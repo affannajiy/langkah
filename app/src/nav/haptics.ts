@@ -1,12 +1,19 @@
 import { Vibration } from 'react-native';
 
+import { getSettings } from '../storage/settings';
+
 // Haptics first, then text (CLAUDE.md UX rules). Android patterns are
-// [wait, buzz, wait, buzz, ...] in milliseconds.
+// [wait, buzz, wait, buzz, ...] in milliseconds. Settings can turn them off;
+// the banners and cards still show.
+function buzz(pattern: number | number[]) {
+  if (getSettings().vibration) Vibration.vibrate(pattern);
+}
+
 export const haptics = {
   // One short pulse for a turn.
-  turn: () => Vibration.vibrate(150),
+  turn: () => buzz(150),
   // Two pulses for a hazard ahead.
-  hazard: () => Vibration.vibrate([0, 150, 120, 150]),
+  hazard: () => buzz([0, 150, 120, 150]),
   // One long pulse on arrival.
-  arrive: () => Vibration.vibrate(700),
+  arrive: () => buzz(700),
 };

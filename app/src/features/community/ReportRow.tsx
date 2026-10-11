@@ -31,7 +31,7 @@ export function useSubtitle(r: CommunityReport, withPhotoNote = false): string {
     .join(' · ');
 }
 
-function Thumb({ r }: { r: CommunityReport }) {
+export function Thumb({ r }: { r: CommunityReport }) {
   const Icon = categoryIcon(r.kind, r.category);
   if (r.photoUrl) {
     return <Image source={{ uri: r.photoUrl }} style={styles.thumb} accessibilityIgnoresInvertColors />;

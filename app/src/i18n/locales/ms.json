@@ -26,7 +26,10 @@
     "offTitle": "Lokasi dimatikan",
     "offBody": "Hidupkan dalam Tetapan untuk melihat kedudukan anda pada peta.",
     "openSettings": "Buka Tetapan",
-    "dismiss": "Tutup"
+    "dismiss": "Tutup",
+    "servicesOff": "Lokasi dimatikan pada telefon ini.",
+    "servicesOffWalk": "Lokasi dimatikan. Hidupkannya untuk terus memandu perjalanan anda.",
+    "turnOn": "Hidupkan"
   },
   "community": {
     "title": "Komuniti",
@@ -65,7 +68,7 @@
     "status": {
       "pending": "Menunggu",
       "active": "Aktif",
-      "expired": "Tamat"
+      "expired": "Luput"
     },
     "upvoteHint": "Menambah undian anda",
     "upvoteUndoHint": "Menarik balik undian anda",
@@ -78,7 +81,7 @@
     "byAnonymous": "tanpa nama",
     "voteCounts": "{{confirms}} masih ada · {{gone}} sudah tiada",
     "reported": "Dilaporkan {{when}} {{by}}",
-    "expires": "tamat {{date}}",
+    "expires": "luput pada {{date}}",
     "pendingRule": "Menjadi aktif selepas 2 orang mengesahkannya.",
     "pendingRulePhoto": "Menjadi aktif selepas 1 orang mengesahkannya.",
     "miniMapA11y": "Peta lokasi laporan {{street}}",
@@ -97,7 +100,6 @@
   },
   "me": {
     "title": "Saya",
-    "empty": "Laporan, tempat disimpan dan perjalanan anda akan dipaparkan di sini dalam kemas kini seterusnya.",
     "guest": "Tetamu",
     "guestBody": "Anda boleh membaca semuanya. Log masuk dengan Google untuk melapor dan mengundi.",
     "signedIn": "Sudah log masuk",
@@ -107,7 +109,36 @@
     "signOut": "Log keluar",
     "signingOut": "Sedang log keluar…",
     "waiting_one": "{{count}} laporan atau undian menunggu untuk dihantar",
-    "waiting_other": "{{count}} laporan atau undian menunggu untuk dihantar"
+    "waiting_other": "{{count}} laporan atau undian menunggu untuk dihantar",
+    "demoGuest": "Tetamu demo",
+    "demoBody": "Mod demo: anda boleh melapor dan mengundi tanpa log masuk. Laporan dihantar tanpa nama.",
+    "stats": {
+      "reports_one": "laporan dihantar",
+      "reports_other": "laporan dihantar",
+      "votes_one": "pengesahan dan sokongan",
+      "votes_other": "pengesahan dan sokongan",
+      "agreed_one": "kali orang lain setuju",
+      "agreed_other": "kali orang lain setuju"
+    },
+    "savedTitle": "Tempat disimpan",
+    "savedHint": "Membuka peta untuk memilih tempat ini",
+    "notSet": "belum ditetapkan",
+    "notSetTap": "Belum ditetapkan. Ketik untuk memilih.",
+    "clearSaved": "Kosongkan {{label}}",
+    "reportsTitle": "Laporan saya",
+    "noReports": "Belum ada. Tekan Lapor pada peta, atau Laporan pantas semasa berjalan.",
+    "loadFailed": "Laporan anda tidak dapat dimuatkan. Semak sambungan internet anda.",
+    "showMore": "Tunjuk lagi",
+    "addPhoto": "Tambah foto",
+    "addPhotoHazard": "Dengan foto, satu pengesahan sudah cukup untuk mengaktifkan bahaya ini.",
+    "addPhotoBody": "Foto membantu majlis melihat masalahnya.",
+    "uploading": "Memuat naik foto…",
+    "photoAdded": "Foto ditambah.",
+    "delete": "Padam laporan",
+    "deleteTitle": "Padam laporan ini?",
+    "deleteBody": "Laporan ini dibuang untuk semua orang, bersama undian dan fotonya. Tindakan ini tidak boleh dibuat asal.",
+    "deleted": "Laporan dipadam.",
+    "deleteFailed": "Tidak dapat dipadam. Semak sambungan internet anda dan cuba lagi."
   },
   "units": {
     "m": "{{value}} m",
@@ -115,14 +146,14 @@
     "min": "{{count}} min"
   },
   "home": {
-    "searchPlaceholder": "Anda nak berjalan ke mana?",
+    "searchPlaceholder": "Hendak berjalan ke mana?",
     "searchHint": "Membuka carian tempat",
     "night": "Malam",
     "day": "Siang",
-    "modeA11yNight": "Pemarkahan malam dihidupkan",
-    "modeA11yDay": "Pemarkahan siang dihidupkan",
-    "modeHintNight": "Tukar kepada pemarkahan siang",
-    "modeHintDay": "Tukar kepada pemarkahan malam",
+    "modeA11yNight": "Skor waktu malam digunakan",
+    "modeA11yDay": "Skor waktu siang digunakan",
+    "modeHintNight": "Tukar kepada skor waktu siang",
+    "modeHintDay": "Tukar kepada skor waktu malam",
     "layers": "Lapisan peta",
     "report": "Lapor",
     "nearYou": "Berhampiran anda",
@@ -174,9 +205,9 @@
     "title_one": "{{count}} laluan jalan kaki",
     "title_other": "{{count}} laluan jalan kaki",
     "titleAny": "Laluan jalan kaki",
-    "nightScoring": "Pemarkahan malam",
-    "dayScoring": "Pemarkahan siang",
-    "scoringHint": "Tukar pemarkahan dan rancang semula laluan",
+    "nightScoring": "Skor waktu malam",
+    "dayScoring": "Skor waktu siang",
+    "scoringHint": "Tukar skor dan rancang semula laluan",
     "safest": "Paling selamat",
     "fastest": "Paling pantas",
     "safestTag": "Paling selamat · {{count}} min",
@@ -238,7 +269,7 @@
       "body": "Berjalan ke {{name}}. Lokasi digunakan hanya sehingga anda tiba atau menamatkan perjalanan."
     },
     "step": {
-      "depart": "Jalan di sepanjang {{street}}",
+      "depart": "Jalan menyusuri {{street}}",
       "departNoName": "Mula berjalan",
       "left": "Belok kiri ke {{street}}",
       "leftNoName": "Belok kiri",
@@ -302,9 +333,9 @@
     "saved": "Laporan disimpan. Ia dihantar sebaik sahaja anda log masuk.",
     "failed": "Tidak dapat menyimpan. Cuba lagi.",
     "close": "Tutup laporan pantas",
-    "sent": "Dilaporkan. Orang berdekatan akan diminta mengesahkannya.",
+    "sent": "Dilaporkan. Anda boleh menambah foto kemudian dalam Saya.",
     "savedOffline": "Tiada isyarat. Disimpan dalam telefon dan dihantar kemudian.",
-    "footerSignedIn": "Tiada isyarat pun tak apa: ia disimpan dalam telefon dahulu."
+    "footerSignedIn": "Tiada isyarat pun tidak mengapa: ia disimpan dalam telefon dahulu."
   },
   "layers": {
     "title": "Lapisan peta",
@@ -339,7 +370,9 @@
   "common": {
     "undo": "Buat asal",
     "close": "Tutup",
-    "retry": "Cuba lagi"
+    "retry": "Cuba lagi",
+    "back": "Kembali",
+    "cancel": "Batal"
   },
   "signIn": {
     "title": "Log masuk supaya orang lain boleh percaya laporan anda",
@@ -361,7 +394,7 @@
   "report": {
     "back": "Kembali",
     "close": "Tutup laporan baharu",
-    "stepOf": "Laporan baharu · Langkah {{step}} daripada 4",
+    "stepOf": "Laporan baharu · Bahagian {{step}} daripada 4",
     "steps": {
       "type": "Jenis",
       "category": "Kategori",
@@ -427,7 +460,7 @@
     "fix_sidewalk": "Baiki kaki lima yang rosak",
     "street_lights": "Baiki lampu jalan",
     "shelter": "Tambah tempat berteduh",
-    "kerb_ramp": "Tambah tanjakan bebendul",
+    "kerb_ramp": "Tambah tanjakan OKU",
     "other": "Penambahbaikan lain"
   },
   "queue": {
@@ -443,5 +476,67 @@
     "hoursAgo_other": "{{count}} jam lalu",
     "daysAgo_one": "{{count}} hari lalu",
     "daysAgo_other": "{{count}} hari lalu"
+  },
+  "offline": {
+    "banner": "Tiada internet. Memaparkan apa yang dimuatkan tadi.",
+    "walk": "Tiada internet. Panduan diteruskan; laporan menunggu dalam telefon."
+  },
+  "arrival": {
+    "arrived": "Anda sudah tiba",
+    "walked": "berjalan",
+    "onTheWay": "dalam perjalanan",
+    "minutes_one": "{{count}} min",
+    "minutes_other": "{{count}} min",
+    "avoided_one": "bahaya dielakkan",
+    "avoided_other": "bahaya dielakkan",
+    "flagged_one": "bahaya dimaklumkan",
+    "flagged_other": "bahaya dimaklumkan",
+    "rateTitle": "Sejauh mana selamat perjalanan ini?",
+    "rate": {
+      "1": "Sangat tidak selamat",
+      "2": "Tidak selamat",
+      "3": "Biasa",
+      "4": "Selamat",
+      "5": "Sangat selamat"
+    },
+    "rateNote": "Penilaian anda membantu menambah baik skor keselamatan untuk semua.",
+    "spot": "Nampak sesuatu yang baharu?"
+  },
+  "settings": {
+    "title": "Tetapan",
+    "language": "Bahasa",
+    "langName": "Bahasa Melayu",
+    "walking": "Peta dan perjalanan",
+    "autoNight": "Siang dan malam automatik",
+    "autoNightBody": "Dari 7:30 malam hingga 7 pagi, laluan mengutamakan jalan yang terang dan peta bertukar gelap.",
+    "vibration": "Getaran amaran",
+    "vibrationBody": "Satu getaran untuk belokan, dua untuk bahaya di hadapan, satu getaran panjang apabila tiba.",
+    "demo": "Mod demo",
+    "demoSwitch": "Lapor tanpa log masuk",
+    "demoBody": "Untuk demo kelas. Tetamu boleh melapor dan mengundi selagi pelayan Langkah membenarkannya.",
+    "newGuest": "Mula sebagai tetamu baharu",
+    "newGuestBusy": "Sedang bermula…",
+    "newGuestDone": "Anda kini tetamu lain, jadi anda boleh mengesahkan laporan anda yang tadi.",
+    "privacy": "Privasi",
+    "privacyLocation": "Lokasi digunakan dalam telefon untuk menunjukkan kedudukan anda dan memandu perjalanan. Langkah tidak pernah menyimpan sejarah tempat anda berjalan.",
+    "privacyReports": "Laporan adalah tanpa nama melainkan anda mematikannya. Jika begitu, hanya nama pertama anda daripada Google ditunjukkan. E-mel anda tidak pernah ditunjukkan.",
+    "privacyPhotos": "Foto dikecilkan dalam telefon sebelum dimuat naik, dan ini juga membuang butiran GPS dan kamera di dalamnya.",
+    "privacyRatings": "Penilaian perjalanan hanya menghantar penilaian, siang atau malam, skor laluan dan panjangnya. Tiada tempat.",
+    "about": "Perihal",
+    "version": "Langkah {{version}}, Kumpulan 4 Teknousahawan UTP",
+    "credits": "Data peta © penyumbang OpenStreetMap, di bawah Open Database License. Gaya peta daripada OpenFreeMap.",
+    "osm": "Hak cipta dan lesen OpenStreetMap"
+  },
+  "welcome": {
+    "chooseTitle": "Pilih bahasa anda",
+    "useIn": "Guna Langkah dalam Bahasa Melayu",
+    "stepOf": "Bahagian {{step}} daripada 2",
+    "locationTitle": "Berjalan di Ipoh dengan lebih selamat",
+    "pitch": "Langkah mencari laluan jalan kaki paling selamat dan memberi amaran tentang bahaya di sepanjang jalan. Untuk itu, ia perlukan lokasi anda.",
+    "reasonRoute": "Merancang perjalanan dari tempat anda berada",
+    "reasonHazard": "Memberi amaran tentang bahaya di hadapan semasa anda berjalan",
+    "reasonReport": "Menanda laporan di tempat anda berdiri",
+    "privacy": "Lokasi kekal dalam telefon anda. Langkah tidak pernah menyimpan sejarah tempat anda berjalan.",
+    "asking": "Sedang meminta…"
   }
 }

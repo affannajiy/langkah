@@ -19,9 +19,9 @@ UTP Technopreneurship Team Project, Group 4. Android only for the MVP.
 | 2 | `search_places` and `route_safe` (safest and fastest walk, day and night scoring) | Done |
 | 3 | Map home, search sheet and route compare screens | Done |
 | 4 | Walking navigation, hazard banner, quick report, haptics | Done |
-| 5 | Sign-in, report flow, community tab, trust rules and report expiry | Done, being reviewed |
-| 6 | Arrival, Me tab, onboarding, empty and error states | Next |
-| 7 | Demo readiness and preview APK | To do |
+| 5 | Sign-in, report flow, community tab, trust rules and report expiry | Done |
+| 6 | Arrival, Me tab, Settings, onboarding, night map, demo mode, empty and error states | Done, being reviewed |
+| 7 | Demo readiness and preview APK | Next |
 
 ### Pilot areas
 
@@ -57,13 +57,15 @@ The budget is RM0: every service above is free and none needs a card.
 | `app/src/auth/` | Guest session, Google sign-in (linked to the guest account) and the sign-in sheet |
 | `app/src/features/map/` | Map tab pieces: search sheet, compare sheet, trip bar, home controls, layers |
 | `app/src/app/navigate.tsx` | The walking screen, shown above the tabs |
+| `app/src/app/arrival.tsx`, `settings.tsx`, `welcome.tsx` | Arrival screen, Settings, and first-launch onboarding (language, why location) |
 | `app/src/features/nav/` | Walking screen pieces: instruction card, hazard banner, bottom bar, quick report sheet, route layers |
 | `app/src/features/report/` | The 4-step report flow sheet and the category icons |
 | `app/src/features/community/` | Community tab pieces: rows, detail sheet, map view, votes, CSV and GeoJSON export |
 | `app/src/nav/` | Walk engine: line snapping, off-route and arrival, haptics, walk location service |
 | `app/src/map/` | Map config (pilot areas), pins, route lines, user dot, location hooks |
 | `app/src/components/` | Shared UI: text, buttons, sheets, chips, route cards, snackbar |
-| `app/src/storage/` | On-phone storage: saved and recent places, the report queue |
+| `app/src/storage/` | On-phone storage: settings, saved and recent places, the report queue |
+| `app/src/net/` | Online or offline, for the offline banners |
 | `app/src/i18n/locales/` | `en.json` and `ms.json` |
 | `app/src/theme/theme.ts` | All design tokens (colours, spacing, radii, type) |
 | `supabase/migrations/` | Every schema change, function and RLS policy, in order |
@@ -97,7 +99,7 @@ See [SETUP_CHECKLIST.md](SETUP_CHECKLIST.md) for the full list of tools and free
 
 Expo Go cannot run MapLibre, so we use our own **development build**: an APK with the native code, which loads the JavaScript live from your laptop.
 
-1. **Build the development APK** (first time, and again only when a native package or a permission changes: AsyncStorage in Phase 3, `expo-task-manager` and the walk permissions in Phase 4, Google sign-in, the photo picker, the image resizer and file sharing in Phase 5). Inside `app/`:
+1. **Build the development APK** (first time, and again only when a native package or a permission changes: AsyncStorage in Phase 3, `expo-task-manager` and the walk permissions in Phase 4, Google sign-in, the photo picker, the image resizer and file sharing in Phase 5, `expo-network` in Phase 6). Inside `app/`:
    ```bash
    eas build -p android --profile development
    ```
@@ -120,9 +122,17 @@ Expo Go cannot run MapLibre, so we use our own **development build**: an APK wit
 
 Saving a file reloads the app on the emulator. Shake (Ctrl+M) opens the dev menu.
 
+### First launch
+
+A fresh install shows onboarding once: language (English or Bahasa Melayu), then why Langkah needs location and Android's permission prompt. To see it again, clear the app's data:
+
+```bash
+adb shell pm clear com.langkah.app
+```
+
 ### Testing in Bahasa Melayu
 
-Switch only the app to Malay, without changing the whole emulator:
+The language picked in onboarding or in **Me**, **Settings** wins. Until one is picked, Langkah follows the phone. To switch only the app to Malay, without changing the whole emulator:
 
 ```bash
 adb shell cmd locale set-app-locales com.langkah.app --locales ms-MY
@@ -178,6 +188,7 @@ The project is hosted on Supabase (Singapore region). Every change goes through 
 | `…07_trunk_roads` | Trunk roads count as main roads in the walk network |
 | `…08_route_per_area` | `route_safe` routes inside the pilot area's own network (Ipoh or Seri Iskandar) |
 | `…09_reports_community` | Trust rules (votes set status), `profiles`, `report_create`, `report_vote`, `community_reports`, `community_export`, `street_at`, `sync_profile`, nightly expiry on pg_cron |
+| `…10_me_ratings_demo` | `walk_ratings` and `rate_walk` (Arrival), `my_reports` and `my_stats` (Me tab), the private `app_flags` demo switch and `app_status` |
 
 The app can call only `search_places`, `route_safe`, `map_in_view`, the report and Community functions above, plus the tables RLS allows. Road data is never read directly by the app.
 
@@ -205,6 +216,17 @@ Guests read everything. Writing a report or a vote needs Google sign-in (guide S
    - **Credentials, Create OAuth client ID, Web application:** this gives the Web client ID and secret for Supabase.
    - **Credentials, Create OAuth client ID, Android:** package `com.langkah.app` and the SHA-1 of the EAS signing key. Get the SHA-1 with `eas credentials -p android` (pick the development profile). Add one Android client per keystore (development and preview).
 3. **`app/.env`:** add `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (the Web client ID from step 2, see `app/.env.example`). It is public by design; the client secret stays in Supabase only.
+
+### Demo mode (no Google sign-in)
+
+For a class demo, or for testing before the Google setup above is done, guests can be allowed to report and vote. The switch lives only in the database, so nobody can turn it on from the app. In the Supabase dashboard, **SQL Editor**:
+
+```sql
+update public.app_flags set demo_open_writes = true, updated_at = now();   -- on
+update public.app_flags set demo_open_writes = false, updated_at = now();  -- off
+```
+
+While it is on, **Me**, **Settings** shows **Demo mode**. Turn on **Report without signing in** there. **Start as a new guest** gives the phone a fresh guest account, so one emulator can play two people (report, then confirm as the second guest). Every other rule still applies: categories, Ipoh only, 20 reports a day, no votes on your own report. Anonymous sign-ins must be on (step 1). **Turn demo mode off after the demo**, since anyone with the app can post as a guest while it is on.
 
 ## 5. Map data (OpenStreetMap)
 
@@ -290,7 +312,9 @@ Then test the phase's steps on the emulator (each phase in `CHANGELOG.md` lists 
 - Every new table turns on RLS in the same migration that creates it.
 - Location stays on the phone. It is only sent as the start of a route request (including a reroute) and never stored.
 - During a walk, location runs as a foreground service with a visible notification and stops when the walk ends. Langkah never asks for "Allow all the time" location (`ACCESS_BACKGROUND_LOCATION` is blocked).
-- Guests (Supabase anonymous accounts) can read but never write. RLS checks for a Google-signed-in account on every report, vote and photo upload.
+- Guests (Supabase anonymous accounts) can read but never write. RLS checks for a Google-signed-in account on every report, vote and photo upload. The one exception is demo mode, a database-only switch (section 4) that lets guests write while it is on.
+- Walk ratings store only the rating, day or night, route kind, score and length. No route line, start or end point.
+- Deleting a report asks first (the app's only dialog, since it cannot be undone). The photo file is removed too.
 - `reports.user_id` is never returned to the app. A first name (from Google) is shown only when the reporter turns off "Post anonymously". Emails are never shown.
 - Report photos are re-encoded on the phone (about 1280 px, JPEG 70%), which drops EXIF and GPS tags. File names are random, so a photo URL does not identify anyone.
 - The council export holds no names or user ids. Notes that start with `=`, `+`, `-` or `@` are escaped so a spreadsheet never runs them.
@@ -307,6 +331,8 @@ Then test the phase's steps on the emulator (each phase in `CHANGELOG.md` lists 
 | Google sign-in fails with "Could not sign in" (DEVELOPER_ERROR in the log) | The Android OAuth client's SHA-1 does not match the build's keystore, or the package name is wrong (section 4, sign-in setup). |
 | "Google Play services is missing" | Use an emulator image with the Play Store, and sign in to a Google account in Android Settings. |
 | Reports never appear for a guest, or every write fails | Check **Allow anonymous sign-ins** and **Allow manual linking** are on in Supabase. |
+| Onboarding shows every launch | The app cannot save on the phone. Check storage on the emulator, or clear the app's data once (`adb shell pm clear com.langkah.app`). |
+| Demo mode is missing from Settings | The database switch is off (section 4, demo mode). Reopen the app after turning it on. |
 | No hazard banner during the demo walk | Run `python seed_demo.py` again (hazards are active for 7 days), and start the **Fastest** walk, since Safest avoids the hazards. |
 | The phone does not vibrate on the emulator | The emulator has no vibration motor. Check `adb shell dumpsys vibrator_manager`, or test on a real phone. |
 | Map is blank | Check the emulator has internet. Tiles come from OpenFreeMap. |

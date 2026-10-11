@@ -22,12 +22,15 @@ const config: ExpoConfig = {
     // so ACCESS_BACKGROUND_LOCATION stays blocked. VIBRATE is for turn and hazard pulses.
     // CAMERA is asked for only when the user taps Take photo in the report flow.
     // Storage is not needed: the gallery uses the system photo picker.
+    // expo-network adds ACCESS_NETWORK_STATE for the offline banner. Its Wi-Fi
+    // permission is only for reading the IP address, which Langkah never does.
     permissions: ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION', 'VIBRATE', 'CAMERA'],
     blockedPermissions: [
       'ACCESS_BACKGROUND_LOCATION',
       'READ_EXTERNAL_STORAGE',
       'WRITE_EXTERNAL_STORAGE',
       'RECORD_AUDIO',
+      'ACCESS_WIFI_STATE',
     ],
     predictiveBackGestureEnabled: false,
   },

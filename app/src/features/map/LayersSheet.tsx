@@ -15,7 +15,7 @@ type Props = {
 };
 
 // Layers sheet: which amenities show on the map (guide Section 5.2, screen 19).
-// The choice lasts for this session; saving it comes with Settings in Phase 6.
+// The choice is saved on the phone and also shows in Settings.
 export function LayersSheet({ visible, toggles, onChange, onClose }: Props) {
   const { t } = useTranslation();
   const rows: { key: keyof LayerToggles; label: string }[] = [

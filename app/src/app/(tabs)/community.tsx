@@ -1,4 +1,4 @@
-import { ArrowUp, Download, List, Map as MapIcon, RefreshCw } from 'lucide-react-native';
+import { ArrowUp, CloudOff, Download, List, Map as MapIcon, RefreshCw } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
@@ -10,6 +10,7 @@ import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
 import { Sheet } from '../../components/Sheet';
 import { Snackbar, useSnackbar } from '../../components/Snackbar';
+import { StatusBanner } from '../../components/StatusBanner';
 import { CommunityMap } from '../../features/community/CommunityMap';
 import { shareExport, type ExportFormat } from '../../features/community/exportFiles';
 import { ReportDetailSheet } from '../../features/community/ReportDetailSheet';
@@ -18,6 +19,7 @@ import { useCommunityList, useVoting } from '../../features/community/useCommuni
 import { HazardMark } from '../../map/MapPins';
 import { useHere } from '../../map/useHere';
 import { useLocationPermission } from '../../map/useLocationPermission';
+import { useOnline } from '../../net/useOnline';
 import { colors, radius, spacing, touchTarget } from '../../theme/theme';
 
 const SORTS: CommunitySort[] = ['top', 'newest', 'nearest'];
@@ -29,6 +31,7 @@ export default function CommunityScreen() {
   const snackbar = useSnackbar();
   const { access, request } = useLocationPermission();
   const here = useHere(access);
+  const online = useOnline();
 
   const [kind, setKind] = useState<ReportKind>('improvement');
   const [sort, setSort] = useState<CommunitySort>('top');
@@ -133,6 +136,8 @@ export default function CommunityScreen() {
           })}
         </View>
       </View>
+
+      {!online && <StatusBanner icon={CloudOff} text={t('offline.banner')} style={styles.offline} />}
 
       <View style={styles.kinds} accessibilityRole="tablist">
         {(['hazard', 'improvement'] as const).map((k) => {
@@ -337,6 +342,7 @@ const styles = StyleSheet.create({
   loading: { marginTop: spacing.xxl },
   more: { marginVertical: spacing.md },
   empty: { alignItems: 'center', gap: spacing.md, padding: spacing.xl },
+  offline: { marginHorizontal: spacing.md, marginBottom: spacing.sm },
   emptyText: { textAlign: 'center', padding: spacing.lg },
   retry: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: touchTarget, paddingHorizontal: spacing.lg },
   mapWrap: { flex: 1, margin: spacing.md },

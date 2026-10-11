@@ -1,5 +1,4 @@
 import type { LngLat } from '@maplibre/maplibre-react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { Camera, Check, ChevronLeft, Image as ImageIcon, Lightbulb, MapPin, TriangleAlert, X, type LucideProps } from 'lucide-react-native';
 import { useEffect, useState, type ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -30,6 +29,7 @@ import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
 import { colors, fontFamily, radius, shadow, spacing, touchTarget, type as typeScale } from '../../theme/theme';
 import { categoryKey, HAZARD_ICONS, IMPROVEMENT_ICONS } from './categoryIcons';
+import { pickPhoto } from './pickPhoto';
 
 export type ReportStep = 1 | 2 | 3 | 4;
 const STEPS = ['type', 'category', 'place', 'details'] as const;
@@ -80,18 +80,9 @@ export function ReportFlowSheet({ pin, street, onStep, onHeight, onClose, onDone
 
   async function pick(from: 'camera' | 'library') {
     setError(null);
-    if (from === 'camera') {
-      const perm = await ImagePicker.requestCameraPermissionsAsync();
-      if (!perm.granted) {
-        setError(t('report.cameraDenied'));
-        return;
-      }
-    }
-    const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 1, exif: false };
-    const result =
-      from === 'camera' ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
-    const asset = result.canceled ? null : result.assets[0];
-    if (asset) setPhoto({ uri: asset.uri, width: asset.width });
+    const picked = await pickPhoto(from);
+    if (picked === 'denied') setError(t('report.cameraDenied'));
+    else if (picked) setPhoto(picked);
   }
 
   async function submit() {

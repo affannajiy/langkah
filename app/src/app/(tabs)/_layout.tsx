@@ -1,9 +1,11 @@
+import { Redirect } from 'expo-router';
 import Tabs from 'expo-router/js-tabs';
 import { Map as MapIcon, UserRound, UsersRound, type LucideIcon } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { tabBarStyles } from '../../navigation/tabBar';
+import { useSettings, useSettingsLoaded } from '../../storage/settings';
 import { colors, fontFamily, radius, spacing } from '../../theme/theme';
 
 // Active tab gets a soft blue pill behind its icon plus bold text, so the state
@@ -20,6 +22,13 @@ function tabIcon(Icon: LucideIcon) {
 
 export default function TabsLayout() {
   const { t } = useTranslation();
+  const loaded = useSettingsLoaded();
+  const { onboarded } = useSettings();
+
+  // First launch: language and location first (guide Section 5.5). The loading
+  // screen covers the short wait for settings.
+  if (!loaded) return null;
+  if (!onboarded) return <Redirect href="/welcome" />;
 
   return (
     <Tabs

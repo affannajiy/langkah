@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { LngLat } from '@maplibre/maplibre-react-native';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
 // Saved places (Home, UTP, Work) and recent searches, kept on the phone only.
 // Nothing here is sent to the server. A wrong or old value is dropped, never trusted.
@@ -57,35 +57,57 @@ async function writeJson(key: string, value: unknown): Promise<void> {
 
 export type SavedPlaces = Record<SavedKey, StoredPlace | null>;
 
-export function useSavedPlaces() {
-  const [saved, setSaved] = useState<SavedPlaces>({ home: null, utp: UTP, work: null });
+// Shared by the Map and Me tabs, so a change on one shows on the other at once.
+let saved: SavedPlaces = { home: null, utp: UTP, work: null };
+let savedRead: Promise<void> | null = null;
+const savedListeners = new Set<() => void>();
+const emitSaved = () => savedListeners.forEach((l) => l());
 
-  useEffect(() => {
-    let alive = true;
-    readJson(SAVED_STORE).then((raw) => {
-      if (!alive || typeof raw !== 'object' || raw === null) return;
-      const r = raw as Record<string, unknown>;
-      setSaved({
-        home: toPlace(r.home),
-        // An explicit null means the user cleared UTP; a missing key means never touched.
-        utp: 'utp' in r ? toPlace(r.utp) : UTP,
-        work: toPlace(r.work),
-      });
-    });
-    return () => {
-      alive = false;
+function readSaved(): Promise<void> {
+  savedRead ??= readJson(SAVED_STORE).then((raw) => {
+    if (typeof raw !== 'object' || raw === null) return;
+    const r = raw as Record<string, unknown>;
+    saved = {
+      home: toPlace(r.home),
+      // An explicit null means the user cleared UTP; a missing key means never touched.
+      utp: 'utp' in r ? toPlace(r.utp) : UTP,
+      work: toPlace(r.work),
     };
-  }, []);
+    emitSaved();
+  });
+  return savedRead;
+}
 
-  const setPlace = useCallback((key: SavedKey, place: StoredPlace | null) => {
-    setSaved((prev) => {
-      const next = { ...prev, [key]: place };
-      writeJson(SAVED_STORE, next);
-      return next;
-    });
-  }, []);
+function subscribeSaved(listener: () => void) {
+  savedListeners.add(listener);
+  return () => {
+    savedListeners.delete(listener);
+  };
+}
 
-  return { saved, setPlace };
+export function setSavedPlace(key: SavedKey, place: StoredPlace | null) {
+  saved = { ...saved, [key]: place };
+  emitSaved();
+  writeJson(SAVED_STORE, saved);
+}
+
+// The Me tab's saved-place rows open the Map tab's "Choose Home" search. Taken once.
+let chooseNext: SavedKey | null = null;
+export function requestChooseSaved(key: SavedKey) {
+  chooseNext = key;
+}
+export function takeChooseSaved(): SavedKey | null {
+  const key = chooseNext;
+  chooseNext = null;
+  return key;
+}
+
+export function useSavedPlaces() {
+  const current = useSyncExternalStore(subscribeSaved, () => saved);
+  useEffect(() => {
+    void readSaved();
+  }, []);
+  return { saved: current, setPlace: setSavedPlace };
 }
 
 export function useRecentPlaces() {

@@ -33,6 +33,13 @@ export type Banner =
   | { kind: 'back' }
   | { kind: 'rerouteFailed' };
 
+// What the Arrival screen shows (guide Section 6.3, screen 8).
+export type WalkSummary = {
+  walkedM: number; // along the lines walked, including parts before any reroute
+  warned: number; // hazard banners shown on this walk
+  route: Route; // the last route, after any reroute
+};
+
 export type WalkView = {
   at: LngLat | null; // the walker, snapped onto the line while on it
   heading: number;
@@ -101,13 +108,19 @@ export function useWalk(walk: Walk) {
     rerouting: false,
     lastReroute: 0,
     arrived: false,
+    doneM: 0, // metres walked on earlier routes, before a reroute
   });
+  const [summary, setSummary] = useState<WalkSummary | null>(null);
   const live = useRef({ route, track, hazards, crossings, banner });
   live.current = { route, track, hazards, crossings, banner };
 
   const arrive = useCallback(() => {
-    if (eng.current.arrived) return;
-    eng.current.arrived = true;
+    const e = eng.current;
+    if (e.arrived) return;
+    e.arrived = true;
+    const { route: r, track: tr } = live.current;
+    // On the line, the last few metres to the end count too.
+    setSummary({ walkedM: e.doneM + (e.joined ? tr.total : (e.along ?? 0)), warned: e.alerted.size, route: r });
     haptics.arrive();
     setBanner(null);
     setView((v) => ({ ...v, arrived: true, remainingM: 0, next: null }));
@@ -122,6 +135,7 @@ export function useWalk(walk: Walk) {
       try {
         const pair = await routeSafe(from, walk.to.lngLat, walk.mode);
         const next = walk.kind === 'fastest' && !pair.same ? pair.fastest : pair.safest;
+        e.doneM += e.along ?? 0;
         Object.assign(e, { along: null, joined: false, offCount: 0, buzzed: new Set<number>() });
         setRoute(next);
         setBanner({ kind: 'back' });
@@ -241,5 +255,6 @@ export function useWalk(walk: Walk) {
     banner,
     dismissBanner,
     remainingS: view.remainingM / WALK_SPEED,
+    summary,
   };
 }

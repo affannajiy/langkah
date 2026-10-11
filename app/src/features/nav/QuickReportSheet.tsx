@@ -25,7 +25,7 @@ type Props = {
 // 3 s countdown with Undo (guide Section 6.3, screen 5; docs/screens/QuickReport.png).
 export function QuickReportSheet({ visible, at, street, onSend, onClose }: Props) {
   const { t } = useTranslation();
-  const { isFull } = useAuth();
+  const { canWrite } = useAuth();
   const [picked, setPicked] = useState<HazardCategory | null>(null);
   const [left, setLeft] = useState(SEND_AFTER_S);
 
@@ -126,7 +126,7 @@ export function QuickReportSheet({ visible, at, street, onSend, onClose }: Props
         )}
 
         <AppText variant="caption" color={colors.textMuted} style={styles.center}>
-          {t(isFull ? 'quick.footerSignedIn' : 'quick.footer')}
+          {t(canWrite ? 'quick.footerSignedIn' : 'quick.footer')}
         </AppText>
       </Sheet>
     </>

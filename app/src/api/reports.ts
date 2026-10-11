@@ -234,3 +234,55 @@ export async function uploadPhoto(jpegUri: string): Promise<string> {
     throw new ReportError('photo_failed', error instanceof Error ? error.message : String(error));
   }
 }
+
+// --- Me tab and Arrival (migration 10) ------------------------------------
+
+export type MyStats = { reports: number; votes: number; agreed: number };
+
+export async function myReports(offset = 0, signal?: AbortSignal): Promise<CommunityReport[]> {
+  return parseItems(await rpc('my_reports', { p_offset: offset, p_limit: PAGE_SIZE }, signal));
+}
+
+export async function myStats(signal?: AbortSignal): Promise<MyStats> {
+  const data = await rpc('my_stats', {}, signal);
+  const d = isObj(data) ? data : {};
+  return { reports: n0(d.reports), votes: n0(d.votes), agreed: n0(d.agreed) };
+}
+
+// Own report only (RLS). The report goes first: if removing the photo then fails, the
+// file is only orphaned, never shown on a report.
+export async function deleteReport(r: CommunityReport): Promise<void> {
+  const { error, count } = await supabase.from('reports').delete({ count: 'exact' }).eq('id', r.id);
+  if (error) throw toReportError(error.message);
+  if (count === 0) throw new ReportError('not_allowed');
+  const path = r.photoUrl ? r.photoUrl.split('/').pop() : null;
+  if (path) {
+    const removed = await supabase.storage.from(PHOTO_BUCKET).remove([path]);
+    if (removed.error) console.warn('Could not remove report photo', removed.error.message);
+  }
+}
+
+// Adds a photo to the user's own report. A hazard with a photo needs only one
+// confirmation (Section 7.2); the database applies that at once.
+export async function setReportPhoto(id: string, photoPath: string): Promise<void> {
+  const { error, count } = await supabase.from('reports').update({ photo_path: photoPath }, { count: 'exact' }).eq('id', id);
+  if (error) throw toReportError(error.message);
+  if (count === 0) throw new ReportError('not_allowed');
+}
+
+// "How safe did this walk feel?" (1 to 5). Guests may rate. No place or route is sent.
+export async function rateWalk(r: {
+  rating: number;
+  mode: 'day' | 'night';
+  kind: 'safest' | 'fastest';
+  score: number;
+  distanceM: number;
+}): Promise<void> {
+  await rpc('rate_walk', {
+    p_rating: r.rating,
+    p_mode: r.mode,
+    p_kind: r.kind,
+    p_score: Math.round(Math.min(100, Math.max(0, r.score))),
+    p_distance: Math.round(Math.min(50000, Math.max(0, r.distanceM))),
+  });
+}

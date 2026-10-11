@@ -1,5 +1,84 @@
 # Changelog
 
+## Phase 6: Arrival, Me, onboarding and polish (2026-10-11)
+
+### Added
+- **Arrival** (guide Section 6.3 screen 8, `docs/screens/Arrival.png`), `app/src/app/arrival.tsx`:
+  - Opens 1.5 s after the arrival pulse, or at once with Done or back.
+  - Shows the place, distance walked (including any part before a reroute), minutes on the way, and hazards avoided.
+  - **Hazards avoided** counts the active hazards on the fastest route minus those on the safer route the walker chose. When the walker took the fastest route, or both routes were the same, it shows "hazards flagged" instead: the hazard banners shown on the walk.
+  - "How safe did this walk feel?": five faces with words, one optional tap. It is sent when the user leaves the screen, guests included.
+  - **Spot anything new?** opens the report flow on the Map tab. The pin starts at the arrival point and the route just walked is drawn faintly.
+- **Me tab** (screen 17):
+  - Account card: guest, demo guest or signed in.
+  - Contribution stats: reports posted, confirmations and upvotes given, and times others agreed with you.
+  - **Saved places:** Home, UTP and Work. Tap a row to choose the place on the map; clearing one has Undo.
+  - **My reports:** every status, newest first. Tapping one opens the detail sheet, where the reporter can:
+    - **Add a photo** (camera or gallery) if the report has none. A hazard with a photo needs one confirmation.
+    - **Delete** it, after a "Delete this report?" dialog. This is the app's only dialog, since deleting cannot be undone (Section 5.3).
+- **Settings** (screen 18), from the gear on Me:
+  - Language.
+  - Automatic day and night.
+  - Vibration alerts. When off, banners and cards still show.
+  - Map layers, now saved on the phone and shared with the Layers sheet.
+  - Demo mode, shown only while the server allows it.
+  - A privacy notice, the version, and the OpenStreetMap credit with a link to its licence.
+- **Onboarding** (screens 2 and 3), first launch only:
+  1. Language: each choice is written in its own language.
+  2. Why location: three reasons and a privacy line, then Android's prompt. "Not now" continues, and the map asks for location again from its recentre button only.
+- **Night map** (Sections 6.1 and 6.2): a dark navy recolour of Positron with light labels. It follows the scoring mode, so it turns on with the clock after 19:30 or with the day/night chip, on every map: home, walk, Community and the mini map. With Automatic day and night off, it stays on the day map unless the chip is tapped.
+- **Empty and error states** (screen 20):
+  - **Offline banner** on Map, Community and Me, and a slim one during a walk ("Guidance keeps going; reports wait on the phone").
+  - **Location turned off** for the whole phone: a banner on the map and during a walk, with **Turn on**, which opens Android's own prompt.
+  - "No route", "nothing nearby" and "no reports yet" were already covered in Phases 3 to 5. Me adds "Nothing yet" and a retry when loading fails.
+- **Demo mode** (asked for during planning): guests report and vote without Google sign-in.
+  - It works only while the database switch `app_flags.demo_open_writes` is on. Only SQL can change that switch; see README section 4.
+  - Turn it on in Settings, and use **Start as a new guest** to act as a second voter on one emulator.
+- **Database** (`supabase/migrations/20261011000010_me_ratings_demo.sql`):
+  - `walk_ratings` (RLS on, no client access), written through `rate_walk`. It stores the rating, mode, route kind, score and distance only, with no geometry, and is limited to 20 a day.
+  - `my_reports` and `my_stats`. Deleting and adding a photo use the RLS policies from Phase 1.
+  - `app_flags` (RLS on, no client access), `demo_writes_open()`, `app_status()`. `is_full_user()` now also allows guests while demo mode is on.
+
+### Changed
+- **Full BM pass:**
+  - "Pemarkahan" became "skor waktu siang/malam".
+  - Expired is now "Luput".
+  - The kerb ramp request is now "Tambah tanjakan OKU".
+  - The search placeholder is now "Hendak berjalan ke mana?".
+  - "tak apa" became "tidak mengapa".
+  - Step counters say "Bahagian" instead of "Langkah", so they don't read as the app name.
+- Quick report confirmation (signed in): "Reported. You can add a photo later in Me." (Section 6.3, screen 5).
+- Language, layers and saved places are shared stores, so a change on one screen shows at once on the others. The scoring mode and the chip are shared too.
+- The map style is downloaded once per app run and recoloured on the phone.
+
+### Dependencies (free; a new development build is needed)
+- `expo-network` ~57.0.2, for the offline banners. Its Wi-Fi permission is blocked: Langkah only asks whether there is internet.
+
+### Decisions
+- **Arrival rating** is stored on the server without any place or route line, so it cannot become a location history. Guests may rate.
+- **Hazards avoided** is fastest-route hazards minus chosen-route hazards. This is honest about what the safer route avoided; walking the fastest route shows hazards flagged instead.
+- **Demo mode** is a server switch, not an app setting alone. The app toggle only stops asking for sign-in, and RLS still decides. Without the switch, a phone could not write at all.
+- **Onboarding** has no PNG. It follows Arrival.png: off-white, the navy logo tile, large choice cards.
+- The night map recolours only the map. Sheets and cards stay light for contrast in the dark.
+
+### Results
+- The migration was tested in a rolled-back transaction before `supabase db push`:
+  - With demo off, a guest cannot write, read `walk_ratings` or `app_flags`, or flip the switch.
+  - With demo on:
+    - a guest can report;
+    - a guest cannot self-confirm;
+    - a second guest and a Google user can confirm, which makes the report active.
+  - `my_reports` and `my_stats` are right. Deleting your own report works; deleting others' affects 0 rows.
+  - With demo off again, guest writes are refused, and `anon` cannot call `my_stats`.
+- `npm run typecheck` passes, expo-doctor passes 21/21, and the Android JS bundle exports.
+- **Not yet tested on the emulator:** it needs the new development build (Phases 5 and 6 together).
+
+### Known issues
+- The night map colours are not checked against a PNG (none exists). Check them on the emulator after 19:30, or with the chip.
+- Ratings are not shown anywhere yet; they are for tuning scores later.
+- Orphaned photos (an upload whose report was never posted, or whose removal failed after a delete) are still not cleaned up.
+- The Settings layer switches and the Layers sheet are the same setting; hazards always show.
+
 ## Phase 5: Reports and Community (2026-10-11)
 
 ### Added

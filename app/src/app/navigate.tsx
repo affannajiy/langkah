@@ -1,6 +1,6 @@
 import { Camera, Map, type CameraRef, type LngLat, type MapRef } from '@maplibre/maplibre-react-native';
 import { Redirect, useRouter } from 'expo-router';
-import { LocateFixed } from 'lucide-react-native';
+import { CloudOff, LocateFixed, LocateOff } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BackHandler, Pressable, StyleSheet, View } from 'react-native';
@@ -11,6 +11,7 @@ import type { HazardCategory } from '../api/types';
 import { useAuth } from '../auth/AuthProvider';
 import { MapCredit } from '../components/MapCredit';
 import { Snackbar, useSnackbar } from '../components/Snackbar';
+import { StatusBanner } from '../components/StatusBanner';
 import { InstructionCard } from '../features/nav/InstructionCard';
 import { NavBanner } from '../features/nav/NavBanner';
 import { NavBottomBar } from '../features/nav/NavBottomBar';
@@ -18,14 +19,18 @@ import { QuickReportSheet } from '../features/nav/QuickReportSheet';
 import { WalkerDot, WalkLayers } from '../features/nav/WalkLayers';
 import { MAX_ZOOM, MIN_ZOOM } from '../map/config';
 import { useLangkahMapStyle } from '../map/useLangkahMapStyle';
+import { useLocationPermission } from '../map/useLocationPermission';
+import { useOnline } from '../net/useOnline';
 import { bearingAt, makeTrack } from '../nav/geo';
 import { useWalk } from '../nav/useWalk';
-import { getWalk, setWalk, type Walk } from '../nav/walkStore';
+import { getWalk, setArrival, setWalk, type Walk } from '../nav/walkStore';
 import { queueReport, queueVote } from '../storage/reportQueue';
 import { colors, shadow, spacing, touchTarget } from '../theme/theme';
 
 const WALK_ZOOM = 17.5;
 const BACK_AGAIN_MS = 3000;
+// After the arrival pulse, the walk screen stays a moment before the Arrival screen.
+const ARRIVAL_PAUSE_MS = 1500;
 
 // Walking navigation (guide Section 6.3, screen 4; docs/screens/Navigation.png).
 export default function NavigateScreen() {
@@ -39,12 +44,14 @@ function WalkScreen({ walk }: { walk: Walk }) {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const mapStyle = useLangkahMapStyle();
+  const { style: mapStyle, land: mapLand } = useLangkahMapStyle();
   const snackbar = useSnackbar();
-  const { isFull } = useAuth();
+  const { canWrite } = useAuth();
+  const online = useOnline();
+  const { servicesOn, turnOnServices } = useLocationPermission();
   const mapRef = useRef<MapRef>(null);
   const cameraRef = useRef<CameraRef>(null);
-  const { track, hazards, crossings, view, fix, banner, dismissBanner, remainingS } = useWalk(walk);
+  const { track, hazards, crossings, view, fix, banner, dismissBanner, remainingS, summary } = useWalk(walk);
 
   const [following, setFollowing] = useState(true);
   const [cardBottom, setCardBottom] = useState(insets.top + 140);
@@ -71,6 +78,31 @@ function WalkScreen({ walk }: { walk: Walk }) {
     else router.replace('/');
   }, [router]);
 
+  // Arrived: hand the numbers to the Arrival screen (guide Section 6.3, screen 8).
+  const finish = useCallback(() => {
+    if (!summary) return;
+    const walked = walk.route;
+    setArrival({
+      to: walk.to,
+      walkedM: summary.walkedM,
+      durationS: Math.max(60, (Date.now() - walk.startedAt) / 1000),
+      avoided: walk.fastestHazards === null ? null : Math.max(0, walk.fastestHazards - walked.stats.hz),
+      warned: summary.warned,
+      mode: walk.mode,
+      kind: walk.kind,
+      score: walked.score,
+      trail: summary.route.points,
+    });
+    setWalk(null);
+    router.replace('/arrival');
+  }, [summary, walk, router]);
+
+  useEffect(() => {
+    if (!summary) return;
+    const timer = setTimeout(finish, ARRIVAL_PAUSE_MS);
+    return () => clearTimeout(timer);
+  }, [summary, finish]);
+
   const openQuick = useCallback(() => {
     // Pin where the walker is now, before they move on.
     setQuick({ at: view.at ?? fix?.lngLat ?? null, street: view.street });
@@ -81,7 +113,7 @@ function WalkScreen({ walk }: { walk: Walk }) {
   const onSend = useCallback(
     async (category: HazardCategory, at: LngLat) => {
       setQuick(null);
-      if (isFull) {
+      if (canWrite) {
         try {
           await createReport({ kind: 'hazard', category, at });
           snackbar.show({ text: t('quick.sent') });
@@ -94,16 +126,16 @@ function WalkScreen({ walk }: { walk: Walk }) {
         }
       }
       const ok = await queueReport(category, at);
-      snackbar.show({ text: ok ? (isFull ? t('quick.savedOffline') : t('quick.saved')) : t('quick.failed') });
+      snackbar.show({ text: ok ? (canWrite ? t('quick.savedOffline') : t('quick.saved')) : t('quick.failed') });
     },
-    [isFull, snackbar, t],
+    [canWrite, snackbar, t],
   );
 
   const onAnswer = useCallback(
     async (vote: 'confirm' | 'gone') => {
       if (banner?.kind !== 'hazard') return;
       dismissBanner();
-      if (isFull) {
+      if (canWrite) {
         try {
           await castVote(banner.hazard.id, vote);
           snackbar.show({ text: t('nav.hazard.thanksSent') });
@@ -119,7 +151,7 @@ function WalkScreen({ walk }: { walk: Walk }) {
       const ok = await queueVote(banner.hazard.id, vote);
       snackbar.show({ text: ok ? t('nav.hazard.thanks') : t('quick.failed') });
     },
-    [banner, dismissBanner, isFull, snackbar, t],
+    [banner, dismissBanner, canWrite, snackbar, t],
   );
 
   // Back closes Quick report first. Otherwise it asks for a second press, since a
@@ -130,7 +162,11 @@ function WalkScreen({ walk }: { walk: Walk }) {
         setQuick(null);
         return true;
       }
-      if (view.arrived || Date.now() - backAt.current < BACK_AGAIN_MS) {
+      if (view.arrived) {
+        finish();
+        return true;
+      }
+      if (Date.now() - backAt.current < BACK_AGAIN_MS) {
         end();
         return true;
       }
@@ -139,12 +175,12 @@ function WalkScreen({ walk }: { walk: Walk }) {
       return true;
     });
     return () => sub.remove();
-  }, [quick, view.arrived, end, snackbar, t]);
+  }, [quick, view.arrived, end, finish, snackbar, t]);
 
   const first = walk.route.points[0]!;
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: mapLand }]}>
       {mapStyle && (
         <Map
           ref={mapRef}
@@ -180,6 +216,14 @@ function WalkScreen({ walk }: { walk: Walk }) {
           <InstructionCard view={view} destName={walk.to.name} />
         </View>
         {banner && !view.arrived && <NavBanner banner={banner} onAnswer={onAnswer} onHide={dismissBanner} />}
+        {!servicesOn && !view.arrived && (
+          <StatusBanner
+            icon={LocateOff}
+            text={t('location.servicesOffWalk')}
+            action={{ label: t('location.turnOn'), onPress: () => void turnOnServices() }}
+          />
+        )}
+        {!online && servicesOn && !view.arrived && <StatusBanner icon={CloudOff} text={t('offline.walk')} />}
       </View>
 
       <View style={[styles.lower, { bottom: barH + spacing.sm }]} pointerEvents="box-none">
@@ -201,7 +245,7 @@ function WalkScreen({ walk }: { walk: Walk }) {
         remainingS={remainingS}
         destName={walk.to.name}
         arrived={view.arrived}
-        onEnd={end}
+        onEnd={view.arrived ? finish : end}
         onQuickReport={openQuick}
         onHeight={setBarH}
       />
@@ -220,7 +264,7 @@ function WalkScreen({ walk }: { walk: Walk }) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.mapLand },
+  root: { flex: 1 },
   top: { position: 'absolute', left: spacing.md, right: spacing.md, gap: spacing.sm },
   lower: {
     position: 'absolute',

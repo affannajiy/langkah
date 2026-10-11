@@ -5,6 +5,7 @@ import { AppState } from 'react-native';
 
 import { supabase } from '../api/supabase';
 import { flushQueue } from '../storage/reportQueue';
+import { updateSettings, useSettings } from '../storage/settings';
 import { SignInSheet, type SignInReason } from './SignInSheet';
 
 // Who the user is (guide Section 5.2, screen 12; kickoff Phase 5):
@@ -12,6 +13,9 @@ import { SignInSheet, type SignInReason } from './SignInSheet';
 // - Google sign-in is asked for only at the first report or vote, in a sheet. The guest
 //   account is linked to Google, so it keeps its id.
 // - Anything queued on the phone is sent right after sign-in.
+// - Demo mode (Phase 6): while the server's demo switch is on and the user turned on
+//   Demo mode in Settings, guests write without Google. The server decides; the app
+//   only stops asking for sign-in.
 
 const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 if (webClientId) GoogleSignin.configure({ webClientId });
@@ -20,8 +24,12 @@ export type SignInResult = 'ok' | 'cancelled' | 'no_play_services' | 'not_config
 
 type AuthState = {
   ready: boolean;
-  isFull: boolean; // signed in with Google, so allowed to write
+  isFull: boolean; // signed in with Google
+  canWrite: boolean; // signed in with Google, or a guest in demo mode
   name: string | null;
+  demo: { available: boolean; on: boolean }; // available: the server allows demo writes
+  setDemo: (on: boolean) => void;
+  newGuest: () => Promise<void>; // demo mode: start again as a different guest
   // Opens the sign-in sheet if needed. Resolves true once the user may write.
   requireSignIn: (reason: SignInReason) => Promise<boolean>;
   signOut: () => Promise<void>;
@@ -43,6 +51,13 @@ async function ensureGuest(): Promise<void> {
   const { error } = await supabase.auth.signInAnonymously();
   // Offline or rate limited: reading still works with the public key. Try again later.
   if (error) console.warn('Guest sign-in failed', error.message);
+}
+
+// The server's switches (migration 10). Off when unknown, for example offline.
+async function demoAvailable(): Promise<boolean> {
+  const { data, error } = await supabase.rpc('app_status');
+  if (error) return false;
+  return typeof data === 'object' && data !== null && (data as Record<string, unknown>).demo === true;
 }
 
 async function signInWithGoogle(): Promise<SignInResult> {
@@ -91,8 +106,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [name, setName] = useState<string | null>(null);
   const [sheet, setSheet] = useState<SignInReason | null>(null);
+  const [demoServer, setDemoServer] = useState(false);
   const waiting = useRef<((ok: boolean) => void) | null>(null);
+  const { demoMode } = useSettings();
   const isFull = isFullSession(session);
+  const demoOn = demoServer && demoMode && !!session;
+  const canWrite = isFull || demoOn;
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
@@ -103,9 +122,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       setReady(true);
     });
-    // Back online after a failed guest sign-in.
+    void demoAvailable().then(setDemoServer);
+    // Back online after a failed guest sign-in; the demo switch may have changed too.
     const appState = AppState.addEventListener('change', (state) => {
-      if (state === 'active') void ensureGuest();
+      if (state !== 'active') return;
+      void ensureGuest();
+      void demoAvailable().then(setDemoServer);
     });
     return () => {
       sub.subscription.unsubscribe();
@@ -113,15 +135,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Signed in with Google: refresh the shown name and send anything queued.
+  // Signed in with Google: refresh the shown name. Allowed to write: send anything queued.
   useEffect(() => {
     if (!isFull) {
       setName(null);
       return;
     }
     supabase.rpc('sync_profile').then(({ data }) => setName(typeof data === 'string' ? data : null));
-    void flushQueue();
   }, [isFull, session?.user.id]);
+
+  useEffect(() => {
+    if (canWrite) void flushQueue();
+  }, [canWrite, session?.user.id]);
 
   const finish = useCallback((ok: boolean) => {
     setSheet(null);
@@ -131,14 +156,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const requireSignIn = useCallback(
     (reason: SignInReason) => {
-      if (isFull) return Promise.resolve(true);
+      if (canWrite) return Promise.resolve(true);
       waiting.current?.(false);
       setSheet(reason);
       return new Promise<boolean>((resolve) => {
         waiting.current = resolve;
       });
     },
-    [isFull],
+    [canWrite],
   );
 
   const signOut = useCallback(async () => {
@@ -151,9 +176,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await ensureGuest();
   }, []);
 
+  // A fresh guest id, so one emulator can act as a second voter in demo mode.
+  const newGuest = useCallback(async () => {
+    await supabase.auth.signOut();
+    await ensureGuest();
+  }, []);
+
+  const setDemo = useCallback((on: boolean) => updateSettings({ demoMode: on }), []);
+
   const value = useMemo<AuthState>(
-    () => ({ ready, isFull, name, requireSignIn, signOut }),
-    [ready, isFull, name, requireSignIn, signOut],
+    () => ({
+      ready,
+      isFull,
+      canWrite,
+      name,
+      demo: { available: demoServer, on: demoOn },
+      setDemo,
+      newGuest,
+      requireSignIn,
+      signOut,
+    }),
+    [ready, isFull, canWrite, name, demoServer, demoOn, setDemo, newGuest, requireSignIn, signOut],
   );
 
   return (

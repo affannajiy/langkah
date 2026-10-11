@@ -6,9 +6,10 @@ import { StyleSheet, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 
 import { HAZARD_CATEGORIES, type HazardCategory, type MapView } from '../api/types';
+import type { LayerToggles } from '../storage/settings';
 import { colors, radius } from '../theme/theme';
 
-export type LayerToggles = { crossings: boolean; busStops: boolean; shelters: boolean };
+export type { LayerToggles };
 
 const HAZARD_KEYS = new Set<string>(HAZARD_CATEGORIES);
 

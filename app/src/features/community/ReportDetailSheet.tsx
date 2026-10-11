@@ -1,8 +1,8 @@
 import { Camera, Map, Marker, type MapRef } from '@maplibre/maplibre-react-native';
-import { X } from 'lucide-react-native';
-import { useEffect, useRef } from 'react';
+import { Camera as CameraIcon, Image as ImageIcon, Trash2, X } from 'lucide-react-native';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BackHandler, Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, BackHandler, Image, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { CommunityReport, Vote } from '../../api/reports';
@@ -24,15 +24,21 @@ type Props = {
   bottom: number;
   onVote: (r: CommunityReport, vote: Vote) => void;
   onClose: () => void;
+  // Me tab only, for the user's own reports.
+  owner?: {
+    onAddPhoto: (r: CommunityReport, from: 'camera' | 'library') => void;
+    onDelete: (r: CommunityReport) => void;
+    message: string | null; // progress or error under the buttons
+  };
 };
 
 // Report detail (guide Section 5.2, screen 15): photo, category, mini map, status,
 // votes, time reported and expiry date.
-export function ReportDetailSheet({ report: r, busy, bottom, onVote, onClose }: Props) {
+export function ReportDetailSheet({ report: r, busy, bottom, onVote, onClose, owner }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
-  const mapStyle = useLangkahMapStyle();
+  const { style: mapStyle, land: mapLand } = useLangkahMapStyle();
   const subtitle = useSubtitle(r);
   const miniRef = useRef<MapRef>(null);
 
@@ -95,7 +101,7 @@ export function ReportDetailSheet({ report: r, busy, bottom, onVote, onClose }: 
           )}
 
           {mapStyle && (
-            <View style={styles.mini} accessible accessibilityLabel={t('community.miniMapA11y', { street: r.street ?? '' })}>
+            <View style={[styles.mini, { backgroundColor: mapLand }]} accessible accessibilityLabel={t('community.miniMapA11y', { street: r.street ?? '' })}>
               <Map
                 ref={miniRef}
                 mapStyle={mapStyle}
@@ -129,9 +135,56 @@ export function ReportDetailSheet({ report: r, busy, bottom, onVote, onClose }: 
             ) : (
               <UpvoteButton report={r} busy={busy} onVote={(v) => onVote(r, v)} wide />
             ))}
+          {owner && r.mine && (
+            <View style={styles.owner}>
+              {!r.photoUrl && r.status !== 'expired' && (
+                <>
+                  <AppText variant="bodyStrong" color={colors.navy}>
+                    {t('me.addPhoto')}
+                  </AppText>
+                  <AppText variant="caption" color={colors.textMuted}>
+                    {hazard ? t('me.addPhotoHazard') : t('me.addPhotoBody')}
+                  </AppText>
+                  <View style={styles.ownerRow}>
+                    <OwnerButton icon={<CameraIcon size={22} color={colors.navy} />} label={t('report.takePhoto')} disabled={busy} onPress={() => owner.onAddPhoto(r, 'camera')} />
+                    <OwnerButton icon={<ImageIcon size={22} color={colors.navy} />} label={t('report.choosePhoto')} disabled={busy} onPress={() => owner.onAddPhoto(r, 'library')} />
+                  </View>
+                </>
+              )}
+              {owner.message && (
+                <AppText variant="label" color={colors.textMuted} accessibilityLiveRegion="polite">
+                  {owner.message}
+                </AppText>
+              )}
+              <OwnerButton
+                icon={busy ? <ActivityIndicator color={colors.hazardText} /> : <Trash2 size={22} color={colors.hazardText} />}
+                label={t('me.delete')}
+                disabled={busy}
+                danger
+                onPress={() => owner.onDelete(r)}
+              />
+            </View>
+          )}
         </ScrollView>
       </View>
     </>
+  );
+}
+
+function OwnerButton(p: { icon: ReactNode; label: string; disabled: boolean; danger?: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: p.disabled }}
+      disabled={p.disabled}
+      onPress={p.onPress}
+      style={({ pressed }) => [styles.ownerButton, p.danger && styles.danger, pressed && styles.pressed]}
+    >
+      {p.icon}
+      <AppText variant="bodyStrong" color={p.danger ? colors.hazardText : colors.navy}>
+        {p.label}
+      </AppText>
+    </Pressable>
   );
 }
 
@@ -162,6 +215,23 @@ const styles = StyleSheet.create({
   },
   photo: { width: '100%', height: 200, borderRadius: radius.card, backgroundColor: colors.surface },
   chips: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flexWrap: 'wrap' },
-  mini: { height: 150, borderRadius: radius.card, overflow: 'hidden', backgroundColor: colors.mapLand },
+  mini: { height: 150, borderRadius: radius.card, overflow: 'hidden' },
   credit: { position: 'absolute', left: spacing.sm, bottom: spacing.sm },
+  owner: { gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md },
+  ownerRow: { flexDirection: 'row', gap: spacing.sm },
+  ownerButton: {
+    flex: 1,
+    minHeight: touchTarget + spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  danger: { flex: 0, borderColor: colors.hazard },
+  pressed: { opacity: 0.85 },
 });

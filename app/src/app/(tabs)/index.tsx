@@ -1,7 +1,7 @@
 import { Camera, Map, type CameraRef, type LngLat, type LngLatBounds, type MapRef } from '@maplibre/maplibre-react-native';
 import * as Location from 'expo-location';
 import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
-import { MapPin, MapPinOff, TriangleAlert, X } from 'lucide-react-native';
+import { CloudOff, LocateOff, MapPin, MapPinOff, TriangleAlert, X } from 'lucide-react-native';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BackHandler, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
@@ -13,6 +13,7 @@ import { useAuth } from '../../auth/AuthProvider';
 import { AppText } from '../../components/AppText';
 import { LocationSheet } from '../../components/LocationSheet';
 import { MapCredit } from '../../components/MapCredit';
+import { StatusBanner } from '../../components/StatusBanner';
 import { Snackbar, useSnackbar } from '../../components/Snackbar';
 import { CompareSheet } from '../../features/map/CompareSheet';
 import { HomeBottomControls, HomeTopControls } from '../../features/map/HomeControls';
@@ -22,19 +23,22 @@ import { ReportFlowSheet, type ReportStep } from '../../features/report/ReportFl
 import { SearchSheet, type SearchPurpose } from '../../features/map/SearchSheet';
 import { TripBar } from '../../features/map/TripBar';
 import { IPOH_BOUNDS, isInPilotArea, MAX_ZOOM, MIN_ZOOM, nearestPilotArea, PILOT_AREAS } from '../../map/config';
-import { MapPins, type LayerToggles } from '../../map/MapPins';
+import { MapPins } from '../../map/MapPins';
+import { TrailLayer } from '../../map/TrailLayer';
 import { RouteLayers, type RouteKind } from '../../map/RouteLayers';
 import { useHere } from '../../map/useHere';
 import { UserDot } from '../../map/UserDot';
 import { useLangkahMapStyle } from '../../map/useLangkahMapStyle';
 import { useLocationPermission } from '../../map/useLocationPermission';
-import { setWalk } from '../../nav/walkStore';
+import { setWalk, takeReportAfterWalk } from '../../nav/walkStore';
 import { useMapView } from '../../map/useMapView';
 import { useScoringMode } from '../../map/useScoringMode';
 import { tabBarStyles } from '../../navigation/tabBar';
+import { useOnline } from '../../net/useOnline';
 import { useRoutes } from '../../route/useRoutes';
-import { useRecentPlaces, useSavedPlaces, type SavedKey, type StoredPlace } from '../../storage/places';
+import { takeChooseSaved, useRecentPlaces, useSavedPlaces, type SavedKey, type StoredPlace } from '../../storage/places';
 import { flushQueue, queuedCount } from '../../storage/reportQueue';
+import { updateSettings, useSettings } from '../../storage/settings';
 import { colors, radius, shadow, spacing } from '../../theme/theme';
 
 const RECENTRE_ZOOM = 16;
@@ -79,8 +83,9 @@ export default function MapScreen() {
   const { height: screenH } = useWindowDimensions();
   const navigation = useNavigation();
   const router = useRouter();
-  const mapStyle = useLangkahMapStyle();
-  const { access, request } = useLocationPermission();
+  const { style: mapStyle, land: mapLand } = useLangkahMapStyle();
+  const { access, request, servicesOn, turnOnServices } = useLocationPermission();
+  const online = useOnline();
   const here = useHere(access);
   const { mode, toggle: toggleMode } = useScoringMode();
   const { saved, setPlace } = useSavedPlaces();
@@ -95,7 +100,6 @@ export default function MapScreen() {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [selected, setSelected] = useState<RouteKind>('safest');
   const [layersOpen, setLayersOpen] = useState(false);
-  const [toggles, setToggles] = useState<LayerToggles>({ crossings: true, busStops: true, shelters: true });
   const [viewBounds, setViewBounds] = useState<LngLatBounds | null>(null);
   const [peekH, setPeekH] = useState(120);
   const [sheetH, setSheetH] = useState(360);
@@ -109,6 +113,9 @@ export default function MapScreen() {
   const [reportH, setReportH] = useState(0);
   const [pin, setPin] = useState<LngLat | null>(null);
   const [pinStreet, setPinStreet] = useState<string | null>(null);
+  // The route just walked, drawn faintly when the report flow opens from Arrival.
+  const [trail, setTrail] = useState<LngLat[] | null>(null);
+  const { layers: toggles, locationAsked } = useSettings();
 
   const home = screen.kind === 'home';
   const comparing = screen.kind === 'compare';
@@ -131,13 +138,16 @@ export default function MapScreen() {
     return () => clearTimeout(timer);
   }, [outsidePilot]);
 
+  // Asked once by itself (onboarding usually does it first); after that only from
+  // the recentre button.
   useEffect(() => {
-    if (access === 'undetermined' && !askedOnce) {
+    if (access === 'undetermined' && !askedOnce && !locationAsked) {
       setLocationSheet(true);
       setAskedOnce(true);
+      updateSettings({ locationAsked: true });
     }
     if (access === 'granted') setLocationSheet(false);
-  }, [access, askedOnce]);
+  }, [access, askedOnce, locationAsked]);
 
   async function allowLocation() {
     const next = await request();
@@ -324,7 +334,14 @@ export default function MapScreen() {
       return;
     }
     const kind: RouteKind = pair.same ? 'safest' : selected;
-    setWalk({ route: pair[kind], kind, mode, to: { name: label(trip.to) ?? '', lngLat: toLL } });
+    setWalk({
+      route: pair[kind],
+      kind,
+      mode,
+      to: { name: label(trip.to) ?? '', lngLat: toLL },
+      startedAt: Date.now(),
+      fastestHazards: kind === 'safest' && !pair.same ? pair.fastest.stats.hz : null,
+    });
     router.push('/navigate');
     // Back on the map after the walk, the home screen shows again.
     closeTrip();
@@ -380,8 +397,9 @@ export default function MapScreen() {
     }, STREET_DELAY_MS);
   }, [screenW, pinY]);
 
-  function openReport() {
-    setPin(null);
+  function openReport(at: LngLat | null = null, walked: LngLat[] | null = null) {
+    setPin(at);
+    setTrail(walked);
     setPinStreet(null);
     setReportStep(1);
     setLayersOpen(false);
@@ -390,19 +408,39 @@ export default function MapScreen() {
 
   function closeReport(message?: string) {
     setScreen({ kind: 'home' });
+    setTrail(null);
     setReportH(0);
     if (message) snackbar.show({ text: message });
   }
 
+  // Back from Arrival ("Spot anything new?") or from the Me tab's saved places.
+  useFocusEffect(
+    useCallback(() => {
+      const after = takeReportAfterWalk();
+      if (after) {
+        setTrip(null);
+        openReport(after.at, after.trail);
+        return;
+      }
+      const key = takeChooseSaved();
+      if (key) {
+        setTrip(null);
+        setLayersOpen(false);
+        setScreen({ kind: 'search', purpose: { kind: 'save', key }, back: 'home' });
+      }
+      // openReport only sets state; it needs no dependency.
+    }, []),
+  );
+
   // Back from a walk with reports still on the phone: offer sign-in here, never mid-walk.
-  const { isFull, ready: authReady, requireSignIn } = auth;
+  const { canWrite, ready: authReady, requireSignIn } = auth;
   const showSnack = snackbar.show;
   useFocusEffect(
     useCallback(() => {
       let live = true;
       queuedCount().then((n) => {
         if (!live || n === 0) return;
-        if (isFull) {
+        if (canWrite) {
           flushQueue().then((sent) => {
             if (live && sent > 0) showSnack({ text: t('queue.sent', { count: sent }) });
           });
@@ -417,7 +455,7 @@ export default function MapScreen() {
       return () => {
         live = false;
       };
-    }, [isFull, authReady, requireSignIn, showSnack, t]),
+    }, [canWrite, authReady, requireSignIn, showSnack, t]),
   );
 
   // Android back steps out one level instead of leaving the app.
@@ -446,7 +484,7 @@ export default function MapScreen() {
   const snackBottom = (comparing ? sheetH : home ? peekH : reporting ? reportH : 0) + spacing.md;
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: mapLand }]}>
       {mapStyle && (
         <Map
           ref={mapRef}
@@ -465,6 +503,7 @@ export default function MapScreen() {
         >
           <Camera ref={cameraRef} initialViewState={{ bounds: IPOH_BOUNDS }} minZoom={MIN_ZOOM} maxZoom={MAX_ZOOM} />
           <MapPins view={mapView.view} toggles={toggles} />
+          {reporting && trail && <TrailLayer points={trail} />}
           {comparing && pair && toLL && (
             <RouteLayers
               pair={pair}
@@ -493,9 +532,20 @@ export default function MapScreen() {
             bottom={peekH + spacing.md}
             credit={credit}
             onRecentre={() => (access === 'granted' ? flyToMe() : setLocationSheet(true))}
-            onReport={openReport}
+            onReport={() => openReport()}
           />
           <PeekSheet state={mapView.state} nearUser={nearUser} onLayout={setPeekH} />
+          {/* Above the Report button: recentre (56) + gap + Report (64). */}
+          <View style={[styles.status, { bottom: peekH + spacing.md * 3 + 120 }]} pointerEvents="box-none">
+            {!online && <StatusBanner icon={CloudOff} text={t('offline.banner')} />}
+            {online && access === 'granted' && !servicesOn && (
+              <StatusBanner
+                icon={LocateOff}
+                text={t('location.servicesOff')}
+                action={{ label: t('location.turnOn'), onPress: () => void turnOnServices() }}
+              />
+            )}
+          </View>
         </>
       )}
 
@@ -597,7 +647,12 @@ export default function MapScreen() {
 
       {home && (
         <>
-          <LayersSheet visible={layersOpen} toggles={toggles} onChange={setToggles} onClose={() => setLayersOpen(false)} />
+          <LayersSheet
+            visible={layersOpen}
+            toggles={toggles}
+            onChange={(layers) => updateSettings({ layers })}
+            onClose={() => setLayersOpen(false)}
+          />
           <LocationSheet
             visible={locationSheet}
             mode={access === 'blocked' ? 'blocked' : 'ask'}
@@ -613,8 +668,9 @@ export default function MapScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.mapLand },
+  root: { flex: 1 },
   credit: { position: 'absolute', left: spacing.md },
+  status: { position: 'absolute', left: spacing.md, right: spacing.md, gap: spacing.sm },
   banner: {
     position: 'absolute',
     left: spacing.md,

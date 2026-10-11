@@ -27,7 +27,7 @@ type Props = {
 // Community map view: reports in the area on screen only (Section 7.4).
 export function CommunityMap({ kind, here, reloadKey, onOpen }: Props) {
   const { t } = useTranslation();
-  const mapStyle = useLangkahMapStyle();
+  const { style: mapStyle, land: mapLand } = useLangkahMapStyle();
   const mapRef = useRef<MapRef>(null);
   const [items, setItems] = useState<CommunityReport[]>([]);
   const [view, setView] = useState<{ bounds: LngLatBounds; zoom: number } | null>(null);
@@ -63,7 +63,7 @@ export function CommunityMap({ kind, here, reloadKey, onOpen }: Props) {
   }, [view, kind, reloadKey]);
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: mapLand }]}>
       {mapStyle && (
         <Map
           ref={mapRef}
@@ -103,7 +103,7 @@ export function CommunityMap({ kind, here, reloadKey, onOpen }: Props) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.mapLand, borderRadius: radius.sheet, overflow: 'hidden' },
+  root: { flex: 1, borderRadius: radius.sheet, overflow: 'hidden' },
   flex: { flex: 1 },
   hint: {
     position: 'absolute',

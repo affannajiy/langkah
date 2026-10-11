@@ -29,9 +29,6 @@ export const colors = {
   safeBadge: '#CDEBE0',
   neutralBadge: '#E8EBEF',
 
-  // Base map land colour, shown while tiles load
-  mapLand: '#E9ECF1',
-
   // Route lines (Section 6.2): safest solid teal with a white outline, fastest dashed grey.
   routeFastest: '#5B6472',
   routeOutline: '#FFFFFF',

@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { AppState } from 'react-native';
 
 import type { ScoringMode } from '../api/types';
+import { useSettings } from '../storage/settings';
 
 // Night scoring from 19:30 to 07:00 phone time. Ipoh sunset is about 19:20 all year,
 // so this starts just after dark (guide Section 6.1, "Night is different").
@@ -14,23 +15,52 @@ export function clockMode(now = new Date()): ScoringMode {
   return min >= NIGHT_FROM_MIN || min < NIGHT_TO_MIN ? 'night' : 'day';
 }
 
-// Follows the clock until the user taps the chip; their choice then holds for this session.
+// Shared by every screen, so the chip, route scoring and the map style always agree.
+// The clock decides until the user taps the chip; their choice then holds until the
+// app restarts.
+let clock: ScoringMode = clockMode();
+let override: ScoringMode | null = null;
+const listeners = new Set<() => void>();
+const emit = () => listeners.forEach((l) => l());
+
+function tick() {
+  const next = clockMode();
+  if (next !== clock) {
+    clock = next;
+    emit();
+  }
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+const snapshot = () => `${clock}:${override ?? ''}`;
+
 export function useScoringMode() {
-  const [auto, setAuto] = useState<ScoringMode>(clockMode);
-  const [override, setOverride] = useState<ScoringMode | null>(null);
+  const { autoNight } = useSettings();
+  useSyncExternalStore(subscribe, snapshot);
 
   useEffect(() => {
-    const tick = () => setAuto(clockMode());
     const timer = setInterval(tick, CHECK_EVERY_MS);
-    const sub = AppState.addEventListener('change', (s) => s === 'active' && tick());
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') tick();
+    });
     return () => {
       clearInterval(timer);
       sub.remove();
     };
   }, []);
 
-  const mode = override ?? auto;
-  const toggle = useCallback(() => setOverride(mode === 'day' ? 'night' : 'day'), [mode]);
+  // Automatic day and night off (Settings): day, unless the chip says otherwise.
+  const mode: ScoringMode = override ?? (autoNight ? clock : 'day');
+  const toggle = useCallback(() => {
+    override = mode === 'day' ? 'night' : 'day';
+    emit();
+  }, [mode]);
 
   return { mode, toggle };
 }
