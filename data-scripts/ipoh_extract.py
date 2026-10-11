@@ -68,6 +68,16 @@ def sidewalk_status(t):
     return "unknown"
 
 
+def is_walkable(t):
+    """True for a way that belongs in the walk network. Shared with load_to_supabase.py."""
+    hw = t.get("highway")
+    if hw not in ROAD_TYPES and hw not in FOOT_TYPES:
+        return False
+    if t.get("foot") == "no" or hw == "service" and t.get("service") == "parking_aisle":
+        return False
+    return True
+
+
 class Collector(osmium.SimpleHandler):
     def __init__(self):
         super().__init__()
@@ -75,11 +85,9 @@ class Collector(osmium.SimpleHandler):
         self.geo = osmium.geom.GeoJSONFactory()
 
     def way(self, w):
+        if not is_walkable(w.tags):
+            return
         hw = w.tags.get("highway")
-        if hw not in ROAD_TYPES and hw not in FOOT_TYPES:
-            return
-        if w.tags.get("foot") == "no" or hw == "service" and w.tags.get("service") == "parking_aisle":
-            return
         try:
             geom = json.loads(self.geo.create_linestring(w))
         except Exception:

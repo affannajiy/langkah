@@ -1,6 +1,6 @@
 import { Camera, Map, UserLocation, type CameraRef, type MapRef } from '@maplibre/maplibre-react-native';
 import * as Location from 'expo-location';
-import { LocateFixed, TriangleAlert } from 'lucide-react-native';
+import { LocateFixed, MapPinOff, TriangleAlert, X } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -9,12 +9,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../../components/AppText';
 import { LocationSheet } from '../../components/LocationSheet';
 import { MapCredit } from '../../components/MapCredit';
-import { IPOH_BOUNDS, MAX_ZOOM, MIN_ZOOM } from '../../map/config';
+import { IPOH_BOUNDS, isInPilotArea, MAX_ZOOM, MIN_ZOOM } from '../../map/config';
 import { useLangkahMapStyle } from '../../map/useLangkahMapStyle';
 import { useLocationPermission } from '../../map/useLocationPermission';
 import { colors, radius, shadow, spacing } from '../../theme/theme';
 
 const RECENTRE_ZOOM = 16;
+const OUTSIDE_BANNER_MS = 6000;
 
 export default function MapScreen() {
   const { t } = useTranslation();
@@ -26,6 +27,14 @@ export default function MapScreen() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [askedOnce, setAskedOnce] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
+  const [outsidePilot, setOutsidePilot] = useState(false);
+
+  // The outside-pilot banner is time-sensitive info, so it hides itself.
+  useEffect(() => {
+    if (!outsidePilot) return;
+    const timer = setTimeout(() => setOutsidePilot(false), OUTSIDE_BANNER_MS);
+    return () => clearTimeout(timer);
+  }, [outsidePilot]);
 
   // First visit: explain why we need location, once. Never on every launch.
   useEffect(() => {
@@ -55,11 +64,15 @@ export default function MapScreen() {
       const pos =
         (await Location.getLastKnownPositionAsync()) ??
         (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
-      cameraRef.current?.flyTo({
-        center: [pos.coords.longitude, pos.coords.latitude],
-        zoom: RECENTRE_ZOOM,
-        duration: 800,
-      });
+      const here: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+      // Outside the pilot there is no data, so show central Ipoh instead of the user.
+      if (!isInPilotArea(here)) {
+        cameraRef.current?.fitBounds(IPOH_BOUNDS, { duration: 800 });
+        setOutsidePilot(true);
+        return;
+      }
+      setOutsidePilot(false);
+      cameraRef.current?.flyTo({ center: here, zoom: RECENTRE_ZOOM, duration: 800 });
     } catch (error) {
       console.warn('Could not get current position', error);
     }
@@ -89,6 +102,24 @@ export default function MapScreen() {
           <AppText variant="label" color={colors.navy} style={styles.bannerText}>
             {t('map.loadFailed')}
           </AppText>
+        </View>
+      )}
+
+      {outsidePilot && !mapFailed && (
+        <View style={[styles.banner, styles.infoBanner, { top: insets.top + spacing.md }]} accessibilityLiveRegion="polite">
+          <MapPinOff size={20} color={colors.interactiveText} />
+          <AppText variant="label" color={colors.navy} style={styles.bannerText}>
+            {t('map.outsidePilot')}
+          </AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('map.dismissBanner')}
+            onPress={() => setOutsidePilot(false)}
+            hitSlop={spacing.sm}
+            style={styles.bannerClose}
+          >
+            <X size={20} color={colors.navy} />
+          </Pressable>
         </View>
       )}
 
@@ -150,4 +181,6 @@ const styles = StyleSheet.create({
     ...shadow.floating,
   },
   bannerText: { flex: 1 },
+  infoBanner: { borderLeftColor: colors.interactive, paddingVertical: spacing.xs },
+  bannerClose: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
 });

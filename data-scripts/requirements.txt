@@ -3,3 +3,4 @@ osmium>=4.0
 shapely>=2.0
 pyproj>=3.6
 matplotlib>=3.8
+psycopg[binary]>=3.2

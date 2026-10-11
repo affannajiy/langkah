@@ -14,7 +14,9 @@
     "credit": "© OpenStreetMap contributors",
     "creditA11yHint": "Shows the full map credits",
     "recentre": "Show my location",
-    "loadFailed": "The map could not load. Check your internet connection."
+    "loadFailed": "The map could not load. Check your internet connection.",
+    "outsidePilot": "You're outside the Ipoh pilot area. Showing central Ipoh.",
+    "dismissBanner": "Dismiss"
   },
   "location": {
     "title": "Langkah needs your location",

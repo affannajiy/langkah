@@ -14,7 +14,9 @@
     "credit": "© OpenStreetMap contributors",
     "creditA11yHint": "Menunjukkan penghargaan peta penuh",
     "recentre": "Tunjukkan lokasi saya",
-    "loadFailed": "Peta tidak dapat dimuatkan. Semak sambungan internet anda."
+    "loadFailed": "Peta tidak dapat dimuatkan. Semak sambungan internet anda.",
+    "outsidePilot": "Anda berada di luar kawasan perintis Ipoh. Memaparkan pusat bandar Ipoh.",
+    "dismissBanner": "Tutup"
   },
   "location": {
     "title": "Langkah perlukan lokasi anda",
