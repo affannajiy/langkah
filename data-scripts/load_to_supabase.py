@@ -225,19 +225,11 @@ def load(conn, segments, amenities, places):
                 cp.write_row((p["osm_type"], p["osm_id"], p["name"], p["alt_names"], p["category"],
                               search, ewkt_point(p["x"], p["y"])))
 
-        # Area label for search results: nearest suburb or neighbourhood within 3 km, else Ipoh.
-        cur.execute("""
-            update places p set area = coalesce((
-              select s.name from places s
-              where s.category in ('place:suburb', 'place:neighbourhood', 'place:quarter')
-                and s.id <> p.id
-                and extensions.st_dwithin(s.geom::extensions.geography, p.geom::extensions.geography, 3000)
-              order by s.geom operator(extensions.<->) p.geom
-              limit 1), 'Ipoh')
-        """)
-
         cur.execute("select segments, vertices from public.rebuild_network()")
         seg_count, vertex_count = cur.fetchone()
+
+        # Area label for search results: nearest street, else neighbourhood, else Ipoh.
+        cur.execute("select private.label_places()")
         cur.execute("select * from public.network_coverage")
         cols = [d.name for d in cur.description]
         coverage = dict(zip(cols, cur.fetchone()))

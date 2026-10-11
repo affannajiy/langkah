@@ -1,5 +1,42 @@
 # Changelog
 
+## Phase 2: Search and routing API (2026-10-11)
+
+### Added
+- `20261011000004_search_and_routing.sql` (guide Sections 4.1, 7.1, 7.4):
+  - `search_places(q, near_lon, near_lat)`: up to 10 places with name, area, category, coordinates (5 decimals) and straight-line distance from the optional near point. Matches with `word_similarity` or a substring, prefix matches first, one row per name per ~200 m.
+  - `route_safe(start_lon, start_lat, end_lon, end_lat, mode)`: returns both the safest route (cost = length x (1 + penalty)) and the fastest route (cost = length) as JSON. Each route has an encoded polyline (precision 5), distance, time at 1.3 m/s, a 0 to 100 score, stats and turn steps. `same` is true when both are the same path.
+  - Active hazards (`status = 'active'`, not expired) add +3.0 to every segment within 15 m at query time.
+  - Both points snap to the nearest edge of the main network (at most 250 m away), and that edge is cut at the snap point, so a route starts exactly at the user.
+  - Errors come back as `{"error": ...}`: `bad_mode`, `bad_point`, `too_far` (over 10 km), `too_close` (under 15 m), `start_off_network`, `end_off_network`, `no_route`.
+  - Helpers live in a `private` schema that the API does not expose. `route_safe` runs as the owner because clients cannot read `road_segments`.
+  - `road_vertices.component` and `unsafe_junction`, plus `road_segments.component`, are now set by `rebuild_network()`.
+  - `private.label_places()` labels each place with the nearest named street within 100 m, else the nearest neighbourhood within 1 km, else Ipoh.
+- `load_to_supabase.py` calls `private.label_places()` after `rebuild_network()`.
+
+### Route JSON
+- Route: `poly`, `dist` (m), `time` (s), `score` (0 to 100), `stats`, `steps`.
+- `stats`: `sw` (% with sidewalk or path), `lit` (% lit), `unk` (% not yet checked), `nosw` (m with no sidewalk), `mx` (marked crossings), `ux` (unmarked main-road crossings), `hz` (active hazards within 15 m).
+- Step: `t` (depart, left, right, slight_left, slight_right, straight, cross, arrive), `n` (street name), `l` (landmark `{k, n}`: crossing, signals, bus_stop, shelter or place), `x` (crossing kind: marked, signals, unmarked), `d` (m to the next step), `i` (index into the polyline points). The app builds the sentence in English or Bahasa Melayu.
+
+### Results
+- About 0.2 to 0.4 s per call.
+- Station to Concubine Lane: 1,257 m, 16 min, score 95 by day.
+- Station to Ipoh Parade: 3,229 m, 41 min, score 94 by day and 88 by night.
+- Payload: both routes for Station to Ipoh Parade (3.2 km) are 1,189 bytes over the wire with gzip (4.6 KB uncompressed). Routes up to about 3 km are under 2 KB each even uncompressed.
+- With a test hazard on the Station to Concubine Lane route, the safest route went around it (1,257 m to 1,463 m), and the fastest route reported `hz: 1` and dropped from 94 to 87. The test was rolled back.
+
+### Decisions
+- Score = 100 - 25 x the length-weighted average penalty, clamped to 0 to 100. A route made only of "not yet checked" streets scores 95 by day and 90 by night. To be tuned after test walks (Section 7.1).
+- Steps under 15 m that are not crossings are merged into the step before, since phone GPS cannot tell them apart.
+- Landmarks are only attached to turns.
+- A separate sidewalk with no name takes the name of the road beside it.
+- The app client, polyline decoding and types come in Phase 3 with the screens.
+
+### Known issues
+- Every route is 100% "not yet checked" until the corridor audit adds sidewalk and lighting tags, so safest and fastest often differ by only a few points.
+- `mx` counts marked crossing nodes within 8 m of the route, which can include a crossing the route passes but does not use.
+
 ## Phase 1: Database and data (2026-10-11)
 
 ### Added
