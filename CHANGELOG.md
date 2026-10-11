@@ -1,5 +1,74 @@
 # Changelog
 
+## Phase 5: Reports and Community (2026-10-11)
+
+### Added
+- **Accounts** (guide Section 5.2 screen 12), `app/src/auth/`:
+  - Everyone starts as a guest: a Supabase anonymous account, made silently on first launch. Sessions are now kept on the phone and refreshed while the app is open.
+  - Google sign-in is asked for only at the first report or vote, in a sheet ("Sign in so others can trust your report"), never a dialog. The guest account is linked to Google (`linkIdentity` with the Google ID token), so it keeps its id. If that Google account already has a Langkah account, the app signs in to it instead.
+  - After sign-in the first name from Google is copied to `profiles` (`sync_profile`), and anything queued on the phone is sent.
+- **Report flow** (screen 6, `docs/screens/ReportFlow.png`), from the Report button on the map:
+  1. Hazard or Improvement, with "Post anonymously" (on by default) on this step as in the PNG.
+  2. Category tiles: the 6 hazard categories, or 7 improvement requests worded as asks ("Add a zebra crossing", "Repaint the faded crossing", "Fix the broken sidewalk", "Repair the street lights", "Add a shaded shelter", "Add a kerb ramp", "Other").
+  3. Place: the sheet shrinks and the user moves the map under a fixed pin. The street under the pin is shown (`street_at`). It starts at the user's position.
+  4. Optional photo (camera or gallery) and note (500 characters). Photos are resized on the phone to 1280 px wide, JPEG 70% (Section 7.4), which also drops EXIF and GPS tags.
+  - Submit asks for sign-in if needed, uploads the photo, creates the report and shows "Pending. Needs 2 confirmations." (or 1 with a photo).
+- **Community tab** (screen 7, `docs/screens/Community.png`):
+  - List and Map toggle, Hazards and Improvements switch, sort chips Top, Newest and Nearest.
+  - Improvements, Top: headed "What Ipoh walkers want fixed most". The top request is shown big when it has a photo, the rest as rows with a pink upvote button and count ("23 · You agreed" when you voted). One upvote per person; tapping again takes it back.
+  - Hazards: rows with Still there and Gone and their counts.
+  - Status chips Pending, Active and Expired, each with its own icon and word.
+  - Report detail sheet: photo, category, street and distance, status, vote counts, note, when and by whom ("anonymously" or the first name), expiry date, a mini map with the OSM credit, and the vote buttons. Your own reports say so instead of showing votes.
+  - Map view: reports in the area on screen only, pending ones with a clock badge. Tapping one opens its detail.
+  - **Export** (Improvements): every open request ranked by upvotes as CSV or GeoJSON, through the Android share sheet. No names or user ids. Cells that start with `=`, `+`, `-` or `@` are escaped against spreadsheet formula injection.
+  - Pages of 30, with pull to refresh.
+- **Walk screen:** when signed in, quick reports and Still there / Gone are sent at once ("Reported. Others nearby will be asked to confirm."). As a guest, or with no signal, they wait on the phone as before.
+- **Waiting reports:** back on the Map tab after a walk, a snackbar says how many reports are waiting, with a Sign in button. Sign-in is never asked for during a walk.
+- **Me tab (part):** an account card with Guest or "Signed in as {name}", what is waiting to send, and Sign in or Sign out, so two accounts can be tested on one emulator. The rest of the Me tab is Phase 6.
+- **Database** (`supabase/migrations/20261011000009_reports_community.sql`):
+  - Trust rules (Section 7.2), run by triggers as soon as a vote lands:
+    - Hazard: pending → active at 2 "Still there" from other people, or 1 with a photo. Each "Still there" pushes expiry to 7 days from then. 2 "Gone" since the last "Still there" → expired.
+    - Improvement: pending → active at 2 upvotes from other people. Never expires.
+    - The reporter's own report never counts and cannot be voted on. Votes must fit the kind. Expired reports take no votes. Changing a vote counts as a new vote.
+  - Checks on every report: category valid for its kind, inside Ipoh, coordinates rounded to 5 decimals, photo must be the reporter's own upload named `<uuid>.jpg`, at most 20 reports per person per day.
+  - `profiles` (RLS on, no client access): the first name shown on non-anonymous reports.
+  - Functions: `report_create`, `report_vote` (both run as the user, so RLS decides), `community_reports` (list, map box and detail; never returns user ids), `community_export`, `street_at`, `sync_profile`.
+  - Nightly expiry: pg_cron job `langkah-expire-reports` at 19:00 UTC (03:00 in Malaysia) runs `expire_reports()`.
+- **Demo data** (`seed_demo.py`): also adds 1 pending hazard and 3 improvement requests with 3, 2 and 1 upvotes from three demo voters (no passwords, cannot sign in). No photos, since we only show real ones. `--clear` removes all four demo accounts and what they posted.
+
+### Dependencies (all free; a new development build is needed)
+- `@react-native-google-signin/google-signin` ^16.1.5 (MIT, the free "original" sign-in). Its config plugin is not used: it only sets up iOS or Firebase.
+- `expo-image-picker` ~57.0.20, `expo-image-manipulator` ~57.0.21, `expo-file-system` ~57.0.7, `expo-sharing` ~57.0.22. The expo-sharing plugin is not used (iOS share extension only).
+- `pg_cron` turned on in the database (free on Supabase).
+
+### Permissions
+- `CAMERA`, asked for only when the user taps Take photo. `RECORD_AUDIO` is blocked (`microphonePermission: false`). The gallery uses the system photo picker, so storage permissions stay blocked.
+
+### Decisions
+- **Third public env var:** `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`, approved during planning. Native Google sign-in needs it, and it is public by design. CLAUDE.md's "only two vars" rule still says two; update it if you want the rule to name this one.
+- **Expiry runs as SQL on pg_cron, not an Edge Function.** The kickoff says "pg_cron and an Edge Function". A plain SQL job needs nothing deployed and no key stored in Vault, and activation happens instantly in a trigger anyway. Approved during planning.
+- **Card titles come from the category** ("Add a zebra crossing"), with the note as extra text, so no title column was added. Community.png's titles are close to these phrases.
+- "Post anonymously" sits on step 1, as in ReportFlow.png (the guide says step 4).
+- Improvements become active at 2 upvotes from others. The guide gives no rule for improvements; this keeps a single person from making a request look confirmed.
+- The Phase 4 queue copy stays for guests ("It is sent once you sign in"). Signed-in walkers see "Reported".
+
+### Results
+- The migration was tested in a rolled-back transaction with three signed-in test users and one guest before `supabase db push`:
+  - Guest and no-session writes refused. Wrong category, outside Ipoh and a fake photo path refused.
+  - Self-confirm, upvoting a hazard, writing `status` and reading `user_id` refused.
+  - 2 confirmations → active (routing sees it). 2 "Gone" → expired. Voting on it after that refused.
+  - `community_reports` returns counts, the first name only when not anonymous, the street and the distance. Box over 0.05° refused.
+  - pg_cron job scheduled.
+- Seeded live data: Community Top lists the zebra crossing (3 upvotes, active), sidewalk (2, active) and street lights (1, pending). Hazards: 3 active, 1 pending.
+- `npm run typecheck` passes, expo-doctor passes 21/21, and the Android JS bundle exports. **Not yet tested on the emulator:** it needs the new development build and the sign-in setup (README section 4).
+
+### Known issues
+- Google sign-in needs your own one-time setup in Supabase and Google Cloud (README section 4, "Sign-in setup"), and an emulator image with Google Play.
+- If the report fails after its photo uploaded (for example the connection drops), the photo stays in storage with no report. A clean-up job can come later.
+- Reports cannot be edited or deleted from the app yet (the Me tab's "My reports" is Phase 6). RLS already allows it.
+- The detail sheet's mini map does not move; tap Map in Community to explore around a report.
+- The Map tab's count of improvement requests includes pending ones.
+
 ## Phase 4: Walking navigation (2026-10-11)
 
 ### Added
@@ -46,7 +115,7 @@
 - The emulator has no vibration motor, so haptics only show in `adb shell dumpsys vibrator_manager`. Test pulses on a real phone.
 - The Settings toggle for alert vibration (Section 5.2 screen 18) is P2 and not built.
 - After a reroute on Safest, the GPX keeps walking the fastest line, so it reroutes again every 15 s. Real walkers follow the new line.
-- Demo hazards expire in 7 days by the trigger's date, but nothing expires them yet (nightly job is Phase 5). Run `seed_demo.py --clear` before a real launch.
+- Demo hazards expire in 7 days by the trigger's date (the nightly job came in Phase 5). Run `seed_demo.py --clear` before a real launch.
 
 ## Phase 3: Core screens (2026-10-11)
 

@@ -30,11 +30,84 @@
   },
   "community": {
     "title": "Community",
-    "empty": "Hazards and improvement requests near you will show here."
+    "empty": {
+      "hazard": "No hazards reported. Spot one on your walk? Tap Report on the map.",
+      "improvement": "No improvement requests yet. Tap Report on the map to add one."
+    },
+    "area": "Ipoh",
+    "list": "List",
+    "map": "Map",
+    "kind": {
+      "hazard": "Hazards",
+      "improvement": "Improvements"
+    },
+    "sort": {
+      "top": "Top",
+      "newest": "Newest",
+      "nearest": "Nearest"
+    },
+    "export": "Export",
+    "exportHint": "Saves the most requested improvements as a file to share",
+    "exportTitle": "Most requested in Ipoh",
+    "exportBody": "Every open improvement request, ranked by upvotes, for councils. No names are included.",
+    "exportCsv": "Spreadsheet (CSV)",
+    "exportGeojson": "Map file (GeoJSON)",
+    "exportEmpty": "There are no improvement requests yet.",
+    "exportFailed": "Could not export. Check your internet connection.",
+    "headingTop": "What Ipoh walkers want fixed most",
+    "headingImprovements": "Improvement requests",
+    "headingHazards": "Hazards reported by walkers",
+    "loadFailed": "Could not load reports. Check your internet connection.",
+    "needLocation": "Turn on location to sort by distance.",
+    "voteSent": "Thanks. Your answer helps other walkers.",
+    "voteNotAllowed": "This report cannot take votes any more.",
+    "voteFailed": "Could not send your vote. Check your internet connection.",
+    "status": {
+      "pending": "Pending",
+      "active": "Active",
+      "expired": "Expired"
+    },
+    "upvoteHint": "Adds your vote",
+    "upvoteUndoHint": "Takes your vote back",
+    "yourReport": "This is your report. Others confirm it.",
+    "noStreet": "No street name",
+    "photoFromWalker": "photo from a walker",
+    "noPhotoYet": "no photo yet",
+    "openHint": "Opens the report details",
+    "by": "by {{name}}",
+    "byAnonymous": "anonymously",
+    "voteCounts": "{{confirms}} still there · {{gone}} gone",
+    "reported": "Reported {{when}} {{by}}",
+    "expires": "expires {{date}}",
+    "pendingRule": "Becomes active after 2 people confirm it.",
+    "pendingRulePhoto": "Becomes active after 1 person confirms it.",
+    "miniMapA11y": "Map of the report location {{street}}",
+    "mapA11y": "Map of reports",
+    "zoomIn": "Zoom in to see reports.",
+    "upvotesYou_one": "1 · You agreed",
+    "upvotesYou_other": "{{count}} · You agreed",
+    "upvoteA11y_one": "Upvote, 1 vote",
+    "upvoteA11y_other": "Upvote, {{count}} votes",
+    "upvoteCount_one": "1 upvote",
+    "upvoteCount_other": "{{count}} upvotes",
+    "stillThere_one": "Still there · 1",
+    "stillThere_other": "Still there · {{count}}",
+    "gone_one": "Gone · 1",
+    "gone_other": "Gone · {{count}}"
   },
   "me": {
     "title": "Me",
-    "empty": "Your reports, saved places and walks will show here."
+    "empty": "Your reports, saved places and walks will show here in the next update.",
+    "guest": "Guest",
+    "guestBody": "You can read everything. Sign in with Google to report and vote.",
+    "signedIn": "Signed in",
+    "signedInAs": "Signed in as {{name}}",
+    "signedInBody": "Your reports are anonymous unless you turn that off when posting.",
+    "signIn": "Sign in with Google",
+    "signOut": "Sign out",
+    "signingOut": "Signing out…",
+    "waiting_one": "1 report or vote waiting to send",
+    "waiting_other": "{{count}} reports or votes waiting to send"
   },
   "units": {
     "m": "{{value}} m",
@@ -52,7 +125,6 @@
     "modeHintDay": "Switches to night scoring",
     "layers": "Map layers",
     "report": "Report",
-    "reportSoon": "Reporting opens in the next update.",
     "nearYou": "Near you",
     "inThisArea": "In this area",
     "hazards_one": "{{count}} active hazard",
@@ -210,7 +282,8 @@
       "stillThere": "Still there",
       "gone": "Gone",
       "answerHint": "Helps other walkers know if this hazard is still there",
-      "thanks": "Thanks. Your answer is saved and is sent once you sign in."
+      "thanks": "Thanks. Your answer is saved and is sent once you sign in.",
+      "thanksSent": "Thanks. Your answer was sent."
     },
     "reroute": {
       "finding": "Off the route. Finding a new walk from here…",
@@ -228,7 +301,10 @@
     "footer": "Saved on your phone first, so no signal is fine. It is sent once you sign in.",
     "saved": "Report saved. It is sent once you sign in.",
     "failed": "Could not save that. Try again.",
-    "close": "Close quick report"
+    "close": "Close quick report",
+    "sent": "Reported. Others nearby will be asked to confirm.",
+    "savedOffline": "No signal. Saved on your phone and sent later.",
+    "footerSignedIn": "No signal is fine: it is saved on your phone first."
   },
   "layers": {
     "title": "Map layers",
@@ -262,6 +338,110 @@
   },
   "common": {
     "undo": "Undo",
-    "close": "Close"
+    "close": "Close",
+    "retry": "Try again"
+  },
+  "signIn": {
+    "title": "Sign in so others can trust your report",
+    "body": {
+      "report": "Reports from signed-in walkers help keep fake reports off the map.",
+      "vote": "One vote per person keeps the counts honest, so voting needs a sign-in.",
+      "queue": "Your reports from the walk are saved on this phone. Sign in to send them.",
+      "me": "Sign in to report hazards, confirm them and upvote improvements."
+    },
+    "privacy": "Reports are anonymous unless you choose to show your first name. We never show your email.",
+    "google": "Continue with Google",
+    "notNow": "Not now",
+    "error": {
+      "no_play_services": "Google Play services is missing or out of date on this phone.",
+      "not_configured": "Google sign-in is not set up in this build yet.",
+      "failed": "Could not sign in. Check your internet connection and try again."
+    }
+  },
+  "report": {
+    "back": "Back",
+    "close": "Close new report",
+    "stepOf": "New report · Step {{step}} of 4",
+    "steps": {
+      "type": "Type",
+      "category": "Category",
+      "place": "Place",
+      "details": "Details"
+    },
+    "typeTitle": "What are you reporting?",
+    "kind": {
+      "hazard": {
+        "title": "Hazard",
+        "body": "A temporary problem. Disappears after 7 days unless people confirm it.",
+        "tag": "Changes routes"
+      },
+      "improvement": {
+        "title": "Improvement",
+        "body": "Something this street needs, like a zebra crossing. Councils see the most requested.",
+        "tag": "Ranked for councils"
+      }
+    },
+    "anonymous": "Post anonymously",
+    "anonymousHint": "Others see the report, never your name",
+    "categoryTitle": {
+      "hazard": "What kind of hazard?",
+      "improvement": "What does this street need?"
+    },
+    "pickCategory": "Pick one to continue.",
+    "placeTitle": "Where is it?",
+    "placeWaiting": "Finding the spot under the pin…",
+    "placeStreet": "Near {{street}}",
+    "placeNoStreet": "No street name here",
+    "placeHint": "Move the map so the pin sits on the exact spot.",
+    "detailsTitle": "Add a photo and a note",
+    "takePhoto": "Take photo",
+    "choosePhoto": "Choose photo",
+    "removePhoto": "Remove photo",
+    "photoHintHazard": "Optional. A photo lets one confirmation make the hazard active.",
+    "photoHintImprovement": "Optional. A photo helps councils see the problem.",
+    "noteLabel": "Note",
+    "notePlaceholder": "Optional: what should others know?",
+    "noteCount": "{{count}} / {{max}}",
+    "cameraDenied": "Camera access is off. You can choose a photo instead.",
+    "continue": "Continue",
+    "submit": "Post report",
+    "sending": "Sending…",
+    "doneHazard": "Pending. Needs 2 confirmations.",
+    "doneHazardPhoto": "Pending. Needs 1 confirmation.",
+    "doneImprovement": "Posted. Others can now upvote it.",
+    "error": {
+      "network": "Could not send. Check your internet connection and try again.",
+      "not_signed_in": "Sign in to send reports.",
+      "not_allowed": "This account cannot post reports.",
+      "bad_category": "That category is not available. Pick another.",
+      "outside_ipoh": "Langkah takes reports in Ipoh only. Move the pin into Ipoh.",
+      "bad_photo": "The photo did not upload. Try again or remove it.",
+      "photo_failed": "The photo did not upload. Try again or remove it.",
+      "too_many_reports": "You have sent 20 reports today. Thank you! Try again tomorrow.",
+      "too_big": "Could not send. Try again."
+    }
+  },
+  "improvement": {
+    "zebra_crossing": "Add a zebra crossing",
+    "repaint_crossing": "Repaint the faded crossing",
+    "fix_sidewalk": "Fix the broken sidewalk",
+    "street_lights": "Repair the street lights",
+    "shelter": "Add a shaded shelter",
+    "kerb_ramp": "Add a kerb ramp",
+    "other": "Other improvement"
+  },
+  "queue": {
+    "signIn": "Sign in",
+    "waiting_one": "1 report is waiting on this phone. Sign in to send it.",
+    "waiting_other": "{{count}} reports are waiting on this phone. Sign in to send them.",
+    "sent_one": "Sent 1 saved report.",
+    "sent_other": "Sent {{count}} saved reports."
+  },
+  "time": {
+    "justNow": "just now",
+    "hoursAgo_one": "1 h ago",
+    "hoursAgo_other": "{{count}} h ago",
+    "daysAgo_one": "1 day ago",
+    "daysAgo_other": "{{count}} days ago"
   }
 }

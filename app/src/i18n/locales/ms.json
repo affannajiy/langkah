@@ -30,11 +30,84 @@
   },
   "community": {
     "title": "Komuniti",
-    "empty": "Bahaya dan permintaan penambahbaikan berhampiran anda akan dipaparkan di sini."
+    "empty": {
+      "hazard": "Tiada bahaya dilaporkan. Nampak satu semasa berjalan? Tekan Lapor pada peta.",
+      "improvement": "Belum ada permintaan penambahbaikan. Tekan Lapor pada peta untuk menambah."
+    },
+    "area": "Ipoh",
+    "list": "Senarai",
+    "map": "Peta",
+    "kind": {
+      "hazard": "Bahaya",
+      "improvement": "Penambahbaikan"
+    },
+    "sort": {
+      "top": "Teratas",
+      "newest": "Terbaru",
+      "nearest": "Terdekat"
+    },
+    "export": "Eksport",
+    "exportHint": "Menyimpan penambahbaikan paling diminta sebagai fail untuk dikongsi",
+    "exportTitle": "Paling diminta di Ipoh",
+    "exportBody": "Semua permintaan penambahbaikan, disusun mengikut sokongan, untuk majlis. Tiada nama disertakan.",
+    "exportCsv": "Hamparan (CSV)",
+    "exportGeojson": "Fail peta (GeoJSON)",
+    "exportEmpty": "Belum ada permintaan penambahbaikan.",
+    "exportFailed": "Tidak dapat dieksport. Semak sambungan internet anda.",
+    "headingTop": "Apa yang pejalan kaki Ipoh paling mahu dibaiki",
+    "headingImprovements": "Permintaan penambahbaikan",
+    "headingHazards": "Bahaya yang dilaporkan pejalan kaki",
+    "loadFailed": "Tidak dapat memuatkan laporan. Semak sambungan internet anda.",
+    "needLocation": "Hidupkan lokasi untuk menyusun mengikut jarak.",
+    "voteSent": "Terima kasih. Jawapan anda membantu pejalan lain.",
+    "voteNotAllowed": "Laporan ini tidak lagi menerima undian.",
+    "voteFailed": "Undian tidak dapat dihantar. Semak sambungan internet anda.",
+    "status": {
+      "pending": "Menunggu",
+      "active": "Aktif",
+      "expired": "Tamat"
+    },
+    "upvoteHint": "Menambah undian anda",
+    "upvoteUndoHint": "Menarik balik undian anda",
+    "yourReport": "Ini laporan anda. Orang lain akan mengesahkannya.",
+    "noStreet": "Tiada nama jalan",
+    "photoFromWalker": "foto daripada pejalan kaki",
+    "noPhotoYet": "belum ada foto",
+    "openHint": "Membuka butiran laporan",
+    "by": "oleh {{name}}",
+    "byAnonymous": "tanpa nama",
+    "voteCounts": "{{confirms}} masih ada · {{gone}} sudah tiada",
+    "reported": "Dilaporkan {{when}} {{by}}",
+    "expires": "tamat {{date}}",
+    "pendingRule": "Menjadi aktif selepas 2 orang mengesahkannya.",
+    "pendingRulePhoto": "Menjadi aktif selepas 1 orang mengesahkannya.",
+    "miniMapA11y": "Peta lokasi laporan {{street}}",
+    "mapA11y": "Peta laporan",
+    "zoomIn": "Zum masuk untuk melihat laporan.",
+    "upvotesYou_one": "{{count}} · Anda setuju",
+    "upvotesYou_other": "{{count}} · Anda setuju",
+    "upvoteA11y_one": "Sokong, {{count}} undian",
+    "upvoteA11y_other": "Sokong, {{count}} undian",
+    "upvoteCount_one": "{{count}} sokongan",
+    "upvoteCount_other": "{{count}} sokongan",
+    "stillThere_one": "Masih ada · {{count}}",
+    "stillThere_other": "Masih ada · {{count}}",
+    "gone_one": "Sudah tiada · {{count}}",
+    "gone_other": "Sudah tiada · {{count}}"
   },
   "me": {
     "title": "Saya",
-    "empty": "Laporan, tempat tersimpan dan perjalanan anda akan dipaparkan di sini."
+    "empty": "Laporan, tempat disimpan dan perjalanan anda akan dipaparkan di sini dalam kemas kini seterusnya.",
+    "guest": "Tetamu",
+    "guestBody": "Anda boleh membaca semuanya. Log masuk dengan Google untuk melapor dan mengundi.",
+    "signedIn": "Sudah log masuk",
+    "signedInAs": "Log masuk sebagai {{name}}",
+    "signedInBody": "Laporan anda tanpa nama melainkan anda mematikannya semasa menghantar.",
+    "signIn": "Log masuk dengan Google",
+    "signOut": "Log keluar",
+    "signingOut": "Sedang log keluar…",
+    "waiting_one": "{{count}} laporan atau undian menunggu untuk dihantar",
+    "waiting_other": "{{count}} laporan atau undian menunggu untuk dihantar"
   },
   "units": {
     "m": "{{value}} m",
@@ -52,7 +125,6 @@
     "modeHintDay": "Tukar kepada pemarkahan malam",
     "layers": "Lapisan peta",
     "report": "Lapor",
-    "reportSoon": "Fungsi melapor akan dibuka dalam kemas kini seterusnya.",
     "nearYou": "Berhampiran anda",
     "inThisArea": "Di kawasan ini",
     "hazards_one": "{{count}} bahaya aktif",
@@ -210,7 +282,8 @@
       "stillThere": "Masih ada",
       "gone": "Sudah tiada",
       "answerHint": "Membantu pejalan kaki lain tahu sama ada bahaya ini masih ada",
-      "thanks": "Terima kasih. Jawapan anda disimpan dan dihantar sebaik sahaja anda log masuk."
+      "thanks": "Terima kasih. Jawapan anda disimpan dan dihantar sebaik sahaja anda log masuk.",
+      "thanksSent": "Terima kasih. Jawapan anda telah dihantar."
     },
     "reroute": {
       "finding": "Terkeluar dari laluan. Mencari laluan baharu dari sini…",
@@ -228,7 +301,10 @@
     "footer": "Disimpan dalam telefon dahulu, jadi tiada isyarat pun tidak mengapa. Ia dihantar sebaik sahaja anda log masuk.",
     "saved": "Laporan disimpan. Ia dihantar sebaik sahaja anda log masuk.",
     "failed": "Tidak dapat menyimpan. Cuba lagi.",
-    "close": "Tutup laporan pantas"
+    "close": "Tutup laporan pantas",
+    "sent": "Dilaporkan. Orang berdekatan akan diminta mengesahkannya.",
+    "savedOffline": "Tiada isyarat. Disimpan dalam telefon dan dihantar kemudian.",
+    "footerSignedIn": "Tiada isyarat pun tak apa: ia disimpan dalam telefon dahulu."
   },
   "layers": {
     "title": "Lapisan peta",
@@ -262,6 +338,110 @@
   },
   "common": {
     "undo": "Buat asal",
-    "close": "Tutup"
+    "close": "Tutup",
+    "retry": "Cuba lagi"
+  },
+  "signIn": {
+    "title": "Log masuk supaya orang lain boleh percaya laporan anda",
+    "body": {
+      "report": "Laporan daripada pejalan yang log masuk membantu menjauhkan laporan palsu dari peta.",
+      "vote": "Satu undian bagi setiap orang memastikan kiraan jujur, jadi mengundi perlu log masuk.",
+      "queue": "Laporan anda semasa berjalan disimpan dalam telefon ini. Log masuk untuk menghantarnya.",
+      "me": "Log masuk untuk melaporkan bahaya, mengesahkannya dan menyokong cadangan penambahbaikan."
+    },
+    "privacy": "Laporan adalah tanpa nama melainkan anda memilih untuk menunjukkan nama pertama anda. E-mel anda tidak pernah ditunjukkan.",
+    "google": "Teruskan dengan Google",
+    "notNow": "Bukan sekarang",
+    "error": {
+      "no_play_services": "Perkhidmatan Google Play tiada atau perlu dikemas kini pada telefon ini.",
+      "not_configured": "Log masuk Google belum disediakan dalam binaan ini.",
+      "failed": "Tidak dapat log masuk. Semak sambungan internet anda dan cuba lagi."
+    }
+  },
+  "report": {
+    "back": "Kembali",
+    "close": "Tutup laporan baharu",
+    "stepOf": "Laporan baharu · Langkah {{step}} daripada 4",
+    "steps": {
+      "type": "Jenis",
+      "category": "Kategori",
+      "place": "Tempat",
+      "details": "Butiran"
+    },
+    "typeTitle": "Apa yang anda laporkan?",
+    "kind": {
+      "hazard": {
+        "title": "Bahaya",
+        "body": "Masalah sementara. Hilang selepas 7 hari melainkan orang mengesahkannya.",
+        "tag": "Mengubah laluan"
+      },
+      "improvement": {
+        "title": "Penambahbaikan",
+        "body": "Sesuatu yang jalan ini perlukan, seperti lintasan zebra. Majlis melihat yang paling banyak diminta.",
+        "tag": "Disenaraikan untuk majlis"
+      }
+    },
+    "anonymous": "Hantar tanpa nama",
+    "anonymousHint": "Orang lain melihat laporan, bukan nama anda",
+    "categoryTitle": {
+      "hazard": "Bahaya jenis apa?",
+      "improvement": "Apa yang jalan ini perlukan?"
+    },
+    "pickCategory": "Pilih satu untuk teruskan.",
+    "placeTitle": "Di mana?",
+    "placeWaiting": "Mencari tempat di bawah pin…",
+    "placeStreet": "Berhampiran {{street}}",
+    "placeNoStreet": "Tiada nama jalan di sini",
+    "placeHint": "Gerakkan peta supaya pin berada tepat di tempatnya.",
+    "detailsTitle": "Tambah foto dan nota",
+    "takePhoto": "Ambil foto",
+    "choosePhoto": "Pilih foto",
+    "removePhoto": "Buang foto",
+    "photoHintHazard": "Pilihan. Dengan foto, satu pengesahan sudah cukup untuk mengaktifkan bahaya.",
+    "photoHintImprovement": "Pilihan. Foto membantu majlis melihat masalahnya.",
+    "noteLabel": "Nota",
+    "notePlaceholder": "Pilihan: apa yang orang lain patut tahu?",
+    "noteCount": "{{count}} / {{max}}",
+    "cameraDenied": "Akses kamera dimatikan. Anda boleh memilih foto.",
+    "continue": "Teruskan",
+    "submit": "Hantar laporan",
+    "sending": "Menghantar…",
+    "doneHazard": "Menunggu. Perlu 2 pengesahan.",
+    "doneHazardPhoto": "Menunggu. Perlu 1 pengesahan.",
+    "doneImprovement": "Dihantar. Orang lain kini boleh menyokongnya.",
+    "error": {
+      "network": "Tidak dapat dihantar. Semak sambungan internet anda dan cuba lagi.",
+      "not_signed_in": "Log masuk untuk menghantar laporan.",
+      "not_allowed": "Akaun ini tidak boleh menghantar laporan.",
+      "bad_category": "Kategori itu tiada. Pilih yang lain.",
+      "outside_ipoh": "Langkah hanya menerima laporan di Ipoh. Gerakkan pin ke dalam Ipoh.",
+      "bad_photo": "Foto tidak dapat dimuat naik. Cuba lagi atau buang foto.",
+      "photo_failed": "Foto tidak dapat dimuat naik. Cuba lagi atau buang foto.",
+      "too_many_reports": "Anda telah menghantar 20 laporan hari ini. Terima kasih! Cuba lagi esok.",
+      "too_big": "Tidak dapat dihantar. Cuba lagi."
+    }
+  },
+  "improvement": {
+    "zebra_crossing": "Tambah lintasan zebra",
+    "repaint_crossing": "Cat semula lintasan yang pudar",
+    "fix_sidewalk": "Baiki kaki lima yang rosak",
+    "street_lights": "Baiki lampu jalan",
+    "shelter": "Tambah tempat berteduh",
+    "kerb_ramp": "Tambah tanjakan bebendul",
+    "other": "Penambahbaikan lain"
+  },
+  "queue": {
+    "signIn": "Log masuk",
+    "waiting_one": "{{count}} laporan menunggu dalam telefon ini. Log masuk untuk menghantarnya.",
+    "waiting_other": "{{count}} laporan menunggu dalam telefon ini. Log masuk untuk menghantarnya.",
+    "sent_one": "{{count}} laporan yang disimpan telah dihantar.",
+    "sent_other": "{{count}} laporan yang disimpan telah dihantar."
+  },
+  "time": {
+    "justNow": "baru tadi",
+    "hoursAgo_one": "{{count}} jam lalu",
+    "hoursAgo_other": "{{count}} jam lalu",
+    "daysAgo_one": "{{count}} hari lalu",
+    "daysAgo_other": "{{count}} hari lalu"
   }
 }

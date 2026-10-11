@@ -1,44 +1,17 @@
 import type { LngLat } from '@maplibre/maplibre-react-native';
-import { Check, CircleEllipsis, Construction, Droplets, LightbulbOff, MapPin, X, type LucideProps } from 'lucide-react-native';
-import { useEffect, useState, type ComponentType } from 'react';
+import { Check, MapPin, X } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 
 import { HAZARD_CATEGORIES, type HazardCategory } from '../../api/types';
+import { useAuth } from '../../auth/AuthProvider';
 import { AppText } from '../../components/AppText';
 import { Sheet } from '../../components/Sheet';
 import { colors, radius, spacing, touchTarget } from '../../theme/theme';
+import { HAZARD_ICONS } from '../report/categoryIcons';
 
 const SEND_AFTER_S = 3;
-
-// Broken slabs: two paving stones with a crack between them.
-function BrokenSidewalk({ size = 32, color = colors.navy }: LucideProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M3 17h18M5 13h6l1.5-2.5L11 9h6l2 4h-6.5" />
-      <Path d="M4 21h16" />
-    </Svg>
-  );
-}
-
-// Zebra crossing between two kerbs.
-function Crossing({ size = 32, color = colors.navy }: LucideProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round">
-      <Path d="M4 4v16M20 4v16M8 7h8M8 12h8M8 17h8" />
-    </Svg>
-  );
-}
-
-const ICONS: Record<HazardCategory, ComponentType<LucideProps>> = {
-  broken_sidewalk: BrokenSidewalk,
-  blocked_path: Construction,
-  no_light: LightbulbOff,
-  unsafe_crossing: Crossing,
-  flooding: Droplets,
-  other: CircleEllipsis,
-};
 
 type Props = {
   visible: boolean;
@@ -52,6 +25,7 @@ type Props = {
 // 3 s countdown with Undo (guide Section 6.3, screen 5; docs/screens/QuickReport.png).
 export function QuickReportSheet({ visible, at, street, onSend, onClose }: Props) {
   const { t } = useTranslation();
+  const { isFull } = useAuth();
   const [picked, setPicked] = useState<HazardCategory | null>(null);
   const [left, setLeft] = useState(SEND_AFTER_S);
 
@@ -103,7 +77,7 @@ export function QuickReportSheet({ visible, at, street, onSend, onClose }: Props
 
         <View style={styles.grid}>
           {HAZARD_CATEGORIES.map((c) => {
-            const Icon = ICONS[c];
+            const Icon = HAZARD_ICONS[c];
             const on = picked === c;
             return (
               <Pressable
@@ -152,7 +126,7 @@ export function QuickReportSheet({ visible, at, street, onSend, onClose }: Props
         )}
 
         <AppText variant="caption" color={colors.textMuted} style={styles.center}>
-          {t('quick.footer')}
+          {t(isFull ? 'quick.footerSignedIn' : 'quick.footer')}
         </AppText>
       </Sheet>
     </>

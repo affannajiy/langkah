@@ -1,18 +1,22 @@
 """
-Langkah - demo hazards for testing walking navigation
-=====================================================
+Langkah - demo reports for testing navigation and Community
+===========================================================
 
-Adds three active hazards on the demo walk from Ipoh Railway Station to
-Concubine Lane, owned by one demo account, and writes a GPX file of that walk
-so the Android Emulator can play it back (guide Section 6.3, screen 4).
+Adds, owned by one demo account:
+- three active hazards on the demo walk from Ipoh Railway Station to Concubine
+  Lane (Phase 4: hazard banners, routing around hazards),
+- one pending hazard and three improvement requests with upvotes from three demo
+  voters (Phase 5: Community tab, status chips, Top ranking, export),
+and writes a GPX file of the walk so the Android Emulator can play it back.
 
 Usage (inside the data-scripts venv):
-    python seed_demo.py                 # add or refresh the demo hazards, write out/demo-walk.gpx
-    python seed_demo.py --clear         # remove the demo account and its hazards
+    python seed_demo.py                 # add or refresh the demo reports, write out/demo-walk.gpx
+    python seed_demo.py --clear         # remove the demo accounts and everything they posted
 
 Needs DATABASE_URL in data-scripts/.env. Safe to run again: it replaces the demo
-account's hazards each time. The demo account has no password and cannot sign in.
-Real reports are never touched. Remove the demo data before a real launch.
+accounts' reports each time. Demo accounts have no password and cannot sign in.
+Real reports and votes are never touched. Remove the demo data before a real launch.
+No photos: Langkah only shows real report photos (CLAUDE.md), and we have none yet.
 """
 import argparse
 import datetime as dt
@@ -26,6 +30,8 @@ from load_to_supabase import load_env
 
 DEMO_USER = "6c616e67-6b61-4864-8065-6d6f00000001"
 DEMO_EMAIL = "demo@langkah.invalid"
+# Three demo voters, so improvements have upvotes from someone other than the reporter.
+DEMO_VOTERS = [f"6c616e67-6b61-4864-8065-6d6f0000000{i}" for i in (2, 3, 4)]
 
 # The demo walk (both ends are search results, so testers can pick them in the app).
 WALK_FROM = (101.07344, 4.59737)  # Ipoh Railway Station
@@ -36,6 +42,19 @@ HAZARDS = [
     ("broken_sidewalk", 101.07488, 4.59689, "Demo: cracked slabs on Jalan Dato Sagor"),
     ("unsafe_crossing", 101.07601, 4.59658, "Demo: no gap in traffic near the clock tower"),
     ("blocked_path", 101.07794, 4.59634, "Demo: stalls block Lorong Panglima"),
+]
+
+# Pending: shows in Community with "Needs 2 confirmations", but does not change routes.
+PENDING_HAZARDS = [
+    ("flooding", 101.07807, 4.59498, "Demo: water pools here after rain"),
+]
+
+# Improvement requests: (category, lon, lat, note, number of demo upvotes).
+# 2 or more upvotes from others makes an improvement active (migration 9).
+IMPROVEMENTS = [
+    ("zebra_crossing", 101.07528, 4.59753, "Demo: people cross here to the station with no crossing", 3),
+    ("fix_sidewalk", 101.07856, 4.59659, "Demo: slabs lifted by tree roots", 2),
+    ("street_lights", 101.08164, 4.59709, None, 1),
 ]
 
 WALK_SPEED = 1.3  # m/s, same as route_safe
@@ -94,34 +113,59 @@ def write_gpx(points, path):
 
 
 def clear(conn):
-    # Deleting the account removes its reports and votes too (on delete cascade).
-    n = conn.execute("delete from auth.users where id = %s", (DEMO_USER,)).rowcount
-    print(f"Removed the demo account ({n} row) and its hazards.")
+    # Deleting the accounts removes their reports and votes too (on delete cascade).
+    n = conn.execute("delete from auth.users where id = any(%s)", ([DEMO_USER, *DEMO_VOTERS],)).rowcount
+    print(f"Removed {n} demo accounts and everything they posted.")
 
 
-def seed(conn):
+def add_account(conn, user_id, email, name):
     conn.execute(
         """
         insert into auth.users (id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
                                 created_at, updated_at, confirmation_token, recovery_token,
                                 email_change_token_new, email_change, is_anonymous)
         values (%s, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', %s,
-                '{"provider": "demo"}', '{"name": "Langkah demo"}', now(), now(), '', '', '', '', false)
+                '{"provider": "demo"}', %s, now(), now(), '', '', '', '', false)
         on conflict (id) do nothing
         """,
-        (DEMO_USER, DEMO_EMAIL),
+        (user_id, email, f'{{"name": "{name}"}}'),
     )
+
+
+def add_report(conn, kind, category, lon, lat, note, status=None):
+    # Status is server-controlled, so only this script (not the app) can set "active".
+    return conn.execute(
+        f"""
+        insert into public.reports (user_id, kind, category, geom, note{", status" if status else ""})
+        values (%s, %s, %s, extensions.st_setsrid(extensions.st_makepoint(%s, %s), 4326), %s{", %s" if status else ""})
+        returning id
+        """,
+        (DEMO_USER, kind, category, lon, lat, note, *([status] if status else [])),
+    ).fetchone()[0]
+
+
+def seed(conn):
+    add_account(conn, DEMO_USER, DEMO_EMAIL, "Langkah demo")
+    for i, voter in enumerate(DEMO_VOTERS, start=1):
+        add_account(conn, voter, f"voter{i}@langkah.invalid", f"Demo voter {i}")
+    # Votes by the demo voters on other reports go too, so a rerun starts clean.
+    conn.execute("delete from public.report_votes where user_id = any(%s)", (DEMO_VOTERS,))
     conn.execute("delete from public.reports where user_id = %s", (DEMO_USER,))
+
     for category, lon, lat, note in HAZARDS:
-        # Status is server-controlled, so only this script (not the app) can set "active".
-        conn.execute(
-            """
-            insert into public.reports (user_id, kind, category, geom, note, status)
-            values (%s, 'hazard', %s, extensions.st_setsrid(extensions.st_makepoint(%s, %s), 4326), %s, 'active')
-            """,
-            (DEMO_USER, category, lon, lat, note),
-        )
-    print(f"Added {len(HAZARDS)} active demo hazards (they expire in 7 days; run again to refresh).")
+        add_report(conn, "hazard", category, lon, lat, note, status="active")
+    for category, lon, lat, note in PENDING_HAZARDS:
+        add_report(conn, "hazard", category, lon, lat, note)
+    for category, lon, lat, note, upvotes in IMPROVEMENTS:
+        report_id = add_report(conn, "improvement", category, lon, lat, note)
+        for voter in DEMO_VOTERS[:upvotes]:
+            # The vote trigger updates the status, as it would for a real vote.
+            conn.execute(
+                "insert into public.report_votes (report_id, user_id, vote) values (%s, %s, 'upvote')",
+                (report_id, voter),
+            )
+    print(f"Added {len(HAZARDS)} active hazards (they expire in 7 days; run again to refresh), "
+          f"{len(PENDING_HAZARDS)} pending hazard and {len(IMPROVEMENTS)} improvement requests.")
 
 
 def main():

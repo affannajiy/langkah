@@ -19,3 +19,17 @@ export function formatDistance(metres: number): string {
 export function minutes(seconds: number): number {
   return Math.max(1, Math.round(seconds / 60));
 }
+
+// "Just now", "3 h ago", "2 days ago". Report times in Community.
+export function timeAgo(iso: string, now = Date.now()): string {
+  const mins = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60000));
+  if (mins < 60) return i18n.t('time.justNow');
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return i18n.t('time.hoursAgo', { count: hours });
+  return i18n.t('time.daysAgo', { count: Math.round(hours / 24) });
+}
+
+// "18 Oct", for expiry dates.
+export function shortDate(iso: string): string {
+  return new Intl.DateTimeFormat(locale(), { day: 'numeric', month: 'short' }).format(new Date(iso));
+}

@@ -20,12 +20,14 @@ const config: ExpoConfig = {
     // Least privilege. An active walk keeps its location through a foreground service
     // with a visible notification, which needs only "while using the app" location,
     // so ACCESS_BACKGROUND_LOCATION stays blocked. VIBRATE is for turn and hazard pulses.
-    // Storage is not needed: photos will use the system photo picker.
-    permissions: ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION', 'VIBRATE'],
+    // CAMERA is asked for only when the user taps Take photo in the report flow.
+    // Storage is not needed: the gallery uses the system photo picker.
+    permissions: ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION', 'VIBRATE', 'CAMERA'],
     blockedPermissions: [
       'ACCESS_BACKGROUND_LOCATION',
       'READ_EXTERNAL_STORAGE',
       'WRITE_EXTERNAL_STORAGE',
+      'RECORD_AUDIO',
     ],
     predictiveBackGestureEnabled: false,
   },
@@ -41,6 +43,9 @@ const config: ExpoConfig = {
         isAndroidForegroundServiceEnabled: true,
       },
     ],
+    // Photos only: no microphone. The Google sign-in and expo-sharing plugins are
+    // iOS-only (or Firebase-only), so they are not listed here.
+    ['expo-image-picker', { microphonePermission: false }],
     [
       'expo-splash-screen',
       {

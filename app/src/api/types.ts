@@ -86,6 +86,22 @@ export const HAZARD_CATEGORIES = [
 ] as const;
 export type HazardCategory = (typeof HAZARD_CATEGORIES)[number];
 
+// Improvement requests, worded as asks so the category doubles as the card title.
+// Kept in step with report_category_ok() in the database.
+export const IMPROVEMENT_CATEGORIES = [
+  'zebra_crossing',
+  'repaint_crossing',
+  'fix_sidewalk',
+  'street_lights',
+  'shelter',
+  'kerb_ramp',
+  'other',
+] as const;
+
+export type ImprovementCategory = (typeof IMPROVEMENT_CATEGORIES)[number];
+
+export type ReportKind = 'hazard' | 'improvement';
+
 export type MapAmenityKind = 'crossing' | 'bus_stop' | 'shelter';
 
 export type MapView = {

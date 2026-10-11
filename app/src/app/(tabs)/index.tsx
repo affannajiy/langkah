@@ -1,13 +1,15 @@
 import { Camera, Map, type CameraRef, type LngLat, type LngLatBounds, type MapRef } from '@maplibre/maplibre-react-native';
 import * as Location from 'expo-location';
-import { useNavigation, useRouter } from 'expo-router';
-import { MapPinOff, TriangleAlert, X } from 'lucide-react-native';
+import { useFocusEffect, useNavigation, useRouter } from 'expo-router';
+import { MapPin, MapPinOff, TriangleAlert, X } from 'lucide-react-native';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BackHandler, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { streetAt } from '../../api/reports';
 import type { RouteError, RoutePair } from '../../api/types';
+import { useAuth } from '../../auth/AuthProvider';
 import { AppText } from '../../components/AppText';
 import { LocationSheet } from '../../components/LocationSheet';
 import { MapCredit } from '../../components/MapCredit';
@@ -16,6 +18,7 @@ import { CompareSheet } from '../../features/map/CompareSheet';
 import { HomeBottomControls, HomeTopControls } from '../../features/map/HomeControls';
 import { LayersSheet } from '../../features/map/LayersSheet';
 import { PeekSheet } from '../../features/map/PeekSheet';
+import { ReportFlowSheet, type ReportStep } from '../../features/report/ReportFlowSheet';
 import { SearchSheet, type SearchPurpose } from '../../features/map/SearchSheet';
 import { TripBar } from '../../features/map/TripBar';
 import { IPOH_BOUNDS, isInPilotArea, MAX_ZOOM, MIN_ZOOM, nearestPilotArea, PILOT_AREAS } from '../../map/config';
@@ -31,9 +34,13 @@ import { useScoringMode } from '../../map/useScoringMode';
 import { tabBarStyles } from '../../navigation/tabBar';
 import { useRoutes } from '../../route/useRoutes';
 import { useRecentPlaces, useSavedPlaces, type SavedKey, type StoredPlace } from '../../storage/places';
+import { flushQueue, queuedCount } from '../../storage/reportQueue';
 import { colors, radius, shadow, spacing } from '../../theme/theme';
 
 const RECENTRE_ZOOM = 16;
+const PIN_ZOOM = 18;
+const PIN_SIZE = 44;
+const STREET_DELAY_MS = 400;
 const OUTSIDE_BANNER_MS = 6000;
 const FIT_DELAY_MS = 150;
 // Camera padding sticks between moves, so home moves clear what compare set.
@@ -47,7 +54,8 @@ type Trip = { from: Endpoint | null; to: Endpoint };
 type Screen =
   | { kind: 'home' }
   | { kind: 'search'; purpose: SearchPurpose; back: 'home' | 'compare'; thenRoute?: boolean }
-  | { kind: 'compare' };
+  | { kind: 'compare' }
+  | { kind: 'report' };
 
 const pointOf = (e: Endpoint | null): LngLat | null => (!e ? null : e.kind === 'me' ? e.at : e.place.lngLat);
 
@@ -79,6 +87,7 @@ export default function MapScreen() {
   const { recent, addRecent } = useRecentPlaces();
   const mapView = useMapView();
   const snackbar = useSnackbar();
+  const auth = useAuth();
 
   const mapRef = useRef<MapRef>(null);
   const cameraRef = useRef<CameraRef>(null);
@@ -96,9 +105,18 @@ export default function MapScreen() {
   const [askedOnce, setAskedOnce] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
   const [outsidePilot, setOutsidePilot] = useState(false);
+  const [reportStep, setReportStep] = useState<ReportStep>(1);
+  const [reportH, setReportH] = useState(0);
+  const [pin, setPin] = useState<LngLat | null>(null);
+  const [pinStreet, setPinStreet] = useState<string | null>(null);
 
   const home = screen.kind === 'home';
   const comparing = screen.kind === 'compare';
+  const reporting = screen.kind === 'report';
+  const placing = reporting && reportStep === 3;
+  const { width: screenW } = useWindowDimensions();
+  // With the camera padded by the sheet, the map centre sits halfway down the visible map.
+  const pinY = (screenH - reportH) / 2;
 
   // Search and route compare use the whole screen (docs/screens/Search.png, RouteCompare.png).
   useLayoutEffect(() => {
@@ -317,6 +335,91 @@ export default function MapScreen() {
     setTrip({ from: trip.to, to: trip.from });
   }
 
+  // --- report flow (guide Section 6.3, screen 6) ---------------------------
+
+  // Step 3: frame the walker (or the current view) under the pin once the sheet has shrunk.
+  const framedPin = useRef(false);
+  useEffect(() => {
+    if (!placing) {
+      framedPin.current = false;
+      return;
+    }
+    if (framedPin.current || reportH === 0) return;
+    framedPin.current = true;
+    const padding = { top: 0, right: 0, bottom: reportH, left: 0 };
+    const start = pin ?? here;
+    if (start) {
+      cameraRef.current?.easeTo({ center: start, zoom: PIN_ZOOM, padding, duration: 600 });
+    } else {
+      mapRef.current
+        ?.getCenter()
+        .then((center) => cameraRef.current?.easeTo({ center, zoom: PIN_ZOOM, padding, duration: 600 }));
+    }
+  }, [placing, reportH, here, pin]);
+
+  // The point under the pin, and its street, after each map move.
+  const streetAbort = useRef<AbortController | null>(null);
+  const streetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const readPin = useCallback(async () => {
+    const at = await mapRef.current?.unproject([screenW / 2, pinY]);
+    if (!at) return;
+    const rounded: LngLat = [Math.round(at[0] * 1e5) / 1e5, Math.round(at[1] * 1e5) / 1e5];
+    setPin(rounded);
+    if (streetTimer.current) clearTimeout(streetTimer.current);
+    streetTimer.current = setTimeout(() => {
+      streetAbort.current?.abort();
+      const controller = new AbortController();
+      streetAbort.current = controller;
+      streetAt(rounded, controller.signal)
+        .then((name) => {
+          if (!controller.signal.aborted) setPinStreet(name);
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) setPinStreet(null);
+        });
+    }, STREET_DELAY_MS);
+  }, [screenW, pinY]);
+
+  function openReport() {
+    setPin(null);
+    setPinStreet(null);
+    setReportStep(1);
+    setLayersOpen(false);
+    setScreen({ kind: 'report' });
+  }
+
+  function closeReport(message?: string) {
+    setScreen({ kind: 'home' });
+    setReportH(0);
+    if (message) snackbar.show({ text: message });
+  }
+
+  // Back from a walk with reports still on the phone: offer sign-in here, never mid-walk.
+  const { isFull, ready: authReady, requireSignIn } = auth;
+  const showSnack = snackbar.show;
+  useFocusEffect(
+    useCallback(() => {
+      let live = true;
+      queuedCount().then((n) => {
+        if (!live || n === 0) return;
+        if (isFull) {
+          flushQueue().then((sent) => {
+            if (live && sent > 0) showSnack({ text: t('queue.sent', { count: sent }) });
+          });
+        } else if (authReady) {
+          showSnack({
+            text: t('queue.waiting', { count: n }),
+            actionLabel: t('queue.signIn'),
+            onAction: () => void requireSignIn('queue'),
+          });
+        }
+      });
+      return () => {
+        live = false;
+      };
+    }, [isFull, authReady, requireSignIn, showSnack, t]),
+  );
+
   // Android back steps out one level instead of leaving the app.
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -332,6 +435,7 @@ export default function MapScreen() {
         closeTrip();
         return true;
       }
+      // The report sheet handles back itself, one step at a time.
       return false;
     });
     return () => sub.remove();
@@ -339,7 +443,7 @@ export default function MapScreen() {
 
   const nearUser = !!here && !!viewBounds && here[0] >= viewBounds[0] && here[0] <= viewBounds[2] && here[1] >= viewBounds[1] && here[1] <= viewBounds[3];
   const credit = <MapCredit onPress={() => mapRef.current?.showAttribution()} />;
-  const snackBottom = (comparing ? sheetH : home ? peekH : 0) + spacing.md;
+  const snackBottom = (comparing ? sheetH : home ? peekH : reporting ? reportH : 0) + spacing.md;
 
   return (
     <View style={styles.root}>
@@ -354,6 +458,7 @@ export default function MapScreen() {
           onDidFailLoadingMap={() => setMapFailed(true)}
           onDidFinishLoadingMap={() => setMapFailed(false)}
           onRegionDidChange={(e) => {
+            if (placing) void readPin();
             setViewBounds(e.nativeEvent.bounds);
             mapView.onViewChange(e.nativeEvent.bounds, e.nativeEvent.zoom);
           }}
@@ -388,7 +493,7 @@ export default function MapScreen() {
             bottom={peekH + spacing.md}
             credit={credit}
             onRecentre={() => (access === 'granted' ? flyToMe() : setLocationSheet(true))}
-            onReport={() => snackbar.show({ text: t('home.reportSoon') })}
+            onReport={openReport}
           />
           <PeekSheet state={mapView.state} nearUser={nearUser} onLayout={setPeekH} />
         </>
@@ -453,6 +558,30 @@ export default function MapScreen() {
         </View>
       )}
 
+      {reporting && (
+        <>
+          {placing && (
+            <>
+              <View pointerEvents="none" style={[styles.pin, { top: pinY - PIN_SIZE, left: screenW / 2 - PIN_SIZE / 2 }]}>
+                <MapPin size={PIN_SIZE} color={colors.white} fill={colors.navy} strokeWidth={1.75} />
+              </View>
+              <View pointerEvents="none" style={[styles.pinDot, { top: pinY - 3, left: screenW / 2 - 3 }]} />
+              <View style={[styles.credit, { bottom: reportH + spacing.sm }]} pointerEvents="box-none">
+                {credit}
+              </View>
+            </>
+          )}
+          <ReportFlowSheet
+            pin={pin}
+            street={pinStreet}
+            onStep={setReportStep}
+            onHeight={setReportH}
+            onClose={() => closeReport()}
+            onDone={closeReport}
+          />
+        </>
+      )}
+
       {screen.kind === 'search' && (
         <SearchSheet
           purpose={screen.purpose}
@@ -503,4 +632,6 @@ const styles = StyleSheet.create({
   bannerText: { flex: 1 },
   infoBanner: { borderLeftColor: colors.interactive, paddingVertical: spacing.xs },
   bannerClose: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  pin: { position: 'absolute', width: PIN_SIZE, height: PIN_SIZE },
+  pinDot: { position: 'absolute', width: 6, height: 6, borderRadius: 3, backgroundColor: colors.navy },
 });

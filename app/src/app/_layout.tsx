@@ -9,6 +9,7 @@ import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AuthProvider } from '../auth/AuthProvider';
 import { LoadingScreen } from '../components/LoadingScreen';
 import { colors } from '../theme/theme';
 
@@ -26,8 +27,10 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <View style={styles.root}>
         <StatusBar style={loading ? 'light' : 'dark'} />
-        {/* Tabs, plus the walking screen on top of them without the tab bar. */}
-        <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
+        <AuthProvider>
+          {/* Tabs, plus the walking screen on top of them without the tab bar. */}
+          <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
+        </AuthProvider>
         {loading && <LoadingScreen onLayout={hideNativeSplash} onDone={finishLoading} />}
       </View>
     </SafeAreaProvider>

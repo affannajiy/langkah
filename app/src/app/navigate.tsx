@@ -6,7 +6,9 @@ import { useTranslation } from 'react-i18next';
 import { BackHandler, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { castVote, createReport, ReportError } from '../api/reports';
 import type { HazardCategory } from '../api/types';
+import { useAuth } from '../auth/AuthProvider';
 import { MapCredit } from '../components/MapCredit';
 import { Snackbar, useSnackbar } from '../components/Snackbar';
 import { InstructionCard } from '../features/nav/InstructionCard';
@@ -39,6 +41,7 @@ function WalkScreen({ walk }: { walk: Walk }) {
   const insets = useSafeAreaInsets();
   const mapStyle = useLangkahMapStyle();
   const snackbar = useSnackbar();
+  const { isFull } = useAuth();
   const mapRef = useRef<MapRef>(null);
   const cameraRef = useRef<CameraRef>(null);
   const { track, hazards, crossings, view, fix, banner, dismissBanner, remainingS } = useWalk(walk);
@@ -73,23 +76,50 @@ function WalkScreen({ walk }: { walk: Walk }) {
     setQuick({ at: view.at ?? fix?.lngLat ?? null, street: view.street });
   }, [view.at, view.street, fix]);
 
+  // Signed in: send now. Otherwise, or with no signal, keep it on the phone; sign-in is
+  // offered after the walk, never during it.
   const onSend = useCallback(
     async (category: HazardCategory, at: LngLat) => {
       setQuick(null);
+      if (isFull) {
+        try {
+          await createReport({ kind: 'hazard', category, at });
+          snackbar.show({ text: t('quick.sent') });
+          return;
+        } catch (error) {
+          if (error instanceof ReportError && error.code !== 'network') {
+            snackbar.show({ text: t(`report.error.${error.code}`, { defaultValue: t('quick.failed') }) });
+            return;
+          }
+        }
+      }
       const ok = await queueReport(category, at);
-      snackbar.show({ text: ok ? t('quick.saved') : t('quick.failed') });
+      snackbar.show({ text: ok ? (isFull ? t('quick.savedOffline') : t('quick.saved')) : t('quick.failed') });
     },
-    [snackbar, t],
+    [isFull, snackbar, t],
   );
 
   const onAnswer = useCallback(
     async (vote: 'confirm' | 'gone') => {
       if (banner?.kind !== 'hazard') return;
       dismissBanner();
+      if (isFull) {
+        try {
+          await castVote(banner.hazard.id, vote);
+          snackbar.show({ text: t('nav.hazard.thanksSent') });
+          return;
+        } catch (error) {
+          // Your own report, or it just expired: nothing to send.
+          if (error instanceof ReportError && error.code !== 'network') {
+            snackbar.show({ text: t('nav.hazard.thanksSent') });
+            return;
+          }
+        }
+      }
       const ok = await queueVote(banner.hazard.id, vote);
       snackbar.show({ text: ok ? t('nav.hazard.thanks') : t('quick.failed') });
     },
-    [banner, dismissBanner, snackbar, t],
+    [banner, dismissBanner, isFull, snackbar, t],
   );
 
   // Back closes Quick report first. Otherwise it asks for a second press, since a
