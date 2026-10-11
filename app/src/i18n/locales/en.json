@@ -2,7 +2,7 @@
   "brand": {
     "name": "Langkah",
     "tagline": "Lebih selamat",
-    "pilot": "Ipoh pilot"
+    "pilot": "Ipoh and Seri Iskandar pilot"
   },
   "tabs": {
     "map": "Map",
@@ -10,12 +10,12 @@
     "me": "Me"
   },
   "map": {
-    "a11yLabel": "Map of central Ipoh",
+    "a11yLabel": "Walking map",
     "credit": "© OpenStreetMap contributors",
     "creditA11yHint": "Shows the full map credits",
     "recentre": "Show my location",
     "loadFailed": "The map could not load. Check your internet connection.",
-    "outsidePilot": "You're outside the Ipoh pilot area. Showing central Ipoh.",
+    "outsidePilot": "You're outside the pilot areas. Showing the nearest one, central Ipoh or Seri Iskandar.",
     "dismissBanner": "Dismiss"
   },
   "location": {
@@ -35,5 +35,162 @@
   "me": {
     "title": "Me",
     "empty": "Your reports, saved places and walks will show here."
+  },
+  "units": {
+    "m": "{{value}} m",
+    "km": "{{value}} km",
+    "min": "{{count}} min"
+  },
+  "home": {
+    "searchPlaceholder": "Where are you walking to?",
+    "searchHint": "Opens place search",
+    "night": "Night",
+    "day": "Day",
+    "modeA11yNight": "Night scoring is on",
+    "modeA11yDay": "Day scoring is on",
+    "modeHintNight": "Switches to day scoring",
+    "modeHintDay": "Switches to night scoring",
+    "layers": "Map layers",
+    "report": "Report",
+    "reportSoon": "Reporting opens in the next update.",
+    "nearYou": "Near you",
+    "inThisArea": "In this area",
+    "hazards_one": "{{count}} active hazard",
+    "hazards_other": "{{count}} active hazards",
+    "improvements_one": "{{count}} improvement request",
+    "improvements_other": "{{count}} improvement requests",
+    "noHazards": "No hazards reported",
+    "zoomIn": "Zoom in to see hazards, crossings and bus stops.",
+    "viewFailed": "Could not load hazards for this area. Check your internet connection."
+  },
+  "saved": {
+    "home": "Home",
+    "utp": "UTP",
+    "work": "Work",
+    "notSetHint": "Not set yet. Opens search so you can choose it.",
+    "setHint": "Plans a walk to {{name}}. Long press to clear it.",
+    "savedToast": "{{label}} saved: {{name}}",
+    "clearedToast": "{{label}} cleared",
+    "chooseTitle": "Choose your {{label}}"
+  },
+  "search": {
+    "placeholder": "Search a place or street",
+    "close": "Close search",
+    "clear": "Clear text",
+    "yourPlaces": "Your places",
+    "recent": "Recent",
+    "results": "Places found",
+    "hint": "Pick a place and Langkah compares the safest and the fastest walk.",
+    "typeMore": "Type at least 2 letters.",
+    "searching": "Searching…",
+    "noResults": "No places match “{{q}}”. Try a shorter name or a street name.",
+    "failed": "Search is not working right now. Check your internet connection.",
+    "retry": "Try again",
+    "away": "{{distance}} away",
+    "chooseStart": "Choose a start point",
+    "useMyLocation": "Use my location",
+    "outsidePilot": "Outside the pilot areas"
+  },
+  "route": {
+    "yourLocation": "Your location",
+    "chooseStart": "Choose a start point",
+    "back": "Back to map",
+    "swap": "Swap start and destination",
+    "fromA11y": "Start: {{name}}",
+    "toA11y": "Destination: {{name}}",
+    "changeHint": "Opens search to change it",
+    "title_one": "{{count}} walking route",
+    "title_other": "{{count}} walking routes",
+    "titleAny": "Walking routes",
+    "nightScoring": "Night scoring",
+    "dayScoring": "Day scoring",
+    "scoringHint": "Switches scoring and plans the walk again",
+    "safest": "Safest",
+    "fastest": "Fastest",
+    "safestTag": "Safest · {{count}} min",
+    "fastestTag": "Fastest · {{count}} min",
+    "bothTag": "Safest and fastest · {{count}} min",
+    "meta": "· {{distance}}",
+    "metaScore": "· {{distance}} · score {{score}}",
+    "scoreA11y": "Safety score {{score}} out of 100",
+    "selectedA11y": "Selected",
+    "cardHint": "Selects this route",
+    "startSafest": "Start safest walk",
+    "startFastest": "Start fastest walk",
+    "navSoon": "Walking navigation comes in the next update.",
+    "same": "The safest walk is also the fastest.",
+    "loading": "Finding the safest walk…",
+    "details": "Route details",
+    "detailsHint": "Shows or hides the score breakdown",
+    "uncheckedNote": "{{pct}}% of this walk is on streets we have not checked yet. They are dotted on the map, and they are not counted as safe.",
+    "chip": {
+      "sidewalk": "{{pct}}% with sidewalk",
+      "wellLit": "Well lit",
+      "marked_one": "{{count}} marked crossing",
+      "marked_other": "{{count}} marked crossings",
+      "noHazards": "No hazards reported",
+      "noSidewalk": "{{distance}} without sidewalk",
+      "unmarked_one": "{{count}} unmarked crossing",
+      "unmarked_other": "{{count}} unmarked crossings",
+      "hazards_one": "{{count}} hazard on route",
+      "hazards_other": "{{count}} hazards on route",
+      "unchecked": "{{pct}}% not yet checked"
+    },
+    "row": {
+      "sidewalk": "With sidewalk or path",
+      "lit": "Lit at night",
+      "marked": "Marked crossings",
+      "unmarked": "Unmarked main-road crossings",
+      "hazards": "Hazards reported on route",
+      "unchecked": "Not yet checked",
+      "percent": "{{pct}}%"
+    },
+    "error": {
+      "too_far": "This walk is over 10 km. Langkah plans walks up to 10 km.",
+      "too_close": "You're already there.",
+      "start_off_network": "The start point is too far from a street we know. Choose a start point closer to a street.",
+      "end_off_network": "This place is too far from a street we know. Try a place nearby.",
+      "no_route": "We could not find a walking route between these places.",
+      "outside_pilot": "{{name}} is outside the pilot areas. Langkah only plans walks in central Ipoh and Seri Iskandar for now.",
+      "start_outside_pilot": "You're outside the pilot areas. Choose a start point in central Ipoh or Seri Iskandar.",
+      "no_start": "Choose a start point, or allow location to start from where you are.",
+      "network": "Could not reach Langkah. Check your internet connection and try again.",
+      "generic": "Something went wrong planning this walk. Try again."
+    },
+    "retry": "Try again"
+  },
+  "layers": {
+    "title": "Map layers",
+    "crossings": "Marked crossings",
+    "busStops": "Bus stops",
+    "shelters": "Shelters",
+    "note": "Hazards always show on the map.",
+    "done": "Done"
+  },
+  "pin": {
+    "hazard": "Hazard: {{category}}",
+    "crossing": "Marked crossing",
+    "busStop": "Bus stop",
+    "shelter": "Shelter",
+    "start": "Start",
+    "destination": "Destination",
+    "you": "You are here"
+  },
+  "hazard": {
+    "broken_sidewalk": "Broken sidewalk",
+    "blocked_path": "Blocked path",
+    "no_light": "No street light",
+    "unsafe_crossing": "Unsafe crossing",
+    "flooding": "Flooding",
+    "other": "Other hazard"
+  },
+  "sheet": {
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "handleHint": "Drag or double tap to resize"
+  },
+  "common": {
+    "undo": "Undo",
+    "close": "Close"
   }
 }

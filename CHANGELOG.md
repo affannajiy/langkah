@@ -1,5 +1,95 @@
 # Changelog
 
+## Phase 3: Core screens (2026-10-11)
+
+### Added
+- **Map home** (guide Section 6.3 screen 1, `docs/screens/Main.png`):
+  - Search pill, day/night chip, saved-place chips (Home, UTP, Work), Layers button, recentre button and an extended Report button.
+  - A peek sheet with active hazards and open improvement requests for the area on screen. It says "Near you" when you are in view and "In this area" otherwise.
+  - Hazard pins (orange diamonds), marked crossings (blue striped squares), bus stops (pink) and shelters (navy), for the visible area only.
+- **Search sheet** (screen 2, `Search.png`):
+  - The field is focused on open, and there is a clear button.
+  - Before typing: your places and recent searches. After typing: results with an icon by category, the area and the walking distance.
+  - Search waits 250 ms, needs at least 2 letters, and cancels the older request when a newer one starts.
+  - States for searching, no results, and failed (with Try again). Swipe down, "x" or Android back closes it.
+- **Route compare** (screen 3, `RouteCompare.png`):
+  - A From/To bar with back and swap. Tapping From or To opens search to change it.
+  - Safest and Fastest cards with time, distance, a score ring and up to 3 reason chips (`app/src/route/reasons.ts`).
+  - The sheet is draggable; dragged up, it shows the score breakdown (Section 5.2 screen 7) and a "not yet checked" note.
+  - The camera fits both routes.
+- **Route lines** (Section 6.2):
+  - Safest: solid teal with a white outline. Fastest: dashed grey.
+  - White dots mark streets that are not yet checked.
+  - Map tags read "Safest · 14 min" and "Fastest · 11 min". Tapping a card, a line or a tag selects that route.
+  - When both routes are the same path, one card and one line show.
+- Night scoring follows the clock (19:30 to 07:00). Tapping the chip overrides it for the session. Changing the mode re-plans the route.
+- **Saved places**:
+  - Tapping an unset chip opens search to choose it. Long press clears it, with Undo.
+  - UTP is preset. It is inside the Seri Iskandar pilot area, so walks around campus and into town are routed.
+  - Saved and recent places are stored on the phone only (AsyncStorage) and are never sent to the server.
+- **Errors in plain words** (EN/BM): too far, too close, start or end off the network, no route, outside the pilot, no start point (with "Choose a start point"), and no internet (with Try again).
+- **Layers sheet:** marked crossings, bus stops and shelters on or off for the session. Hazards always show.
+- **Placeholders until later phases:** the snackbar (3 s, 5 s with Undo) says Report opens in Phase 5 and walking navigation in Phase 4.
+- **App client** (`app/src/api/`):
+  - One Supabase client, with sessions off until Phase 5.
+  - Typed wrappers for `search_places`, `route_safe` and `map_in_view`. Each has a 12 s timeout and checks the response shape before the UI uses it.
+  - Coordinates are sent rounded to 5 decimals.
+- `app/src/map/polyline.ts`: a hand-written polyline decoder (no dependency). It matches Google's reference example and the server's point count.
+- `20261011000005_map_view_and_unchecked.sql`:
+  - `map_in_view(min_lon, min_lat, max_lon, max_lat)` runs as the caller, so RLS applies. It returns active hazards, amenities and counts, and refuses boxes over about 5.5 km.
+  - `route_build` now also returns `u`, the polyline index ranges of not-yet-checked streets.
+- The tab bar hides during search and route compare, matching the PNGs. Android back steps out one level.
+
+### Dependencies
+- `@supabase/supabase-js` 2.117.2 (MIT). Pinned to a release more than 2 weeks old.
+- `@react-native-async-storage/async-storage` 2.2.0 (MIT). Version chosen by `expo install` for SDK 57.
+- No URL polyfill is needed: React Native 0.86 ships `URL` and `URLSearchParams`.
+- `npm audit` is unchanged at 30 issues, all in build tooling. None come from the new packages.
+- **AsyncStorage is a native module, so a new development build is needed.**
+
+### Payload (Section 7.4)
+- `map_in_view` for a 1.3 km by 1.1 km view of the Old Town: about 1.5 KB.
+- Routes grew by about 10 bytes each for `u`.
+
+### Decisions
+- Only hazards with status `active` show on the map. Pending hazards wait for Phase 5 confirmations (Section 7.2).
+- The "Near you" counts cover the visible area, which is the same box the pins come from.
+- Route lines are drawn in a fixed order (fastest under safest). The route that is not selected is faded instead of reordered.
+
+### Fixed during emulator testing
+- Route framing used the sheet's placeholder height on the first fit, so part of the route hid under the sheet. The map now refits once the cards have measured themselves, and home camera moves clear the padding compare left behind.
+- Long-pressing a saved chip to clear it also opened the "Choose your Home" search, because the long-press handler vanished mid-press. The handler now stays set.
+- Tapping Undo on the snackbar could reach the Report button underneath. The snackbar now sits above floating buttons and catches its own taps.
+- The "compares the safest and fastest walk" hint no longer shows when choosing a saved place.
+- The compare title read "2 walking routes" while loading or on an error; it now reads "Walking routes" until routes arrive.
+- BM showed "1 walking route" in English: Hermes has no Malay plural rules, so `ms.json` now repeats each `_other` plural as `_one`.
+- Route cards are more compact (smaller score ring, tighter padding, Fastest shows its two biggest warnings) so more map shows; text stays at 14 sp or more.
+- The expanded sheet stops below the trip bar so the OpenStreetMap credit always has map behind it.
+
+### Second pilot area: Seri Iskandar and UTP
+- `ipoh_extract.py` has named areas (`--area ipoh` or `--area seri-iskandar`, `--bbox` still works) and writes each to its own folder: `out/ipoh/`, `out/seri-iskandar/`. The clipped file is now `area.osm.pbf`, next to an `area.json` with the area's name and box.
+- `load_to_supabase.py` loads every area folder in one run (`python load_to_supabase.py out/ipoh out/seri-iskandar`), so one area can never wipe the other.
+- Seri Iskandar box: 100.935, 4.345 to 100.990, 4.395. It covers the town centre, Iskandar Bestari, UiTM, Hospital Seri Iskandar, the Hentian bus station and the UTP campus.
+- `20261011000006_area_labels.sql`: a place with no named street within 100 m and no neighbourhood within 1 km is labelled with its nearest town (within 15 km) instead of always "Ipoh".
+- `20261011000008_route_per_area.sql`: `route_safe` used to snap only to the single largest network (Ipoh), so every Seri Iskandar walk failed. It now uses the largest network within 250 m of the start that has at least 500 junctions, one per pilot area, so isolated service roads still cannot strand a search.
+- Load results (OSM extract of 2026-10-09, trunk roads included): Ipoh 6,058 segments, 246 amenities, 1,405 places; Seri Iskandar and UTP 4,310 segments, 57 amenities, 338 places. 10,368 segments and 7,528 junctions in total.
+- Route checks: UTP to Hentian Seri Iskandar 2.8 km, UTP to UiTM 5.9 km, both in about 0.1 s. Ipoh to UTP returns `too_far`.
+- App: `PILOT_AREAS` in `app/src/map/config.ts` lists both boxes. Recentre outside both shows the nearest one. On the first location fix inside Seri Iskandar, the map frames that area. "Ipoh pilot" wording now says "pilot areas" in EN and BM.
+
+### Fixed after review
+- **Detours around trunk roads:** Jalan Panglima Bukit Gantang Wahab, between the railway station and Ipoh Padang, is tagged `highway=trunk`, and the walk network left trunk roads out. Walks could not cross it, so Station to Ipoh Padang (400 m straight) routed at 1.3 km; it is now 510 m. Trunk roads are now walkable unless tagged `foot=no` or `motorroad=yes`, and `20261011000007_trunk_roads.sql` gives them every main-road penalty (Section 7.1).
+- **Route tags** sit 20 to 80% along each route, where that route is farthest from the other, and at least a third of the trip apart when possible. They no longer stack on each other or on the start pin.
+- **Crossing stacks:** pins of the same kind within 20 m show as one.
+- **User dot:** the blue dot is drawn from the same position the app routes from, so it shows whenever "Your location" works. MapLibre's own location layer could stay hidden.
+
+### Known issues
+- Most route segments are still "not yet checked" until the corridor audit, so lines are largely dotted and Fastest often shows a high "not yet checked" warning.
+- Seri Iskandar has very few mapped crossings, bus stops and sidewalks in OSM, so its routes are almost all "not yet checked".
+- The guide's Section 7.3 steps still show the old single-folder extractor command and `ipoh-central.osm.pbf`; the README has the new commands.
+- In the dev build the Expo dev-menu button floats over the swap button; release builds do not have it.
+- Tapping a hazard pin does nothing yet; report cards come in Phase 5.
+- ESLint and Prettier are still not set up (waiting for approval as dev dependencies).
+
 ## Phase 2: Search and routing API (2026-10-11)
 
 ### Added

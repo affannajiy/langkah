@@ -26,9 +26,19 @@ export const colors = {
   safeSoft: '#E3F4EE',
   hazardSoft: '#FDF3E0',
   communitySoft: '#F8E8F1',
+  safeBadge: '#CDEBE0',
+  neutralBadge: '#E8EBEF',
 
   // Base map land colour, shown while tiles load
   mapLand: '#E9ECF1',
+
+  // Route lines (Section 6.2): safest solid teal with a white outline, fastest dashed grey.
+  routeFastest: '#5B6472',
+  routeOutline: '#FFFFFF',
+
+  // The user's position dot and its soft halo
+  userDot: '#1F6FB2',
+  userHalo: 'rgba(86, 180, 233, 0.3)',
 
   border: '#D9DEE5',
   handle: '#C9D0D9',

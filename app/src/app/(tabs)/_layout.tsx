@@ -3,6 +3,7 @@ import { Map as MapIcon, UserRound, UsersRound, type LucideIcon } from 'lucide-r
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
+import { tabBarStyles } from '../../navigation/tabBar';
 import { colors, fontFamily, radius, spacing } from '../../theme/theme';
 
 // Active tab gets a soft blue pill behind its icon plus bold text, so the state
@@ -26,7 +27,7 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.navy,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: styles.bar,
+        tabBarStyle: tabBarStyles.bar,
         tabBarItemStyle: styles.item,
         tabBarLabelStyle: styles.label,
       }}
@@ -39,12 +40,6 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  bar: {
-    backgroundColor: colors.white,
-    borderTopColor: colors.border,
-    height: 80,
-    paddingTop: spacing.sm,
-  },
   item: { minHeight: 56 },
   label: { fontFamily, fontSize: 14, fontWeight: '700', marginTop: spacing.xs },
   iconPill: {

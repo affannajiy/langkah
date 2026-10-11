@@ -5,6 +5,8 @@ import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
 import ms from './locales/ms.json';
 
+// ms.json repeats each _other plural as _one: Malay has one form, but Hermes has no
+// Malay plural rules and falls back to English ones, which ask for _one.
 export const resources = { en: { translation: en }, ms: { translation: ms } } as const;
 export type Language = keyof typeof resources;
 

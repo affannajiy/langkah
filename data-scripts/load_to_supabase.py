@@ -1,18 +1,19 @@
 """
-Langkah - load the Ipoh data into Supabase
-==========================================
+Langkah - load the pilot areas into Supabase
+============================================
 
 Reads the outputs of ipoh_extract.py and fills road_segments, amenities and
 places, then builds the routing topology and safety scores in Postgres
 (guide Sections 7.1, 7.5 and 8).
 
-Usage (inside the data-scripts venv):
-    python load_to_supabase.py out
+Usage (inside the data-scripts venv), every pilot area in one run:
+    python load_to_supabase.py out/ipoh out/seri-iskandar
 
 Needs DATABASE_URL in data-scripts/.env (see .env.example). Run it again after
-each monthly OSM refresh: it replaces the OSM rows and keeps audit rows.
+each monthly OSM refresh. It replaces all OSM rows and keeps audit rows, so
+always pass every area: an area left out is removed from the database.
 
-Why the network comes from ipoh-central.osm.pbf and not walk-network.geojson:
+Why the network comes from area.osm.pbf and not walk-network.geojson:
 the GeoJSON is simplified for display, which can drop the shared vertex where
 two streets meet. Routing needs exact junctions, so ways are split here at the
 OSM nodes they share. Amenities come from amenities.geojson.
@@ -30,7 +31,7 @@ import osmium
 import psycopg
 from shapely.geometry import LineString, MultiLineString, Polygon
 
-from ipoh_extract import DEFAULT_BBOX, ROAD_TYPES, is_walkable, sidewalk_status
+from ipoh_extract import ROAD_TYPES, is_walkable, sidewalk_status
 
 PLACE_KEYS = ("amenity", "shop", "tourism", "leisure", "historic", "office", "railway",
               "public_transport", "healthcare", "place", "building")
@@ -238,8 +239,7 @@ def load(conn, segments, amenities, places):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("out", help="output folder of ipoh_extract.py")
-    ap.add_argument("--bbox", nargs=4, type=float, default=DEFAULT_BBOX)
+    ap.add_argument("outs", nargs="+", metavar="out", help="output folder of ipoh_extract.py, one per area")
     a = ap.parse_args()
 
     here = os.path.dirname(os.path.abspath(__file__))
@@ -248,21 +248,33 @@ def main():
     if not url:
         sys.exit("DATABASE_URL is missing. Copy .env.example to .env and fill it in.")
 
-    pbf = os.path.join(a.out, "ipoh-central.osm.pbf")
-    amen_path = os.path.join(a.out, "amenities.geojson")
-    for path in (pbf, amen_path):
-        if not os.path.exists(path):
-            sys.exit(f"{path} not found. Run ipoh_extract.py first.")
-
-    print("1/3 Reading the clipped OSM file...")
-    reader = Reader(tuple(a.bbox))
-    reader.apply_file(pbf, locations=True)
-    segments = split_ways(reader.ways)
-    places = dedupe_places(reader.places + street_places(reader.streets, tuple(a.bbox)))
-    with open(amen_path, encoding="utf-8") as fh:
-        amenities = json.load(fh)["features"]
-    print(f"    {len(reader.ways)} ways -> {len(segments)} segments, "
-          f"{len(amenities)} amenities, {len(places)} places")
+    print("1/3 Reading the clipped OSM files...")
+    segments, amenities, places, seen_ways = [], [], [], set()
+    for out in a.outs:
+        pbf = os.path.join(out, "area.osm.pbf")
+        amen_path = os.path.join(out, "amenities.geojson")
+        area_path = os.path.join(out, "area.json")
+        for path in (pbf, amen_path, area_path):
+            if not os.path.exists(path):
+                sys.exit(f"{path} not found. Run ipoh_extract.py for this area first.")
+        with open(area_path, encoding="utf-8") as fh:
+            area = json.load(fh)
+        bbox = tuple(area["bbox"])
+        reader = Reader(bbox)
+        reader.apply_file(pbf, locations=True)
+        # A way reaching into two boxes is kept once.
+        ways = [w for w in reader.ways if w[0] not in seen_ways]
+        seen_ways.update(w[0] for w in ways)
+        area_segments = split_ways(ways)
+        area_places = reader.places + street_places(reader.streets, bbox)
+        with open(amen_path, encoding="utf-8") as fh:
+            area_amenities = json.load(fh)["features"]
+        print(f"    {area['title']}: {len(ways)} ways -> {len(area_segments)} segments, "
+              f"{len(area_amenities)} amenities, {len(area_places)} places")
+        segments += area_segments
+        amenities += area_amenities
+        places += area_places
+    places = dedupe_places(places)
 
     print("2/3 Loading into Supabase and building the network...")
     with psycopg.connect(url, sslmode="require", connect_timeout=20) as conn:

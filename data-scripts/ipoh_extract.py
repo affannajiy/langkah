@@ -2,17 +2,20 @@
 Langkah - Ipoh pedestrian data extractor
 ========================================
 
-Turns the Geofabrik Malaysia OSM extract into small, app-ready files for the
-central Ipoh pilot area, plus a coverage report.
+Turns the Geofabrik Malaysia OSM extract into small, app-ready files for one
+pilot area, plus a coverage report.
 
-Usage (inside the conda env from the guide):
-    python ipoh_extract.py malaysia-singapore-brunei-latest.osm.pbf out
+Usage (inside the data-scripts venv), one out folder per area:
+    python ipoh_extract.py raw/malaysia-singapore-brunei-latest.osm.pbf out/ipoh
+    python ipoh_extract.py raw/malaysia-singapore-brunei-latest.osm.pbf out/seri-iskandar --area seri-iskandar
 
 Optional:
-    --bbox MIN_LON MIN_LAT MAX_LON MAX_LAT   (default: central Ipoh)
+    --area NAME                              a pilot area from AREAS (default: ipoh)
+    --bbox MIN_LON MIN_LAT MAX_LON MAX_LAT   a custom box instead of a named area
 
 Outputs in the out folder:
-    ipoh-central.osm.pbf         clipped raw OSM data (small)
+    area.json                    area name and box, read by load_to_supabase.py
+    area.osm.pbf                 clipped raw OSM data (small)
     walk-network.geojson         walkable lines with sidewalk / lit / crossing tags
     amenities.geojson            crossings, bus stops, shelters, street lamps, signals
     coverage-report.md           how complete the data is
@@ -27,12 +30,19 @@ import sys
 
 import osmium
 
-# Central Ipoh: Old Town, New Town, railway station, Concubine Lane to Ipoh Parade
-DEFAULT_BBOX = (101.068, 4.583, 101.100, 4.612)
+# Pilot areas as (title, lon/lat box). Keep in step with PILOT_AREAS in app/src/map/config.ts.
+AREAS = {
+    # Old Town, New Town, railway station, Concubine Lane to Ipoh Parade
+    "ipoh": ("Central Ipoh", (101.068, 4.583, 101.100, 4.612)),
+    # Seri Iskandar town, Iskandar Bestari, UiTM, the hospital and the UTP campus
+    "seri-iskandar": ("Seri Iskandar and UTP", (100.935, 4.345, 100.990, 4.395)),
+}
+DEFAULT_BBOX = AREAS["ipoh"][1]
 
-ROAD_TYPES = {"primary", "primary_link", "secondary", "secondary_link", "tertiary",
+# Trunk roads count: in Ipoh some town roads are trunk, and people walk along and across them.
+ROAD_TYPES = {"trunk", "trunk_link", "primary", "primary_link", "secondary", "secondary_link", "tertiary",
               "tertiary_link", "residential", "unclassified", "living_street", "service"}
-MAIN_ROADS = {"primary", "primary_link", "secondary", "secondary_link"}
+MAIN_ROADS = {"trunk", "trunk_link", "primary", "primary_link", "secondary", "secondary_link"}
 FOOT_TYPES = {"footway", "pedestrian", "path", "steps", "corridor"}
 NET_TAGS = ["sidewalk", "sidewalk:both", "sidewalk:left", "sidewalk:right", "footway",
             "lit", "crossing", "maxspeed", "lanes", "surface", "name"]
@@ -73,7 +83,9 @@ def is_walkable(t):
     hw = t.get("highway")
     if hw not in ROAD_TYPES and hw not in FOOT_TYPES:
         return False
-    if t.get("foot") == "no" or hw == "service" and t.get("service") == "parking_aisle":
+    if t.get("foot") == "no" or t.get("motorroad") == "yes":
+        return False
+    if hw == "service" and t.get("service") == "parking_aisle":
         return False
     return True
 
@@ -152,7 +164,7 @@ def line_len_m(geom):
     return Geod(ellps="WGS84").geometry_length(shape(geom))
 
 
-def report(lines, points, sizes, bbox, path):
+def report(lines, points, sizes, title, bbox, path):
     from collections import Counter
     road = [f for f in lines if f["properties"]["highway"] in ROAD_TYPES]
     foot = [f for f in lines if f["properties"]["highway"] in FOOT_TYPES]
@@ -166,7 +178,7 @@ def report(lines, points, sizes, bbox, path):
     total_road = sum(by_status.values()) or 1
     pct = lambda x: f"{100 * x / total_road:.0f}%"
     md = [
-        "# Central Ipoh pedestrian data coverage", "",
+        f"# {title}: pedestrian data coverage", "",
         f"Area (lon/lat box): {bbox}. Data (c) OpenStreetMap contributors, ODbL 1.0.", "",
         "## Streets", "",
         "| Measure | Value |", "|---|---|",
@@ -191,7 +203,7 @@ def report(lines, points, sizes, bbox, path):
     return by_status, kinds
 
 
-def preview(lines, points, path):
+def preview(lines, points, title, path):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -216,7 +228,7 @@ def preview(lines, points, path):
     ax.set_aspect(1 / math.cos(math.radians(sum(lats) / len(lats))))
     ax.axis("off")
     ax.legend(loc="lower left", fontsize=8, frameon=True)
-    ax.set_title("Central Ipoh: sidewalk data in OpenStreetMap", fontsize=12, color="#0F2A47")
+    ax.set_title(f"{title}: sidewalk data in OpenStreetMap", fontsize=12, color="#0F2A47")
     fig.text(0.99, 0.01, "Data (c) OpenStreetMap contributors, ODbL", ha="right", fontsize=7, color="#555")
     fig.savefig(path, bbox_inches="tight", facecolor="white")
 
@@ -225,12 +237,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("pbf")
     ap.add_argument("out")
-    ap.add_argument("--bbox", nargs=4, type=float, default=DEFAULT_BBOX)
+    ap.add_argument("--area", choices=sorted(AREAS), default="ipoh")
+    ap.add_argument("--bbox", nargs=4, type=float, help="custom box instead of --area")
     a = ap.parse_args()
+    area = "custom" if a.bbox else a.area
+    title, bbox = ("Custom area", tuple(a.bbox)) if a.bbox else AREAS[a.area]
     os.makedirs(a.out, exist_ok=True)
-    clipped = os.path.join(a.out, "ipoh-central.osm.pbf")
-    print("1/4 Clipping to central Ipoh...")
-    clip(a.pbf, clipped, a.bbox)
+    with open(os.path.join(a.out, "area.json"), "w", encoding="utf-8") as fh:
+        json.dump({"area": area, "title": title, "bbox": list(bbox)}, fh)
+    clipped = os.path.join(a.out, "area.osm.pbf")
+    print(f"1/4 Clipping to {title}...")
+    clip(a.pbf, clipped, bbox)
     print("2/4 Extracting walk network and amenities...")
     col = Collector()
     col.apply_file(clipped, locations=True)
@@ -241,8 +258,8 @@ def main():
         "amenities.geojson": write_geojson(col.points, os.path.join(a.out, "amenities.geojson")),
     }
     print("4/4 Coverage report and preview...")
-    report(col.lines, col.points, sizes, tuple(a.bbox), os.path.join(a.out, "coverage-report.md"))
-    preview(col.lines, col.points, os.path.join(a.out, "preview.png"))
+    report(col.lines, col.points, sizes, title, bbox, os.path.join(a.out, "coverage-report.md"))
+    preview(col.lines, col.points, title, os.path.join(a.out, "preview.png"))
     print("Done. See", a.out)
 
 

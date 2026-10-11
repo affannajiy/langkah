@@ -2,7 +2,7 @@
   "brand": {
     "name": "Langkah",
     "tagline": "Lebih selamat",
-    "pilot": "Perintis Ipoh"
+    "pilot": "Perintis Ipoh dan Seri Iskandar"
   },
   "tabs": {
     "map": "Peta",
@@ -10,12 +10,12 @@
     "me": "Saya"
   },
   "map": {
-    "a11yLabel": "Peta pusat bandar Ipoh",
+    "a11yLabel": "Peta jalan kaki",
     "credit": "© OpenStreetMap contributors",
     "creditA11yHint": "Menunjukkan penghargaan peta penuh",
     "recentre": "Tunjukkan lokasi saya",
     "loadFailed": "Peta tidak dapat dimuatkan. Semak sambungan internet anda.",
-    "outsidePilot": "Anda berada di luar kawasan perintis Ipoh. Memaparkan pusat bandar Ipoh.",
+    "outsidePilot": "Anda berada di luar kawasan perintis. Memaparkan kawasan terdekat, pusat bandar Ipoh atau Seri Iskandar.",
     "dismissBanner": "Tutup"
   },
   "location": {
@@ -35,5 +35,162 @@
   "me": {
     "title": "Saya",
     "empty": "Laporan, tempat tersimpan dan perjalanan anda akan dipaparkan di sini."
+  },
+  "units": {
+    "m": "{{value}} m",
+    "km": "{{value}} km",
+    "min": "{{count}} min"
+  },
+  "home": {
+    "searchPlaceholder": "Anda nak berjalan ke mana?",
+    "searchHint": "Membuka carian tempat",
+    "night": "Malam",
+    "day": "Siang",
+    "modeA11yNight": "Pemarkahan malam dihidupkan",
+    "modeA11yDay": "Pemarkahan siang dihidupkan",
+    "modeHintNight": "Tukar kepada pemarkahan siang",
+    "modeHintDay": "Tukar kepada pemarkahan malam",
+    "layers": "Lapisan peta",
+    "report": "Lapor",
+    "reportSoon": "Fungsi melapor akan dibuka dalam kemas kini seterusnya.",
+    "nearYou": "Berhampiran anda",
+    "inThisArea": "Di kawasan ini",
+    "hazards_one": "{{count}} bahaya aktif",
+    "hazards_other": "{{count}} bahaya aktif",
+    "improvements_one": "{{count}} permintaan penambahbaikan",
+    "improvements_other": "{{count}} permintaan penambahbaikan",
+    "noHazards": "Tiada bahaya dilaporkan",
+    "zoomIn": "Zum masuk untuk melihat bahaya, lintasan dan perhentian bas.",
+    "viewFailed": "Bahaya di kawasan ini tidak dapat dimuatkan. Semak sambungan internet anda."
+  },
+  "saved": {
+    "home": "Rumah",
+    "utp": "UTP",
+    "work": "Kerja",
+    "notSetHint": "Belum ditetapkan. Membuka carian supaya anda boleh memilihnya.",
+    "setHint": "Merancang jalan kaki ke {{name}}. Tekan lama untuk mengosongkannya.",
+    "savedToast": "{{label}} disimpan: {{name}}",
+    "clearedToast": "{{label}} dikosongkan",
+    "chooseTitle": "Pilih {{label}} anda"
+  },
+  "search": {
+    "placeholder": "Cari tempat atau jalan",
+    "close": "Tutup carian",
+    "clear": "Padam teks",
+    "yourPlaces": "Tempat anda",
+    "recent": "Terkini",
+    "results": "Tempat dijumpai",
+    "hint": "Pilih tempat dan Langkah akan membandingkan laluan jalan kaki paling selamat dan paling pantas.",
+    "typeMore": "Taip sekurang-kurangnya 2 huruf.",
+    "searching": "Sedang mencari…",
+    "noResults": "Tiada tempat sepadan dengan “{{q}}”. Cuba nama yang lebih pendek atau nama jalan.",
+    "failed": "Carian tidak berfungsi buat masa ini. Semak sambungan internet anda.",
+    "retry": "Cuba lagi",
+    "away": "{{distance}} dari sini",
+    "chooseStart": "Pilih titik mula",
+    "useMyLocation": "Guna lokasi saya",
+    "outsidePilot": "Di luar kawasan perintis"
+  },
+  "route": {
+    "yourLocation": "Lokasi anda",
+    "chooseStart": "Pilih titik mula",
+    "back": "Kembali ke peta",
+    "swap": "Tukar titik mula dan destinasi",
+    "fromA11y": "Mula: {{name}}",
+    "toA11y": "Destinasi: {{name}}",
+    "changeHint": "Membuka carian untuk menukarnya",
+    "title_one": "{{count}} laluan jalan kaki",
+    "title_other": "{{count}} laluan jalan kaki",
+    "titleAny": "Laluan jalan kaki",
+    "nightScoring": "Pemarkahan malam",
+    "dayScoring": "Pemarkahan siang",
+    "scoringHint": "Tukar pemarkahan dan rancang semula laluan",
+    "safest": "Paling selamat",
+    "fastest": "Paling pantas",
+    "safestTag": "Paling selamat · {{count}} min",
+    "fastestTag": "Paling pantas · {{count}} min",
+    "bothTag": "Paling selamat dan pantas · {{count}} min",
+    "meta": "· {{distance}}",
+    "metaScore": "· {{distance}} · skor {{score}}",
+    "scoreA11y": "Skor keselamatan {{score}} daripada 100",
+    "selectedA11y": "Dipilih",
+    "cardHint": "Memilih laluan ini",
+    "startSafest": "Mula jalan paling selamat",
+    "startFastest": "Mula jalan paling pantas",
+    "navSoon": "Navigasi jalan kaki akan tiba dalam kemas kini seterusnya.",
+    "same": "Laluan paling selamat juga yang paling pantas.",
+    "loading": "Mencari laluan paling selamat…",
+    "details": "Butiran laluan",
+    "detailsHint": "Tunjuk atau sembunyikan pecahan skor",
+    "uncheckedNote": "{{pct}}% daripada laluan ini melalui jalan yang belum kami semak. Jalan itu bertitik pada peta dan tidak dikira sebagai selamat.",
+    "chip": {
+      "sidewalk": "{{pct}}% ada kaki lima",
+      "wellLit": "Cukup terang",
+      "marked_one": "{{count}} lintasan bertanda",
+      "marked_other": "{{count}} lintasan bertanda",
+      "noHazards": "Tiada bahaya dilaporkan",
+      "noSidewalk": "{{distance}} tanpa kaki lima",
+      "unmarked_one": "{{count}} lintasan tidak bertanda",
+      "unmarked_other": "{{count}} lintasan tidak bertanda",
+      "hazards_one": "{{count}} bahaya di laluan",
+      "hazards_other": "{{count}} bahaya di laluan",
+      "unchecked": "{{pct}}% belum disemak"
+    },
+    "row": {
+      "sidewalk": "Ada kaki lima atau laluan pejalan kaki",
+      "lit": "Diterangi pada waktu malam",
+      "marked": "Lintasan bertanda",
+      "unmarked": "Lintasan jalan utama tidak bertanda",
+      "hazards": "Bahaya dilaporkan di laluan",
+      "unchecked": "Belum disemak",
+      "percent": "{{pct}}%"
+    },
+    "error": {
+      "too_far": "Perjalanan ini lebih 10 km. Langkah merancang perjalanan sehingga 10 km.",
+      "too_close": "Anda sudah sampai.",
+      "start_off_network": "Titik mula terlalu jauh dari jalan yang kami kenali. Pilih titik mula yang lebih dekat dengan jalan.",
+      "end_off_network": "Tempat ini terlalu jauh dari jalan yang kami kenali. Cuba tempat berdekatan.",
+      "no_route": "Kami tidak menemui laluan jalan kaki antara tempat-tempat ini.",
+      "outside_pilot": "{{name}} berada di luar kawasan perintis. Langkah hanya merancang perjalanan di pusat bandar Ipoh dan Seri Iskandar buat masa ini.",
+      "start_outside_pilot": "Anda berada di luar kawasan perintis. Pilih titik mula di pusat bandar Ipoh atau Seri Iskandar.",
+      "no_start": "Pilih titik mula, atau benarkan lokasi untuk bermula dari tempat anda berada.",
+      "network": "Tidak dapat menghubungi Langkah. Semak sambungan internet anda dan cuba lagi.",
+      "generic": "Ada masalah semasa merancang perjalanan ini. Cuba lagi."
+    },
+    "retry": "Cuba lagi"
+  },
+  "layers": {
+    "title": "Lapisan peta",
+    "crossings": "Lintasan bertanda",
+    "busStops": "Perhentian bas",
+    "shelters": "Tempat berteduh",
+    "note": "Bahaya sentiasa dipaparkan pada peta.",
+    "done": "Selesai"
+  },
+  "pin": {
+    "hazard": "Bahaya: {{category}}",
+    "crossing": "Lintasan bertanda",
+    "busStop": "Perhentian bas",
+    "shelter": "Tempat berteduh",
+    "start": "Mula",
+    "destination": "Destinasi",
+    "you": "Anda di sini"
+  },
+  "hazard": {
+    "broken_sidewalk": "Kaki lima rosak",
+    "blocked_path": "Laluan terhalang",
+    "no_light": "Tiada lampu jalan",
+    "unsafe_crossing": "Lintasan tidak selamat",
+    "flooding": "Banjir",
+    "other": "Bahaya lain"
+  },
+  "sheet": {
+    "expand": "Kembangkan",
+    "collapse": "Kecilkan",
+    "handleHint": "Seret atau ketik dua kali untuk mengubah saiz"
+  },
+  "common": {
+    "undo": "Buat asal",
+    "close": "Tutup"
   }
 }

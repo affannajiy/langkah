@@ -1,0 +1,84 @@
+import type { LngLat } from '@maplibre/maplibre-react-native';
+
+// Shapes returned by the Supabase functions in supabase/migrations (Phase 2 and 3).
+
+export type ScoringMode = 'day' | 'night';
+
+export type Place = {
+  name: string;
+  area: string | null;
+  category: string | null;
+  lngLat: LngLat;
+  // Straight-line metres from the user, when the search knew where they were.
+  distM: number | null;
+};
+
+export type StepType =
+  | 'depart'
+  | 'left'
+  | 'right'
+  | 'slight_left'
+  | 'slight_right'
+  | 'straight'
+  | 'cross'
+  | 'arrive';
+
+export type Step = {
+  t: StepType;
+  n?: string; // street name
+  l?: { k: 'crossing' | 'signals' | 'bus_stop' | 'shelter' | 'place'; n?: string }; // landmark
+  x?: 'marked' | 'signals' | 'unmarked'; // crossing kind
+  d?: number; // metres to the next step
+  i: number; // index into the route points
+};
+
+export type RouteStats = {
+  sw: number; // % with sidewalk or path
+  lit: number; // % lit
+  unk: number; // % not yet checked
+  nosw: number; // metres with no sidewalk
+  mx: number; // marked crossings
+  ux: number; // unmarked main-road crossings
+  hz: number; // active hazards within 15 m
+};
+
+export type Route = {
+  points: LngLat[];
+  distM: number;
+  timeS: number;
+  score: number;
+  stats: RouteStats;
+  steps: Step[];
+  // [from, to] point index ranges on streets that are not yet checked.
+  unchecked: [number, number][];
+};
+
+export type RoutePair = {
+  mode: ScoringMode;
+  same: boolean;
+  safest: Route;
+  fastest: Route;
+};
+
+export type RouteError =
+  | 'bad_mode'
+  | 'bad_point'
+  | 'too_far'
+  | 'too_close'
+  | 'start_off_network'
+  | 'end_off_network'
+  | 'no_route'
+  // App-side failures
+  | 'outside_pilot'
+  | 'start_outside_pilot'
+  | 'no_start'
+  | 'network'
+  | 'generic';
+
+export type MapAmenityKind = 'crossing' | 'bus_stop' | 'shelter';
+
+export type MapView = {
+  hazards: { id: string; lngLat: LngLat; category: string }[];
+  amenities: { kind: MapAmenityKind; lngLat: LngLat }[];
+  counts: { hazards: number; improvements: number };
+};

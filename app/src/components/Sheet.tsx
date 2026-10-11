@@ -9,8 +9,8 @@ type Props = {
 };
 
 // Small non-blocking bottom sheet, sitting above the tab bar.
-// The map stays visible and usable behind it.
-// Phase 3 may replace this with a draggable sheet library (needs approval).
+// The map stays visible and usable behind it. For a sheet the user resizes
+// (route compare), use BottomSheet instead.
 export function Sheet({ visible, children }: Props) {
   const offset = useRef(new Animated.Value(visible ? 0 : 1)).current;
 
