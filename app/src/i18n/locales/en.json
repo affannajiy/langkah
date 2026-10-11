@@ -1,0 +1,37 @@
+{
+  "brand": {
+    "name": "Langkah",
+    "tagline": "Lebih selamat",
+    "pilot": "Ipoh pilot"
+  },
+  "tabs": {
+    "map": "Map",
+    "community": "Community",
+    "me": "Me"
+  },
+  "map": {
+    "a11yLabel": "Map of central Ipoh",
+    "credit": "© OpenStreetMap contributors",
+    "creditA11yHint": "Shows the full map credits",
+    "recentre": "Show my location",
+    "loadFailed": "The map could not load. Check your internet connection."
+  },
+  "location": {
+    "title": "Langkah needs your location",
+    "body": "We use it to show where you are and to find the safest walk from here. Your walking history is never stored.",
+    "allow": "Allow location",
+    "notNow": "Not now",
+    "offTitle": "Location is off",
+    "offBody": "Turn it on in Settings to see where you are on the map.",
+    "openSettings": "Open Settings",
+    "dismiss": "Close"
+  },
+  "community": {
+    "title": "Community",
+    "empty": "Hazards and improvement requests near you will show here."
+  },
+  "me": {
+    "title": "Me",
+    "empty": "Your reports, saved places and walks will show here."
+  }
+}

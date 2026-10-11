@@ -1,0 +1,5 @@
+# Langkah data scripts: install inside the "langkah" Miniforge environment
+osmium>=4.0
+shapely>=2.0
+pyproj>=3.6
+matplotlib>=3.8

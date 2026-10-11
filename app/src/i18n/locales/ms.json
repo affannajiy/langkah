@@ -1,0 +1,37 @@
+{
+  "brand": {
+    "name": "Langkah",
+    "tagline": "Lebih selamat",
+    "pilot": "Perintis Ipoh"
+  },
+  "tabs": {
+    "map": "Peta",
+    "community": "Komuniti",
+    "me": "Saya"
+  },
+  "map": {
+    "a11yLabel": "Peta pusat bandar Ipoh",
+    "credit": "© OpenStreetMap contributors",
+    "creditA11yHint": "Menunjukkan penghargaan peta penuh",
+    "recentre": "Tunjukkan lokasi saya",
+    "loadFailed": "Peta tidak dapat dimuatkan. Semak sambungan internet anda."
+  },
+  "location": {
+    "title": "Langkah perlukan lokasi anda",
+    "body": "Kami gunakannya untuk menunjukkan kedudukan anda dan mencari laluan jalan kaki paling selamat dari sini. Sejarah perjalanan anda tidak pernah disimpan.",
+    "allow": "Benarkan lokasi",
+    "notNow": "Bukan sekarang",
+    "offTitle": "Lokasi dimatikan",
+    "offBody": "Hidupkan dalam Tetapan untuk melihat kedudukan anda pada peta.",
+    "openSettings": "Buka Tetapan",
+    "dismiss": "Tutup"
+  },
+  "community": {
+    "title": "Komuniti",
+    "empty": "Bahaya dan permintaan penambahbaikan berhampiran anda akan dipaparkan di sini."
+  },
+  "me": {
+    "title": "Saya",
+    "empty": "Laporan, tempat tersimpan dan perjalanan anda akan dipaparkan di sini."
+  }
+}
