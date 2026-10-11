@@ -203,20 +203,28 @@ export function RouteLayers({ pair, selected, onSelect, start, end }: Props) {
           <View accessible accessibilityLabel={t('pin.start')} style={styles.startDot} />
         </Marker>
       )}
-      <Marker lngLat={end} anchor="bottom">
-        <View accessible accessibilityLabel={t('pin.destination')}>
-          <Svg width={40} height={50} viewBox="0 0 40 50">
-            <Path
-              d="M20 48 C20 48 36 30 36 18 A16 16 0 1 0 4 18 C4 30 20 48 20 48 Z"
-              fill={colors.navy}
-              stroke={colors.white}
-              strokeWidth={3}
-            />
-            <Circle cx={20} cy={18} r={6} fill={colors.white} />
-          </Svg>
-        </View>
-      </Marker>
+      <DestinationPin at={end} />
     </>
+  );
+}
+
+// Navy drop pin on the destination, shared with the walking screen.
+export function DestinationPin({ at }: { at: LngLat }) {
+  const { t } = useTranslation();
+  return (
+    <Marker lngLat={at} anchor="bottom">
+      <View accessible accessibilityLabel={t('pin.destination')}>
+        <Svg width={40} height={50} viewBox="0 0 40 50">
+          <Path
+            d="M20 48 C20 48 36 30 36 18 A16 16 0 1 0 4 18 C4 30 20 48 20 48 Z"
+            fill={colors.navy}
+            stroke={colors.white}
+            strokeWidth={3}
+          />
+          <Circle cx={20} cy={18} r={6} fill={colors.white} />
+        </Svg>
+      </View>
+    </Marker>
   );
 }
 

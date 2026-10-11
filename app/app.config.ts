@@ -17,9 +17,11 @@ const config: ExpoConfig = {
       foregroundImage: './assets/brand/adaptive-icon-foreground-1024.png',
       backgroundColor: NAVY,
     },
-    // Least privilege. Background location is added in Phase 4, only for active walks.
+    // Least privilege. An active walk keeps its location through a foreground service
+    // with a visible notification, which needs only "while using the app" location,
+    // so ACCESS_BACKGROUND_LOCATION stays blocked. VIBRATE is for turn and hazard pulses.
     // Storage is not needed: photos will use the system photo picker.
-    permissions: ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'],
+    permissions: ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION', 'VIBRATE'],
     blockedPermissions: [
       'ACCESS_BACKGROUND_LOCATION',
       'READ_EXTERNAL_STORAGE',
@@ -35,7 +37,8 @@ const config: ExpoConfig = {
       'expo-location',
       {
         isAndroidBackgroundLocationEnabled: false,
-        isAndroidForegroundServiceEnabled: false,
+        // Adds FOREGROUND_SERVICE and FOREGROUND_SERVICE_LOCATION, used only during a walk.
+        isAndroidForegroundServiceEnabled: true,
       },
     ],
     [

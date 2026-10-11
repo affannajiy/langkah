@@ -1,6 +1,6 @@
 import { Camera, Map, type CameraRef, type LngLat, type LngLatBounds, type MapRef } from '@maplibre/maplibre-react-native';
 import * as Location from 'expo-location';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { MapPinOff, TriangleAlert, X } from 'lucide-react-native';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +25,7 @@ import { useHere } from '../../map/useHere';
 import { UserDot } from '../../map/UserDot';
 import { useLangkahMapStyle } from '../../map/useLangkahMapStyle';
 import { useLocationPermission } from '../../map/useLocationPermission';
+import { setWalk } from '../../nav/walkStore';
 import { useMapView } from '../../map/useMapView';
 import { useScoringMode } from '../../map/useScoringMode';
 import { tabBarStyles } from '../../navigation/tabBar';
@@ -69,6 +70,7 @@ export default function MapScreen() {
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
   const navigation = useNavigation();
+  const router = useRouter();
   const mapStyle = useLangkahMapStyle();
   const { access, request } = useLocationPermission();
   const here = useHere(access);
@@ -295,6 +297,21 @@ export default function MapScreen() {
     });
   }
 
+  // Hand the chosen route to the walking screen. Guidance needs the walker's position.
+  async function startWalk() {
+    if (!pair || !trip || !toLL) return;
+    const ok = access === 'granted' || (await request()) === 'granted';
+    if (!ok) {
+      snackbar.show({ text: t('route.needLocation') });
+      return;
+    }
+    const kind: RouteKind = pair.same ? 'safest' : selected;
+    setWalk({ route: pair[kind], kind, mode, to: { name: label(trip.to) ?? '', lngLat: toLL } });
+    router.push('/navigate');
+    // Back on the map after the walk, the home screen shows again.
+    closeTrip();
+  }
+
   function onSwap() {
     if (!trip?.from) return;
     setTrip({ from: trip.to, to: trip.from });
@@ -398,7 +415,7 @@ export default function MapScreen() {
             onToggleMode={toggleMode}
             selected={selected}
             onSelect={setSelected}
-            onStart={() => snackbar.show({ text: t('route.navSoon') })}
+            onStart={startWalk}
             onRetry={routes.retry}
             onChooseStart={() => setScreen({ kind: 'search', purpose: { kind: 'from' }, back: 'compare' })}
             onHeight={setSheetH}

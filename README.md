@@ -1,6 +1,6 @@
 # Langkah
 
-Pedestrian safety and navigation for Ipoh and Seri Iskandar. Langkah treats the walker the way Waze treats the car: it compares the safest and the fastest walk, shows hazards and crossings, and (from Phase 4) guides you turn by turn.
+Pedestrian safety and navigation for Ipoh and Seri Iskandar. Langkah treats the walker the way Waze treats the car: it compares the safest and the fastest walk, shows hazards and crossings, and guides you turn by turn with hazard alerts on the way.
 
 UTP Technopreneurship Team Project, Group 4. Android only for the MVP.
 
@@ -17,9 +17,10 @@ UTP Technopreneurship Team Project, Group 4. Android only for the MVP.
 | 0 | Expo app, theme, fonts, tab bar, map with OpenFreeMap, location permission, EN and BM | Done |
 | 1 | Supabase schema with RLS, OSM data loaded, routing network and safety scores | Done |
 | 2 | `search_places` and `route_safe` (safest and fastest walk, day and night scoring) | Done |
-| 3 | Map home, search sheet and route compare screens | Done, being reviewed |
-| 4 | Walking navigation with haptics | Next |
-| 5 to 7 | Reports, community, Me tab, demo walk mode and preview APK | To do |
+| 3 | Map home, search sheet and route compare screens | Done |
+| 4 | Walking navigation, hazard banner, quick report, haptics | Done, being reviewed |
+| 5 | Sign-in, report flow, community tab, report expiry | Next |
+| 6 and 7 | Arrival, Me tab, onboarding, demo readiness and preview APK | To do |
 
 ### Pilot areas
 
@@ -53,12 +54,16 @@ The budget is RM0: every service above is free and none needs a card.
 | `app/` | The Expo app. Screens live in `app/src/app/` (Expo Router). |
 | `app/src/api/` | Supabase client and typed calls (`search_places`, `route_safe`, `map_in_view`) |
 | `app/src/features/map/` | Map tab pieces: search sheet, compare sheet, trip bar, home controls, layers |
+| `app/src/app/navigate.tsx` | The walking screen, shown above the tabs |
+| `app/src/features/nav/` | Walking screen pieces: instruction card, hazard banner, bottom bar, quick report sheet, route layers |
+| `app/src/nav/` | Walk engine: line snapping, off-route and arrival, haptics, walk location service |
 | `app/src/map/` | Map config (pilot areas), pins, route lines, user dot, location hooks |
 | `app/src/components/` | Shared UI: text, buttons, sheets, chips, route cards, snackbar |
+| `app/src/storage/` | On-phone storage: saved and recent places, the report queue |
 | `app/src/i18n/locales/` | `en.json` and `ms.json` |
 | `app/src/theme/theme.ts` | All design tokens (colours, spacing, radii, type) |
 | `supabase/migrations/` | Every schema change, function and RLS policy, in order |
-| `data-scripts/` | `ipoh_extract.py` (clip and check OSM data) and `load_to_supabase.py` (load and build the network). `raw/`, `out/` and `.venv/` are git-ignored. |
+| `data-scripts/` | `ipoh_extract.py` (clip and check OSM data), `load_to_supabase.py` (load and build the network) and `seed_demo.py` (demo hazards and walk). `raw/`, `out/` and `.venv/` are git-ignored. |
 | `docs/` | The guide, colour scheme, architecture diagram and final screen PNGs |
 | `assets/logo/` | Master logo files. `app/assets/brand/` holds the copies the build uses. |
 | `rulebooks/` | Engineering, security and UI/UX rulebooks |
@@ -88,7 +93,7 @@ See [SETUP_CHECKLIST.md](SETUP_CHECKLIST.md) for the full list of tools and free
 
 Expo Go cannot run MapLibre, so we use our own **development build**: an APK with the native code, which loads the JavaScript live from your laptop.
 
-1. **Build the development APK** (first time, and again only when a native package is added or changed, for example AsyncStorage in Phase 3). Inside `app/`:
+1. **Build the development APK** (first time, and again only when a native package or a permission changes: AsyncStorage in Phase 3, `expo-task-manager` and the walk permissions in Phase 4). Inside `app/`:
    ```bash
    eas build -p android --profile development
    ```
@@ -102,7 +107,11 @@ Expo Go cannot run MapLibre, so we use our own **development build**: an APK wit
 4. **Fake your location.** In the emulator, click **...** (Extended controls), then **Location**. Search for a place and click **Set location**:
    - Ipoh Railway Station: 4.597368, 101.073437
    - UTP: 4.38545, 100.97958
-5. **Fake a walk** (for Phase 4): in **Location**, open **Routes**, set a start and an end in Ipoh Old Town and press **Play route**.
+5. **Fake a walk** with the demo GPX (see section 5, "Demo hazards"):
+   1. Set the location to Ipoh Railway Station and restart the app.
+   2. Search **Concubine Lane**, pick the **Fastest** card and press Start.
+   3. In **Extended controls**, **Location**, choose **Load GPX/KML**, open `data-scripts/out/demo-walk.gpx` and press **Play**. Raise the playback speed to go faster.
+   4. Expect turn cards, three hazard banners, then "You have arrived". Start the **Safest** walk instead to see an off-route reroute.
 
 Saving a file reloads the app on the emulator. Shake (Ctrl+M) opens the dev menu.
 
@@ -203,6 +212,20 @@ Copy `data-scripts/.env.example` to `data-scripts/.env` and put in the **Session
    ```
    It rebuilds the routing network and the day and night safety scores, and prints a coverage summary.
 
+### Demo hazards (testing and the demo)
+
+The `reports` table is empty until people report (Phase 5). To test hazard banners and routing around hazards, add three demo hazards on the walk from Ipoh Railway Station to Concubine Lane:
+
+```bash
+python seed_demo.py
+```
+
+It also writes `out/demo-walk.gpx`, the fastest line of that walk, for the emulator to play back (section 2, step 5). Run it again to refresh the hazards. Remove them before a real launch:
+
+```bash
+python seed_demo.py --clear
+```
+
 ### Add a new pilot area
 
 1. Add it to `AREAS` in `data-scripts/ipoh_extract.py`.
@@ -234,14 +257,18 @@ Then test the phase's steps on the emulator (each phase in `CHANGELOG.md` lists 
 - Only `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` go in the app. The anon key is safe to ship because RLS protects every table.
 - The **service role key** and the **database password** never go in the app, in git or in chat. `.env` files are git-ignored; keep the `.env.example` files up to date.
 - Every new table turns on RLS in the same migration that creates it.
-- Location stays on the phone. It is only sent as the start of a route request and never stored.
+- Location stays on the phone. It is only sent as the start of a route request (including a reroute) and never stored.
+- During a walk, location runs as a foreground service with a visible notification and stops when the walk ends. Langkah never asks for "Allow all the time" location (`ACCESS_BACKGROUND_LOCATION` is blocked).
+- Quick reports and Still there / Gone answers wait on the phone until sign-in (Phase 5).
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---|---|
 | Dev launcher cannot find the server | Make sure `npx expo start` is running in `app/`, then enter `http://10.0.2.2:8081` in the launcher. |
-| App crashes after `npm install` added a native package | Build a new development APK (section 2, step 1). |
+| App crashes after `npm install` added a native package (for example "Cannot find native module 'ExpoTaskManager'") | Build a new development APK (section 2, step 1). |
+| No hazard banner during the demo walk | Run `python seed_demo.py` again (hazards are active for 7 days), and start the **Fastest** walk, since Safest avoids the hazards. |
+| The phone does not vibrate on the emulator | The emulator has no vibration motor. Check `adb shell dumpsys vibrator_manager`, or test on a real phone. |
 | Map is blank | Check the emulator has internet. Tiles come from OpenFreeMap. |
 | "Outside the pilot areas" | Set the emulator location inside one of the pilot boxes (section 2, step 4). |
 | Search or routes fail | Check `app/.env`, then the Supabase project status in the dashboard. |

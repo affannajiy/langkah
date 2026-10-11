@@ -117,7 +117,7 @@
     "cardHint": "Selects this route",
     "startSafest": "Start safest walk",
     "startFastest": "Start fastest walk",
-    "navSoon": "Walking navigation comes in the next update.",
+    "needLocation": "Allow location so Langkah can guide your walk.",
     "same": "The safest walk is also the fastest.",
     "loading": "Finding the safest walk…",
     "details": "Route details",
@@ -158,6 +158,77 @@
       "generic": "Something went wrong planning this walk. Try again."
     },
     "retry": "Try again"
+  },
+  "nav": {
+    "mapA11y": "Walking map, turning with your walking direction",
+    "notice": {
+      "title": "Langkah is guiding your walk",
+      "body": "Walking to {{name}}. Location is used only until you arrive or end the walk."
+    },
+    "step": {
+      "depart": "Head along {{street}}",
+      "departNoName": "Start walking",
+      "left": "Turn left onto {{street}}",
+      "leftNoName": "Turn left",
+      "right": "Turn right onto {{street}}",
+      "rightNoName": "Turn right",
+      "slight_left": "Keep left onto {{street}}",
+      "slight_leftNoName": "Keep left",
+      "slight_right": "Keep right onto {{street}}",
+      "slight_rightNoName": "Keep right",
+      "straight": "Continue onto {{street}}",
+      "straightNoName": "Continue straight",
+      "cross_marked": "Cross at the zebra crossing",
+      "cross_signals": "Cross at the traffic lights",
+      "cross_unmarked": "Cross with care. There is no marked crossing",
+      "arrive": "Arrive at {{name}}"
+    },
+    "landmark": {
+      "crossing": "At the zebra crossing",
+      "signals": "At the traffic lights",
+      "bus_stop": "At the bus stop",
+      "shelter": "At the shelter",
+      "named": "At {{name}}"
+    },
+    "now": "Now",
+    "waiting": "Finding you…",
+    "waitingBody": "Waiting for your location",
+    "toRoute": "Walk to the start of the route",
+    "arrivedTitle": "You have arrived",
+    "left": "{{distance}} left · {{name}}",
+    "end": "End",
+    "endA11y": "End walk",
+    "done": "Done",
+    "quickReport": "Quick report",
+    "recentre": "Follow my position",
+    "backAgain": "Press back again to end the walk.",
+    "hazard": {
+      "title": "{{hazard}} in {{distance}}",
+      "beforeCrossing": "Just before the marked crossing",
+      "afterCrossing": "Just after the marked crossing",
+      "onStreet": "On {{street}}",
+      "stillThere": "Still there",
+      "gone": "Gone",
+      "answerHint": "Helps other walkers know if this hazard is still there",
+      "thanks": "Thanks. Your answer is saved and is sent once you sign in."
+    },
+    "reroute": {
+      "finding": "Off the route. Finding a new walk from here…",
+      "back": "Back on route",
+      "failed": "Could not find a new walk. Head back to the route line."
+    }
+  },
+  "quick": {
+    "title": "Quick report",
+    "pinned": "Pinned where you are, on {{street}}",
+    "pinnedNoStreet": "Pinned where you are",
+    "waitingFix": "Waiting for your location…",
+    "tileHint": "Pins this hazard where you are and sends it in 3 seconds",
+    "sending": "Sending in {{count}} s",
+    "footer": "Saved on your phone first, so no signal is fine. It is sent once you sign in.",
+    "saved": "Report saved. It is sent once you sign in.",
+    "failed": "Could not save that. Try again.",
+    "close": "Close quick report"
   },
   "layers": {
     "title": "Map layers",

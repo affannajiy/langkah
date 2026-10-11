@@ -75,6 +75,17 @@ export type RouteError =
   | 'network'
   | 'generic';
 
+// Hazard categories, in the order of the Quick report tiles (docs/screens/QuickReport.png).
+export const HAZARD_CATEGORIES = [
+  'broken_sidewalk',
+  'blocked_path',
+  'no_light',
+  'unsafe_crossing',
+  'flooding',
+  'other',
+] as const;
+export type HazardCategory = (typeof HAZARD_CATEGORIES)[number];
+
 export type MapAmenityKind = 'crossing' | 'bus_stop' | 'shelter';
 
 export type MapView = {

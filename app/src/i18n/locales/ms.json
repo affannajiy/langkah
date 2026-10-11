@@ -117,7 +117,7 @@
     "cardHint": "Memilih laluan ini",
     "startSafest": "Mula jalan paling selamat",
     "startFastest": "Mula jalan paling pantas",
-    "navSoon": "Navigasi jalan kaki akan tiba dalam kemas kini seterusnya.",
+    "needLocation": "Benarkan lokasi supaya Langkah boleh memandu perjalanan anda.",
     "same": "Laluan paling selamat juga yang paling pantas.",
     "loading": "Mencari laluan paling selamat…",
     "details": "Butiran laluan",
@@ -158,6 +158,77 @@
       "generic": "Ada masalah semasa merancang perjalanan ini. Cuba lagi."
     },
     "retry": "Cuba lagi"
+  },
+  "nav": {
+    "mapA11y": "Peta berjalan, berpusing mengikut arah anda berjalan",
+    "notice": {
+      "title": "Langkah sedang memandu perjalanan anda",
+      "body": "Berjalan ke {{name}}. Lokasi digunakan hanya sehingga anda tiba atau menamatkan perjalanan."
+    },
+    "step": {
+      "depart": "Jalan di sepanjang {{street}}",
+      "departNoName": "Mula berjalan",
+      "left": "Belok kiri ke {{street}}",
+      "leftNoName": "Belok kiri",
+      "right": "Belok kanan ke {{street}}",
+      "rightNoName": "Belok kanan",
+      "slight_left": "Ikut kiri ke {{street}}",
+      "slight_leftNoName": "Ikut kiri",
+      "slight_right": "Ikut kanan ke {{street}}",
+      "slight_rightNoName": "Ikut kanan",
+      "straight": "Terus ke {{street}}",
+      "straightNoName": "Jalan terus",
+      "cross_marked": "Lintas di lintasan zebra",
+      "cross_signals": "Lintas di lampu isyarat",
+      "cross_unmarked": "Lintas dengan berhati-hati. Tiada lintasan bertanda",
+      "arrive": "Tiba di {{name}}"
+    },
+    "landmark": {
+      "crossing": "Di lintasan zebra",
+      "signals": "Di lampu isyarat",
+      "bus_stop": "Di perhentian bas",
+      "shelter": "Di tempat berteduh",
+      "named": "Di {{name}}"
+    },
+    "now": "Sekarang",
+    "waiting": "Mencari anda…",
+    "waitingBody": "Menunggu lokasi anda",
+    "toRoute": "Jalan ke permulaan laluan",
+    "arrivedTitle": "Anda sudah tiba",
+    "left": "{{distance}} lagi · {{name}}",
+    "end": "Tamat",
+    "endA11y": "Tamatkan perjalanan",
+    "done": "Selesai",
+    "quickReport": "Laporan pantas",
+    "recentre": "Ikut kedudukan saya",
+    "backAgain": "Tekan kembali sekali lagi untuk menamatkan perjalanan.",
+    "hazard": {
+      "title": "{{hazard}} dalam {{distance}}",
+      "beforeCrossing": "Sejurus sebelum lintasan bertanda",
+      "afterCrossing": "Sejurus selepas lintasan bertanda",
+      "onStreet": "Di {{street}}",
+      "stillThere": "Masih ada",
+      "gone": "Sudah tiada",
+      "answerHint": "Membantu pejalan kaki lain tahu sama ada bahaya ini masih ada",
+      "thanks": "Terima kasih. Jawapan anda disimpan dan dihantar sebaik sahaja anda log masuk."
+    },
+    "reroute": {
+      "finding": "Terkeluar dari laluan. Mencari laluan baharu dari sini…",
+      "back": "Kembali ke laluan",
+      "failed": "Laluan baharu tidak dijumpai. Kembali ke garisan laluan."
+    }
+  },
+  "quick": {
+    "title": "Laporan pantas",
+    "pinned": "Dipin di tempat anda berada, di {{street}}",
+    "pinnedNoStreet": "Dipin di tempat anda berada",
+    "waitingFix": "Menunggu lokasi anda…",
+    "tileHint": "Pin bahaya ini di tempat anda dan hantar dalam 3 saat",
+    "sending": "Menghantar dalam {{count}} s",
+    "footer": "Disimpan dalam telefon dahulu, jadi tiada isyarat pun tidak mengapa. Ia dihantar sebaik sahaja anda log masuk.",
+    "saved": "Laporan disimpan. Ia dihantar sebaik sahaja anda log masuk.",
+    "failed": "Tidak dapat menyimpan. Cuba lagi.",
+    "close": "Tutup laporan pantas"
   },
   "layers": {
     "title": "Lapisan peta",

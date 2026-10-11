@@ -36,6 +36,12 @@ export const colors = {
   routeFastest: '#5B6472',
   routeOutline: '#FFFFFF',
 
+  // Walked part of the line during a walk
+  routeWalked: '#A7B0BC',
+
+  // Raised box on navy (turn arrow on the instruction card)
+  navyRaised: '#1E3F66',
+
   // The user's position dot and its soft halo
   userDot: '#1F6FB2',
   userHalo: 'rgba(86, 180, 233, 0.3)',

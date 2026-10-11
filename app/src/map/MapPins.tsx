@@ -5,12 +5,16 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 
-import type { MapView } from '../api/types';
+import { HAZARD_CATEGORIES, type HazardCategory, type MapView } from '../api/types';
 import { colors, radius } from '../theme/theme';
 
 export type LayerToggles = { crossings: boolean; busStops: boolean; shelters: boolean };
 
-const HAZARD_KEYS = new Set(['broken_sidewalk', 'blocked_path', 'no_light', 'unsafe_crossing', 'flooding']);
+const HAZARD_KEYS = new Set<string>(HAZARD_CATEGORIES);
+
+// Unknown categories from the server read as "Other hazard".
+export const hazardKey = (category: string): HazardCategory =>
+  HAZARD_KEYS.has(category) ? (category as HazardCategory) : 'other';
 
 // Hazard pin: orange diamond with a dark outline and "!", like a Malaysian road
 // warning sign (CLAUDE.md, Final design).
@@ -25,7 +29,7 @@ export function HazardMark({ size = 36 }: { size?: number }) {
 }
 
 // Marked crossing: light blue rounded square with zebra stripes.
-function CrossingMark() {
+export function CrossingMark() {
   return (
     <View style={[styles.square, { backgroundColor: colors.interactive }]}>
       <Svg width={16} height={14} viewBox="0 0 16 14">
@@ -106,7 +110,7 @@ export const MapPins = memo(function MapPins({ view, toggles }: Props) {
           <View
             accessible
             accessibilityLabel={t('pin.hazard', {
-              category: t(`hazard.${HAZARD_KEYS.has(h.category) ? h.category : 'other'}` as 'hazard.other'),
+              category: t(`hazard.${hazardKey(h.category)}`),
             })}
           >
             <HazardMark />

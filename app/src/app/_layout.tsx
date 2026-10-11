@@ -1,6 +1,8 @@
 import '../i18n';
+// Registers the walk location task before Android can deliver a fix to it.
+import '../nav/walkLocation';
 
-import { Slot } from 'expo-router';
+import Stack from 'expo-router/stack';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useState } from 'react';
@@ -24,7 +26,8 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <View style={styles.root}>
         <StatusBar style={loading ? 'light' : 'dark'} />
-        <Slot />
+        {/* Tabs, plus the walking screen on top of them without the tab bar. */}
+        <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
         {loading && <LoadingScreen onLayout={hideNativeSplash} onDone={finishLoading} />}
       </View>
     </SafeAreaProvider>

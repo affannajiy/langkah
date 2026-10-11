@@ -1,5 +1,53 @@
 # Changelog
 
+## Phase 4: Walking navigation (2026-10-11)
+
+### Added
+- **Walking screen** (guide Section 6.3 screen 4, `docs/screens/Navigation.png`), `app/src/app/navigate.tsx`:
+  - Full screen above the tabs (the root layout is now a Stack), so there is no tab bar while walking.
+  - Navy instruction card: turn arrow, distance to the next step ("Now" under 10 m), the street, and a landmark from `route_safe` ("At the zebra crossing", "At Yoon Wah"). Crossings say what kind they are. Wording is by street and landmark, never by side of the road.
+  - Heading-up map that follows the walker. On the line it turns with the route's direction over the next 20 m; off the line it uses the GPS course. Moving the map stops following; a recentre button brings it back.
+  - Only the active route: walked part grey, the rest in its own pattern (safest solid teal, fastest dashed grey), plus hazards and marked crossings within 15 m and 10 m of the line, and the destination pin.
+  - Bottom bar: End, minutes and distance left with the destination, and an orange Quick report button.
+  - Android back closes Quick report first, then needs a second press within 3 s to end the walk (no dialog during a walk, Section 5.3).
+- **Walk engine** (`app/src/nav/`):
+  - Snaps each fix to the line, preferring the part near the last progress, so a route that passes itself does not jump.
+  - **Off route:** more than 30 m from the line for 3 fixes in a row (fixes worse than 40 m accuracy never count). It reroutes from where you are with the same route kind, at most every 15 s, then shows "Back on route". Before you first reach the line, the card says how far away it is instead.
+  - **Arrival:** within 20 m of the end. One long pulse, the card and bar say "You have arrived", location stops, and End becomes Done. The full Arrival screen is Phase 6.
+- **Haptics** (`app/src/nav/haptics.ts`, React Native `Vibration`): one short pulse 20 m before a turn or crossing, two pulses for a hazard, one long pulse on arrival.
+- **Hazard banner** (screen 4): when an active hazard on the route is 50 m ahead, an orange-edged banner slides under the card ("Broken sidewalk in 50 m", "Just before the marked crossing" or "On Jalan Dato Sagor") with Still there and Gone and a 6 s countdown line, then hides itself. Each hazard alerts once. Hazards come from `map_in_view` over small boxes along the line, so there is no new server function.
+- **Quick report** (screen 5, `QuickReport.png`): a sheet with six tiles. One tap pins the hazard where you were when you opened it and sends after a 3 s countdown with Undo. The subtitle names the street you are on.
+- **Offline queue** (`app/src/storage/reportQueue.ts`): quick reports and Still there / Gone answers are saved on the phone (AsyncStorage, 5-decimal coordinates, at most 50 each).
+- **Location during a walk** (`app/src/nav/walkLocation.ts`): an Android foreground service with a notification ("Langkah is guiding your walk") keeps fixes coming with the screen off. It starts with the walk and stops on End, arrival or leaving the screen. If Android refuses the service, the walk falls back to updates while the app is open.
+- **Demo hazards** (`data-scripts/seed_demo.py`, pulled forward from Phase 7):
+  - One demo account (no password, cannot sign in) with three active hazards on the walk from Ipoh Railway Station to Concubine Lane.
+  - It writes `out/demo-walk.gpx` (the fastest line, a point every 5 m at 1.3 m/s) for the emulator to play back.
+  - `--clear` removes the account and its hazards.
+- Start on route compare now opens the walking screen. It asks for location first if needed.
+
+### Dependencies
+- `expo-task-manager` ~57.0.21 (Expo's own, free), for the walk location task. **A new development build is needed** (`eas build -p android --profile development`).
+
+### Permissions
+- `isAndroidForegroundServiceEnabled: true` adds `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_LOCATION`. `VIBRATE` is added for haptics.
+- `ACCESS_BACKGROUND_LOCATION` stays blocked. The installed expo-location (`LocationModule.kt`) starts a user-started foreground service with "while using the app" location, so Langkah never asks for "Allow all the time". This is less than the kickoff's "background location, asked for at the first walk" and gives the same result: the walk keeps going with the screen off.
+
+### Decisions
+- **Reports wait on the phone until Phase 5.** RLS lets only signed-in (not anonymous) users insert reports and votes (Section 7.2), and sign-in is Phase 5. The copy says so honestly ("It is sent once you sign in") instead of the design's "Reported". Phase 5 sends the queue after sign-in and can switch the copy back.
+- Test values: off route 30 m × 3 fixes, turn pulse at 20 m, hazard banner at 50 m, arrival at 20 m, camera zoom 17.5. Tune them after real walks.
+- No vote count on the banner ("3 walkers confirmed") yet. Counts come from Phase 5's server functions.
+
+### Results
+- Seeding added 3 hazards. The safest walk from the station to Concubine Lane went from 704 m to 827 m to avoid them; the fastest stays at 637 m through all three.
+- Replaying `demo-walk.gpx` through the engine maths with the real route: on Fastest, banners fire 48 m before each hazard (at 153, 283 and 533 m) and arrival at 623 m. On Safest, the track leaves the line and a reroute fires at 148 m.
+- `npm run typecheck` passes and expo-doctor passes 21/21. Not yet tested on the emulator: it needs the new development build.
+
+### Known issues
+- The emulator has no vibration motor, so haptics only show in `adb shell dumpsys vibrator_manager`. Test pulses on a real phone.
+- The Settings toggle for alert vibration (Section 5.2 screen 18) is P2 and not built.
+- After a reroute on Safest, the GPX keeps walking the fastest line, so it reroutes again every 15 s. Real walkers follow the new line.
+- Demo hazards expire in 7 days by the trigger's date, but nothing expires them yet (nightly job is Phase 5). Run `seed_demo.py --clear` before a real launch.
+
 ## Phase 3: Core screens (2026-10-11)
 
 ### Added
