@@ -16,7 +16,7 @@ export const colors = {
   // Text-safe variants (4.5:1 or better)
   textMuted: '#4B5563',
   interactiveText: '#1F6FB2',
-  safeText: '#007A5A',
+  safeText: '#006B4F',
   hazardText: '#8A5A00',
   communityText: '#A0457A',
   onNavyAccent: '#B9D9F2',
@@ -68,6 +68,10 @@ export const radius = {
 export const touchTarget = 48;
 
 export const fontFamily = 'AtkinsonHyperlegibleNext';
+
+// Largest text scale for controls that float over the map and for the tab bar.
+// Lists, settings and report details follow the phone's font size fully.
+export const chromeTextScale = 1.3;
 
 // Type scale from Section 6.2. Sizes in sp. Nothing under 14 except the map credit.
 export const type = {

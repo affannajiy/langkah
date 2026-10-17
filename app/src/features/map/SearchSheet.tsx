@@ -11,6 +11,7 @@ import {
   StyleSheet,
   TextInput,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -23,7 +24,7 @@ import { formatDistance } from '../../i18n/format';
 import { isInPilotArea } from '../../map/config';
 import { placeIcon, SAVED_ICONS } from '../../map/placeIcon';
 import { SAVED_KEYS, type SavedKey, type SavedPlaces, type StoredPlace } from '../../storage/places';
-import { colors, fontFamily, radius, shadow, spacing, touchTarget, type } from '../../theme/theme';
+import { chromeTextScale, colors, fontFamily, radius, shadow, spacing, touchTarget, type } from '../../theme/theme';
 
 // What the picked place is for.
 export type SearchPurpose = { kind: 'to' } | { kind: 'from' } | { kind: 'save'; key: SavedKey };
@@ -287,6 +288,8 @@ function PlaceRow({ place, onPress, icon }: { place: Place; onPress: () => void;
   const outside = !isInPilotArea(place.lngLat);
   const distance = place.distM != null ? formatDistance(place.distM) : null;
   const sub = outside ? t('search.outsidePilot') : place.area;
+  // With big phone text the distance moves under the name, so the name keeps the width.
+  const stacked = useWindowDimensions().fontScale > chromeTextScale;
 
   return (
     <Pressable
@@ -299,16 +302,17 @@ function PlaceRow({ place, onPress, icon }: { place: Place; onPress: () => void;
         <Icon size={22} color={colors.navy} />
       </View>
       <View style={styles.rowText}>
-        <AppText variant="bodyStrong" color={colors.text} numberOfLines={1}>
+        <AppText variant="bodyStrong" color={colors.text} numberOfLines={2}>
           {place.name}
         </AppText>
         {sub && (
-          <AppText color={colors.textMuted} numberOfLines={1}>
+          <AppText color={colors.textMuted} numberOfLines={2}>
             {sub}
           </AppText>
         )}
+        {stacked && distance && <AppText color={colors.textMuted}>{distance}</AppText>}
       </View>
-      {distance && <AppText color={colors.textMuted}>{distance}</AppText>}
+      {!stacked && distance && <AppText color={colors.textMuted}>{distance}</AppText>}
     </Pressable>
   );
 }

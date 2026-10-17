@@ -525,6 +525,7 @@
     "about": "Perihal",
     "version": "Langkah {{version}}, Kumpulan 4 Teknousahawan UTP",
     "credits": "Data peta © penyumbang OpenStreetMap, di bawah Open Database License. Gaya peta daripada OpenFreeMap.",
+    "photoCredits": "Foto laporan demo daripada Wikimedia Commons, diambil di tempat lain di Malaysia: Encik Tekateki (CC BY-SA 4.0), Wiki Asmah (CC BY 4.0), Two hundred percent (CC BY-SA 2.5) dan Taufik (CC BY-SA 4.0).",
     "osm": "Hak cipta dan lesen OpenStreetMap"
   },
   "welcome": {
@@ -538,5 +539,12 @@
     "reasonReport": "Menanda laporan di tempat anda berdiri",
     "privacy": "Lokasi kekal dalam telefon anda. Langkah tidak pernah menyimpan sejarah tempat anda berjalan.",
     "asking": "Sedang meminta…"
+  },
+  "batteryTip": {
+    "title": "Pastikan perjalanan terus dipandu",
+    "body": "Telefon ini mungkin menghentikan aplikasi di latar belakang untuk menjimatkan bateri. Langkah tidak dapat mengikut perjalanan anda apabila skrin dimatikan.",
+    "steps": "Dalam Tetapan, buka Bateri (atau Pelancaran aplikasi) untuk Langkah dan benarkan ia berjalan di latar belakang.",
+    "openSettings": "Buka Tetapan",
+    "start": "Mula berjalan"
   }
 }

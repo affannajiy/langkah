@@ -125,6 +125,7 @@ export default function SettingsScreen() {
         <Section title={t('settings.about')}>
           <AppText color={colors.text}>{t('settings.version', { version: Constants.expoConfig?.version ?? '' })}</AppText>
           <AppText color={colors.text}>{t('settings.credits')}</AppText>
+          <AppText color={colors.text}>{t('settings.photoCredits')}</AppText>
           <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(OSM_COPYRIGHT)} style={styles.link}>
             <AppText variant="bodyStrong" color={colors.interactiveText}>
               {t('settings.osm')}

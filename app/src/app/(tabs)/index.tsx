@@ -10,7 +10,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { streetAt } from '../../api/reports';
 import type { RouteError, RoutePair } from '../../api/types';
 import { useAuth } from '../../auth/AuthProvider';
-import { AppText } from '../../components/AppText';
+import { AppText, TextScaleCap } from '../../components/AppText';
+import { BatteryTipSheet, hasStrictBatterySaver } from '../../components/BatteryTipSheet';
 import { LocationSheet } from '../../components/LocationSheet';
 import { MapCredit } from '../../components/MapCredit';
 import { StatusBanner } from '../../components/StatusBanner';
@@ -33,13 +34,13 @@ import { useLocationPermission } from '../../map/useLocationPermission';
 import { setWalk, takeReportAfterWalk } from '../../nav/walkStore';
 import { useMapView } from '../../map/useMapView';
 import { useScoringMode } from '../../map/useScoringMode';
-import { tabBarStyles } from '../../navigation/tabBar';
+import { tabBarStyles, useTabBarStyle } from '../../navigation/tabBar';
 import { useOnline } from '../../net/useOnline';
 import { useRoutes } from '../../route/useRoutes';
 import { takeChooseSaved, useRecentPlaces, useSavedPlaces, type SavedKey, type StoredPlace } from '../../storage/places';
 import { flushQueue, queuedCount } from '../../storage/reportQueue';
 import { updateSettings, useSettings } from '../../storage/settings';
-import { colors, radius, shadow, spacing } from '../../theme/theme';
+import { chromeTextScale, colors, radius, shadow, spacing } from '../../theme/theme';
 
 const RECENTRE_ZOOM = 16;
 const PIN_ZOOM = 18;
@@ -115,7 +116,8 @@ export default function MapScreen() {
   const [pinStreet, setPinStreet] = useState<string | null>(null);
   // The route just walked, drawn faintly when the report flow opens from Arrival.
   const [trail, setTrail] = useState<LngLat[] | null>(null);
-  const { layers: toggles, locationAsked } = useSettings();
+  const { layers: toggles, locationAsked, batteryTipSeen } = useSettings();
+  const [batteryTip, setBatteryTip] = useState(false);
 
   const home = screen.kind === 'home';
   const comparing = screen.kind === 'compare';
@@ -126,9 +128,10 @@ export default function MapScreen() {
   const pinY = (screenH - reportH) / 2;
 
   // Search and route compare use the whole screen (docs/screens/Search.png, RouteCompare.png).
+  const tabBarStyle = useTabBarStyle();
   useLayoutEffect(() => {
-    navigation.setOptions({ tabBarStyle: home ? tabBarStyles.bar : tabBarStyles.hidden });
-  }, [navigation, home]);
+    navigation.setOptions({ tabBarStyle: home ? tabBarStyle : tabBarStyles.hidden });
+  }, [navigation, home, tabBarStyle]);
 
   // --- location permission (Phase 0 behaviour, unchanged) ---------------
 
@@ -261,6 +264,7 @@ export default function MapScreen() {
 
   const closeTrip = useCallback(() => {
     setTrip(null);
+    setBatteryTip(false);
     setScreen({ kind: 'home' });
   }, []);
 
@@ -333,6 +337,16 @@ export default function MapScreen() {
       snackbar.show({ text: t('route.needLocation') });
       return;
     }
+    // Once, on brands with strict battery savers: how to keep the walk running.
+    if (!batteryTipSeen && hasStrictBatterySaver()) {
+      setBatteryTip(true);
+      return;
+    }
+    beginWalk();
+  }
+
+  function beginWalk() {
+    if (!pair || !trip || !toLL) return;
     const kind: RouteKind = pair.same ? 'safest' : selected;
     setWalk({
       route: pair[kind],
@@ -484,186 +498,203 @@ export default function MapScreen() {
   const snackBottom = (comparing ? sheetH : home ? peekH : reporting ? reportH : 0) + spacing.md;
 
   return (
-    <View style={[styles.root, { backgroundColor: mapLand }]}>
-      {mapStyle && (
-        <Map
-          ref={mapRef}
-          mapStyle={mapStyle}
-          accessibilityLabel={t('map.a11yLabel')}
-          attribution={false}
-          logo={false}
-          compass={false}
-          onDidFailLoadingMap={() => setMapFailed(true)}
-          onDidFinishLoadingMap={() => setMapFailed(false)}
-          onRegionDidChange={(e) => {
-            if (placing) void readPin();
-            setViewBounds(e.nativeEvent.bounds);
-            mapView.onViewChange(e.nativeEvent.bounds, e.nativeEvent.zoom);
-          }}
-        >
-          <Camera ref={cameraRef} initialViewState={{ bounds: IPOH_BOUNDS }} minZoom={MIN_ZOOM} maxZoom={MAX_ZOOM} />
-          <MapPins view={mapView.view} toggles={toggles} />
-          {reporting && trail && <TrailLayer points={trail} />}
-          {comparing && pair && toLL && (
-            <RouteLayers
-              pair={pair}
-              selected={selected}
-              onSelect={setSelected}
-              start={trip?.from?.kind === 'place' ? fromLL : null}
-              end={toLL}
-            />
-          )}
-          {access === 'granted' && here && <UserDot at={here} />}
-        </Map>
-      )}
-
-      {home && (
-        <>
-          <HomeTopControls
-            mode={mode}
-            onToggleMode={toggleMode}
-            onSearch={() => setScreen({ kind: 'search', purpose: { kind: 'to' }, back: 'home' })}
-            saved={saved}
-            onSavedPress={onSavedPress}
-            onSavedLongPress={onSavedLongPress}
-            onLayers={() => setLayersOpen(true)}
-          />
-          <HomeBottomControls
-            bottom={peekH + spacing.md}
-            credit={credit}
-            onRecentre={() => (access === 'granted' ? flyToMe() : setLocationSheet(true))}
-            onReport={() => openReport()}
-          />
-          <PeekSheet state={mapView.state} nearUser={nearUser} onLayout={setPeekH} />
-          {/* Above the Report button: recentre (56) + gap + Report (64). */}
-          <View style={[styles.status, { bottom: peekH + spacing.md * 3 + 120 }]} pointerEvents="box-none">
-            {!online && <StatusBanner icon={CloudOff} text={t('offline.banner')} />}
-            {online && access === 'granted' && !servicesOn && (
-              <StatusBanner
-                icon={LocateOff}
-                text={t('location.servicesOff')}
-                action={{ label: t('location.turnOn'), onPress: () => void turnOnServices() }}
+    // Controls over the map cap big phone text; the search, report and layer sheets do not.
+    <TextScaleCap.Provider value={chromeTextScale}>
+      <View style={[styles.root, { backgroundColor: mapLand }]}>
+        {mapStyle && (
+          <Map
+            ref={mapRef}
+            mapStyle={mapStyle}
+            accessibilityLabel={t('map.a11yLabel')}
+            attribution={false}
+            logo={false}
+            compass={false}
+            onDidFailLoadingMap={() => setMapFailed(true)}
+            onDidFinishLoadingMap={() => setMapFailed(false)}
+            onRegionDidChange={(e) => {
+              if (placing) void readPin();
+              setViewBounds(e.nativeEvent.bounds);
+              mapView.onViewChange(e.nativeEvent.bounds, e.nativeEvent.zoom);
+            }}
+          >
+            <Camera ref={cameraRef} initialViewState={{ bounds: IPOH_BOUNDS }} minZoom={MIN_ZOOM} maxZoom={MAX_ZOOM} />
+            <MapPins view={mapView.view} toggles={toggles} />
+            {reporting && trail && <TrailLayer points={trail} />}
+            {comparing && pair && toLL && (
+              <RouteLayers
+                pair={pair}
+                selected={selected}
+                onSelect={setSelected}
+                start={trip?.from?.kind === 'place' ? fromLL : null}
+                end={toLL}
               />
             )}
+            {access === 'granted' && here && <UserDot at={here} />}
+          </Map>
+        )}
+
+        {home && (
+          <>
+            <HomeTopControls
+              mode={mode}
+              onToggleMode={toggleMode}
+              onSearch={() => setScreen({ kind: 'search', purpose: { kind: 'to' }, back: 'home' })}
+              saved={saved}
+              onSavedPress={onSavedPress}
+              onSavedLongPress={onSavedLongPress}
+              onLayers={() => setLayersOpen(true)}
+            />
+            <HomeBottomControls
+              bottom={peekH + spacing.md}
+              credit={credit}
+              onRecentre={() => (access === 'granted' ? flyToMe() : setLocationSheet(true))}
+              onReport={() => openReport()}
+            />
+            <PeekSheet state={mapView.state} nearUser={nearUser} onLayout={setPeekH} />
+            {/* Above the Report button: recentre (56) + gap + Report (64). */}
+            <View style={[styles.status, { bottom: peekH + spacing.md * 3 + 120 }]} pointerEvents="box-none">
+              {!online && <StatusBanner icon={CloudOff} text={t('offline.banner')} />}
+              {online && access === 'granted' && !servicesOn && (
+                <StatusBanner
+                  icon={LocateOff}
+                  text={t('location.servicesOff')}
+                  action={{ label: t('location.turnOn'), onPress: () => void turnOnServices() }}
+                />
+              )}
+            </View>
+          </>
+        )}
+
+        {comparing && trip && (
+          <>
+            <TripBar
+              fromLabel={label(trip.from)}
+              toLabel={label(trip.to) ?? ''}
+              onBack={closeTrip}
+              onFrom={() => setScreen({ kind: 'search', purpose: { kind: 'from' }, back: 'compare' })}
+              onTo={() => setScreen({ kind: 'search', purpose: { kind: 'to' }, back: 'compare' })}
+              onSwap={onSwap}
+              onLayout={setTripBarBottom}
+            />
+            <View style={[styles.credit, { bottom: sheetH + spacing.sm }]} pointerEvents="box-none">
+              {credit}
+            </View>
+            <CompareSheet
+              state={tripError ? { status: 'error', error: tripError } : routes.state}
+              destinationName={label(trip.to) ?? ''}
+              mode={mode}
+              onToggleMode={toggleMode}
+              selected={selected}
+              onSelect={setSelected}
+              onStart={startWalk}
+              onRetry={routes.retry}
+              onChooseStart={() => setScreen({ kind: 'search', purpose: { kind: 'from' }, back: 'compare' })}
+              onHeight={setSheetH}
+              onCollapsedHeight={setCompareH}
+              // Room below the trip bar for a strip of map and the OSM credit.
+              maxHeight={screenH - tripBarBottom - spacing.xxl}
+            />
+            <TextScaleCap.Provider value={undefined}>
+              <BatteryTipSheet
+                visible={batteryTip}
+                onStart={() => {
+                  setBatteryTip(false);
+                  updateSettings({ batteryTipSeen: true });
+                  beginWalk();
+                }}
+              />
+            </TextScaleCap.Provider>
+          </>
+        )}
+
+        {home && mapFailed && (
+          <View style={[styles.banner, { top: insets.top + spacing.md }]} accessibilityLiveRegion="polite">
+            <TriangleAlert size={20} color={colors.hazardText} />
+            <AppText variant="label" color={colors.navy} style={styles.bannerText}>
+              {t('map.loadFailed')}
+            </AppText>
           </View>
-        </>
-      )}
+        )}
 
-      {comparing && trip && (
-        <>
-          <TripBar
-            fromLabel={label(trip.from)}
-            toLabel={label(trip.to) ?? ''}
-            onBack={closeTrip}
-            onFrom={() => setScreen({ kind: 'search', purpose: { kind: 'from' }, back: 'compare' })}
-            onTo={() => setScreen({ kind: 'search', purpose: { kind: 'to' }, back: 'compare' })}
-            onSwap={onSwap}
-            onLayout={setTripBarBottom}
-          />
-          <View style={[styles.credit, { bottom: sheetH + spacing.sm }]} pointerEvents="box-none">
-            {credit}
+        {home && outsidePilot && !mapFailed && (
+          <View style={[styles.banner, styles.infoBanner, { top: insets.top + spacing.md }]} accessibilityLiveRegion="polite">
+            <MapPinOff size={20} color={colors.interactiveText} />
+            <AppText variant="label" color={colors.navy} style={styles.bannerText}>
+              {t('map.outsidePilot')}
+            </AppText>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('map.dismissBanner')}
+              onPress={() => setOutsidePilot(false)}
+              hitSlop={spacing.sm}
+              style={styles.bannerClose}
+            >
+              <X size={20} color={colors.navy} />
+            </Pressable>
           </View>
-          <CompareSheet
-            state={tripError ? { status: 'error', error: tripError } : routes.state}
-            destinationName={label(trip.to) ?? ''}
-            mode={mode}
-            onToggleMode={toggleMode}
-            selected={selected}
-            onSelect={setSelected}
-            onStart={startWalk}
-            onRetry={routes.retry}
-            onChooseStart={() => setScreen({ kind: 'search', purpose: { kind: 'from' }, back: 'compare' })}
-            onHeight={setSheetH}
-            onCollapsedHeight={setCompareH}
-            // Room below the trip bar for a strip of map and the OSM credit.
-            maxHeight={screenH - tripBarBottom - spacing.xxl}
-          />
-        </>
-      )}
+        )}
 
-      {home && mapFailed && (
-        <View style={[styles.banner, { top: insets.top + spacing.md }]} accessibilityLiveRegion="polite">
-          <TriangleAlert size={20} color={colors.hazardText} />
-          <AppText variant="label" color={colors.navy} style={styles.bannerText}>
-            {t('map.loadFailed')}
-          </AppText>
-        </View>
-      )}
+        {reporting && (
+          <>
+            {placing && (
+              <>
+                <View pointerEvents="none" style={[styles.pin, { top: pinY - PIN_SIZE, left: screenW / 2 - PIN_SIZE / 2 }]}>
+                  <MapPin size={PIN_SIZE} color={colors.white} fill={colors.navy} strokeWidth={1.75} />
+                </View>
+                <View pointerEvents="none" style={[styles.pinDot, { top: pinY - 3, left: screenW / 2 - 3 }]} />
+                <View style={[styles.credit, { bottom: reportH + spacing.sm }]} pointerEvents="box-none">
+                  {credit}
+                </View>
+              </>
+            )}
+            <TextScaleCap.Provider value={undefined}>
+              <ReportFlowSheet
+                pin={pin}
+                street={pinStreet}
+                onStep={setReportStep}
+                onHeight={setReportH}
+                onClose={() => closeReport()}
+                onDone={closeReport}
+              />
+            </TextScaleCap.Provider>
+          </>
+        )}
 
-      {home && outsidePilot && !mapFailed && (
-        <View style={[styles.banner, styles.infoBanner, { top: insets.top + spacing.md }]} accessibilityLiveRegion="polite">
-          <MapPinOff size={20} color={colors.interactiveText} />
-          <AppText variant="label" color={colors.navy} style={styles.bannerText}>
-            {t('map.outsidePilot')}
-          </AppText>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('map.dismissBanner')}
-            onPress={() => setOutsidePilot(false)}
-            hitSlop={spacing.sm}
-            style={styles.bannerClose}
-          >
-            <X size={20} color={colors.navy} />
-          </Pressable>
-        </View>
-      )}
+        {screen.kind === 'search' && (
+          <TextScaleCap.Provider value={undefined}>
+            <SearchSheet
+              purpose={screen.purpose}
+              near={here}
+              saved={saved}
+              recent={recent}
+              onPick={onPick}
+              onPickSaved={onPickSaved}
+              onUseMyLocation={onUseMyLocation}
+              onClose={closeSearch}
+            />
+          </TextScaleCap.Provider>
+        )}
 
-      {reporting && (
-        <>
-          {placing && (
-            <>
-              <View pointerEvents="none" style={[styles.pin, { top: pinY - PIN_SIZE, left: screenW / 2 - PIN_SIZE / 2 }]}>
-                <MapPin size={PIN_SIZE} color={colors.white} fill={colors.navy} strokeWidth={1.75} />
-              </View>
-              <View pointerEvents="none" style={[styles.pinDot, { top: pinY - 3, left: screenW / 2 - 3 }]} />
-              <View style={[styles.credit, { bottom: reportH + spacing.sm }]} pointerEvents="box-none">
-                {credit}
-              </View>
-            </>
-          )}
-          <ReportFlowSheet
-            pin={pin}
-            street={pinStreet}
-            onStep={setReportStep}
-            onHeight={setReportH}
-            onClose={() => closeReport()}
-            onDone={closeReport}
-          />
-        </>
-      )}
+        {home && (
+          <TextScaleCap.Provider value={undefined}>
+            <LayersSheet
+              visible={layersOpen}
+              toggles={toggles}
+              onChange={(layers) => updateSettings({ layers })}
+              onClose={() => setLayersOpen(false)}
+            />
+            <LocationSheet
+              visible={locationSheet}
+              mode={access === 'blocked' ? 'blocked' : 'ask'}
+              onAllow={allowLocation}
+              onClose={() => setLocationSheet(false)}
+            />
+          </TextScaleCap.Provider>
+        )}
 
-      {screen.kind === 'search' && (
-        <SearchSheet
-          purpose={screen.purpose}
-          near={here}
-          saved={saved}
-          recent={recent}
-          onPick={onPick}
-          onPickSaved={onPickSaved}
-          onUseMyLocation={onUseMyLocation}
-          onClose={closeSearch}
-        />
-      )}
-
-      {home && (
-        <>
-          <LayersSheet
-            visible={layersOpen}
-            toggles={toggles}
-            onChange={(layers) => updateSettings({ layers })}
-            onClose={() => setLayersOpen(false)}
-          />
-          <LocationSheet
-            visible={locationSheet}
-            mode={access === 'blocked' ? 'blocked' : 'ask'}
-            onAllow={allowLocation}
-            onClose={() => setLocationSheet(false)}
-          />
-        </>
-      )}
-
-      <Snackbar message={snackbar.message} onHide={snackbar.hide} bottom={snackBottom} />
-    </View>
+        <Snackbar message={snackbar.message} onHide={snackbar.hide} bottom={snackBottom} />
+      </View>
+    </TextScaleCap.Provider>
   );
 }
 

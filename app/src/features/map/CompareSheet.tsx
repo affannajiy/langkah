@@ -31,6 +31,9 @@ type Props = {
   maxHeight: number;
 };
 
+// Height of BottomSheet's drag handle area.
+const HANDLE = 24;
+
 const KNOWN_ERRORS = new Set<RouteError>([
   'too_far',
   'too_close',
@@ -52,12 +55,19 @@ export function CompareSheet(props: Props) {
   const { height: screenH } = useWindowDimensions();
   const [index, setIndex] = useState(0);
   const [mainH, setMainH] = useState(320);
+  const [footerH, setFooterH] = useState(88);
   // Only report the collapsed height after the cards have really been measured.
   const [measured, setMeasured] = useState(false);
 
-  const collapsed = Math.min(mainH + insets.bottom, screenH * 0.75, maxHeight);
+  const ok = state.status === 'ok';
+  // Start stays pinned under the cards; without routes, only the system bar needs room.
+  const bottom = ok ? footerH : insets.bottom + spacing.lg;
+  const collapsed = Math.min(mainH + bottom, screenH * 0.75, maxHeight);
+  // Small screens or big text: the cards scroll above Start instead of pushing it off screen.
+  const overflow = mainH + bottom > collapsed;
   const expanded = Math.max(collapsed + 1, Math.min(screenH * 0.85, maxHeight));
-  const routeCount = state.status === 'ok' && state.pair.same ? 1 : 2;
+  const routeCount = ok && state.pair.same ? 1 : 2;
+  const startLabel = props.selected === 'safest' ? t('route.startSafest') : t('route.startFastest');
 
   useEffect(() => {
     onHeight(index === 0 ? collapsed : expanded);
@@ -69,32 +79,56 @@ export function CompareSheet(props: Props) {
 
   return (
     <BottomSheet snapPoints={[collapsed, expanded]} index={index} onIndexChange={setIndex}>
-      <ScrollView scrollEnabled={index > 0} contentContainerStyle={{ paddingBottom: insets.bottom + spacing.lg }}>
-        <View
-          style={styles.main}
-          onLayout={(e) => {
-            // The 24 dp handle area sits above this block.
-            setMainH(e.nativeEvent.layout.height + 24 + spacing.md);
-            setMeasured(true);
-          }}
+      {/* Only the part of the sheet on screen: the handle area (24) sits above it. */}
+      <View style={{ height: (index === 0 ? collapsed : expanded) - HANDLE }}>
+        <ScrollView
+          style={styles.flex}
+          scrollEnabled={index > 0 || overflow}
+          contentContainerStyle={{ paddingBottom: ok ? spacing.md : insets.bottom + spacing.lg }}
         >
-          <View style={styles.titleRow}>
-            <AppText variant="heading" color={colors.navy} accessibilityRole="header" style={styles.title}>
-              {state.status === 'ok' ? t('route.title', { count: routeCount }) : t('route.titleAny')}
-            </AppText>
-            <ModeChip mode={mode} size="long" onPress={onToggleMode} />
+          <View
+            style={styles.main}
+            onLayout={(e) => {
+              // The 24 dp handle area sits above this block.
+              setMainH(e.nativeEvent.layout.height + HANDLE + spacing.md);
+              setMeasured(true);
+            }}
+          >
+            <View style={styles.titleRow}>
+              <AppText variant="heading" color={colors.navy} accessibilityRole="header" style={styles.title}>
+                {state.status === 'ok' ? t('route.title', { count: routeCount }) : t('route.titleAny')}
+              </AppText>
+              <ModeChip mode={mode} size="long" onPress={onToggleMode} />
+            </View>
+            <Body {...props} />
           </View>
-          <Body {...props} />
-        </View>
-        {index > 0 && state.status === 'ok' && (
-          <Details route={props.selected === 'safest' ? state.pair.safest : state.pair.fastest} />
+          {index > 0 && ok && (
+            <Details route={props.selected === 'safest' ? state.pair.safest : state.pair.fastest} />
+          )}
+        </ScrollView>
+        {ok && (
+          <View
+            style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}
+            onLayout={(e) => setFooterH(e.nativeEvent.layout.height)}
+          >
+            <Pressable
+              accessibilityRole="button"
+              onPress={props.onStart}
+              style={({ pressed }) => [styles.primary, styles.start, pressed && styles.pressed]}
+            >
+              <Footprints size={24} color={colors.white} />
+              <AppText variant="heading" color={colors.white}>
+                {startLabel}
+              </AppText>
+            </Pressable>
+          </View>
         )}
-      </ScrollView>
+      </View>
     </BottomSheet>
   );
 }
 
-function Body({ state, destinationName, selected, onSelect, onStart, onRetry, onChooseStart }: Props) {
+function Body({ state, destinationName, selected, onSelect, onRetry, onChooseStart }: Props) {
   const { t } = useTranslation();
 
   if (state.status === 'idle' || state.status === 'loading') {
@@ -137,7 +171,6 @@ function Body({ state, destinationName, selected, onSelect, onStart, onRetry, on
   }
 
   const { pair } = state;
-  const startLabel = selected === 'safest' ? t('route.startSafest') : t('route.startFastest');
 
   return (
     <View style={styles.cards} accessibilityRole="radiogroup">
@@ -147,12 +180,6 @@ function Body({ state, destinationName, selected, onSelect, onStart, onRetry, on
       ) : (
         <RouteCard kind="fastest" route={pair.fastest} selected={selected === 'fastest'} onPress={() => onSelect('fastest')} />
       )}
-      <Pressable accessibilityRole="button" onPress={onStart} style={({ pressed }) => [styles.primary, styles.start, pressed && styles.pressed]}>
-        <Footprints size={24} color={colors.white} />
-        <AppText variant="heading" color={colors.white}>
-          {startLabel}
-        </AppText>
-      </Pressable>
     </View>
   );
 }
@@ -212,7 +239,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
   },
-  start: { minHeight: touchTarget + spacing.sm, marginTop: spacing.xs },
+  start: { minHeight: touchTarget + spacing.sm },
+  footer: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, backgroundColor: colors.white },
   pressed: { opacity: 0.85 },
   details: { paddingHorizontal: spacing.md, paddingTop: spacing.lg, gap: spacing.sm },
   detailRow: {

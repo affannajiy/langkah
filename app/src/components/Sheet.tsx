@@ -1,17 +1,29 @@
-import { useEffect, useRef, type ReactNode } from 'react';
-import { AccessibilityInfo, Animated, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { AccessibilityInfo, Animated, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radius, shadow, spacing } from '../theme/theme';
 
 type Props = {
   visible: boolean;
   children: ReactNode;
+  // True on screens without the tab bar (the walk): keeps the buttons above the
+  // phone's gesture line or 3-button bar.
+  overSystemBar?: boolean;
 };
+
+// Extra slide past the sheet's own height, so its shadow is off screen too.
+const HIDE_MARGIN = 24;
 
 // Small non-blocking bottom sheet, sitting above the tab bar.
 // The map stays visible and usable behind it. For a sheet the user resizes
 // (route compare), use BottomSheet instead.
-export function Sheet({ visible, children }: Props) {
+export function Sheet({ visible, children, overSystemBar }: Props) {
+  const insets = useSafeAreaInsets();
+  // Hidden sheets slide down by their own measured height. A fixed distance left the
+  // top of a tall sheet (big text, small screen) peeking over the tab bar.
+  const { height: screenH } = useWindowDimensions();
+  const [height, setHeight] = useState(screenH);
   const offset = useRef(new Animated.Value(visible ? 0 : 1)).current;
 
   useEffect(() => {
@@ -27,17 +39,26 @@ export function Sheet({ visible, children }: Props) {
     };
   }, [visible, offset]);
 
-  const translateY = offset.interpolate({ inputRange: [0, 1], outputRange: [0, 400] });
+  const translateY = offset.interpolate({ inputRange: [0, 1], outputRange: [0, height + HIDE_MARGIN] });
 
   return (
     <Animated.View
       pointerEvents={visible ? 'auto' : 'none'}
       accessibilityElementsHidden={!visible}
       importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}
-      style={[styles.sheet, { transform: [{ translateY }] }]}
+      onLayout={(e) => setHeight(e.nativeEvent.layout.height)}
+      style={[
+        styles.sheet,
+        // Never taller than the screen: the content scrolls instead (largest text sizes).
+        { maxHeight: screenH - insets.top - spacing.lg },
+        overSystemBar && { paddingBottom: spacing.lg + insets.bottom },
+        { transform: [{ translateY }] },
+      ]}
     >
       <View style={styles.handle} />
-      {children}
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} bounces={false}>
+        {children}
+      </ScrollView>
     </Animated.View>
   );
 }
@@ -54,9 +75,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     paddingBottom: spacing.lg,
-    gap: spacing.md,
     ...shadow.floating,
   },
+  scroll: { flexGrow: 0 },
+  content: { gap: spacing.md },
   handle: {
     alignSelf: 'center',
     width: 40,

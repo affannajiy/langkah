@@ -284,7 +284,7 @@ export default function MeScreen() {
                     <AppText variant="bodyStrong" color={colors.text}>
                       {label}
                     </AppText>
-                    <AppText variant="caption" color={colors.textMuted} numberOfLines={1}>
+                    <AppText variant="caption" color={colors.textMuted} numberOfLines={2}>
                       {place ? place.name : t('me.notSetTap')}
                     </AppText>
                   </View>
@@ -335,7 +335,7 @@ export default function MeScreen() {
                   <AppText variant="bodyStrong" color={colors.text} numberOfLines={2}>
                     {t(categoryKey(r.kind, r.category))}
                   </AppText>
-                  <AppText variant="caption" color={colors.textMuted} numberOfLines={1}>
+                  <AppText variant="caption" color={colors.textMuted} numberOfLines={2}>
                     {[r.street ?? t('community.noStreet'), timeAgo(r.createdAt)].join(' · ')}
                   </AppText>
                   <View style={styles.chipRow}>

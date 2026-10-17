@@ -57,7 +57,7 @@ export function QuickReportSheet({ visible, at, street, onSend, onClose }: Props
           onPress={onClose}
         />
       )}
-      <Sheet visible={visible}>
+      <Sheet visible={visible} overSystemBar>
         <View style={styles.header}>
           <View style={styles.flex}>
             <AppText variant="title" color={colors.navy} accessibilityRole="header">

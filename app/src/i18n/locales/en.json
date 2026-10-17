@@ -525,6 +525,7 @@
     "about": "About",
     "version": "Langkah {{version}}, UTP Technopreneurship Group 4",
     "credits": "Map data © OpenStreetMap contributors, available under the Open Database License. Map style from OpenFreeMap.",
+    "photoCredits": "Demo report photos from Wikimedia Commons, taken elsewhere in Malaysia: Encik Tekateki (CC BY-SA 4.0), Wiki Asmah (CC BY 4.0), Two hundred percent (CC BY-SA 2.5) and Taufik (CC BY-SA 4.0).",
     "osm": "OpenStreetMap copyright and licence"
   },
   "welcome": {
@@ -538,5 +539,12 @@
     "reasonReport": "Pin a report where you stand",
     "privacy": "Location stays on your phone. Langkah never keeps a history of where you walked.",
     "asking": "Asking…"
+  },
+  "batteryTip": {
+    "title": "Keep your walk running",
+    "body": "This phone may stop apps in the background to save battery. Then Langkah cannot follow your walk with the screen off.",
+    "steps": "In Settings, open Battery (or App launch) for Langkah and allow it to run in the background.",
+    "openSettings": "Open Settings",
+    "start": "Start walk"
   }
 }

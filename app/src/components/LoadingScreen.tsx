@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 4,
     borderRadius: radius.pill,
-    backgroundColor: '#1F3F66',
+    backgroundColor: colors.navyRaised,
     overflow: 'hidden',
   },
   fill: { height: '100%', backgroundColor: colors.interactive },

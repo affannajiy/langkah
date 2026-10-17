@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { CommunityReport, CommunitySort, Vote } from '../../api/reports';
 import type { ReportKind } from '../../api/types';
-import { AppText } from '../../components/AppText';
+import { AppText, TextScaleCap } from '../../components/AppText';
 import { Button } from '../../components/Button';
 import { Sheet } from '../../components/Sheet';
 import { Snackbar, useSnackbar } from '../../components/Snackbar';
@@ -20,7 +20,7 @@ import { HazardMark } from '../../map/MapPins';
 import { useHere } from '../../map/useHere';
 import { useLocationPermission } from '../../map/useLocationPermission';
 import { useOnline } from '../../net/useOnline';
-import { colors, radius, spacing, touchTarget } from '../../theme/theme';
+import { chromeTextScale, colors, radius, spacing, touchTarget } from '../../theme/theme';
 
 const SORTS: CommunitySort[] = ['top', 'newest', 'nearest'];
 
@@ -106,97 +106,110 @@ export default function CommunityScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
-      <View style={styles.top}>
-        <View style={styles.flex}>
-          <AppText variant="title" color={colors.navy} accessibilityRole="header" style={styles.bigTitle}>
-            {t('community.title')}
-          </AppText>
-          <AppText variant="body" color={colors.textMuted}>
-            {t('community.area')}
-          </AppText>
+      {/* The controls above the list cap big phone text, so the list keeps most of the
+          screen; the reports in the list follow the phone's text size fully. */}
+      <TextScaleCap.Provider value={chromeTextScale}>
+        <View style={styles.top}>
+          <View style={styles.titleBlock}>
+            <AppText variant="title" color={colors.navy} accessibilityRole="header" style={styles.bigTitle}>
+              {t('community.title')}
+            </AppText>
+            <AppText variant="body" color={colors.textMuted}>
+              {t('community.area')}
+            </AppText>
+          </View>
+          <View style={styles.segment} accessibilityRole="tablist">
+            {(['list', 'map'] as const).map((m) => {
+              const on = mode === m;
+              const Icon = m === 'list' ? List : MapIcon;
+              return (
+                <Pressable
+                  key={m}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: on }}
+                  onPress={() => setMode(m)}
+                  style={[styles.segmentItem, on && styles.segmentOn]}
+                >
+                  <Icon size={20} color={colors.navy} strokeWidth={on ? 2.5 : 2} />
+                  <AppText variant={on ? 'bodyStrong' : 'body'} color={colors.navy}>
+                    {t(`community.${m}`)}
+                  </AppText>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
-        <View style={styles.segment} accessibilityRole="tablist">
-          {(['list', 'map'] as const).map((m) => {
-            const on = mode === m;
-            const Icon = m === 'list' ? List : MapIcon;
+
+        {!online && <StatusBanner icon={CloudOff} text={t('offline.banner')} style={styles.offline} />}
+
+        <View style={styles.kinds} accessibilityRole="tablist">
+          {(['hazard', 'improvement'] as const).map((k) => {
+            const on = kind === k;
             return (
               <Pressable
-                key={m}
+                key={k}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: on }}
-                onPress={() => setMode(m)}
-                style={[styles.segmentItem, on && styles.segmentOn]}
+                onPress={() => setKind(k)}
+                style={[styles.kind, on && styles.kindOn]}
               >
-                <Icon size={20} color={colors.navy} strokeWidth={on ? 2.5 : 2} />
-                <AppText variant={on ? 'bodyStrong' : 'body'} color={colors.navy}>
-                  {t(`community.${m}`)}
+                {k === 'hazard' ? (
+                  <HazardMark size={20} />
+                ) : (
+                  <ArrowUp size={20} color={on ? colors.community : colors.communityText} strokeWidth={2.75} />
+                )}
+                <AppText
+                  variant="bodyStrong"
+                  color={on ? colors.white : colors.navy}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                  style={styles.kindText}
+                >
+                  {t(`community.kind.${k}`)}
                 </AppText>
               </Pressable>
             );
           })}
         </View>
-      </View>
-
-      {!online && <StatusBanner icon={CloudOff} text={t('offline.banner')} style={styles.offline} />}
-
-      <View style={styles.kinds} accessibilityRole="tablist">
-        {(['hazard', 'improvement'] as const).map((k) => {
-          const on = kind === k;
-          return (
-            <Pressable
-              key={k}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: on }}
-              onPress={() => setKind(k)}
-              style={[styles.kind, on && styles.kindOn]}
-            >
-              {k === 'hazard' ? (
-                <HazardMark size={20} />
-              ) : (
-                <ArrowUp size={20} color={on ? colors.community : colors.communityText} strokeWidth={2.75} />
-              )}
-              <AppText variant="bodyStrong" color={on ? colors.white : colors.navy}>
-                {t(`community.kind.${k}`)}
-              </AppText>
-            </Pressable>
-          );
-        })}
-      </View>
+      </TextScaleCap.Provider>
 
       {mode === 'list' ? (
         <>
-          <View style={styles.sorts}>
-            {SORTS.map((s) => {
-              const on = sort === s;
-              return (
+          <TextScaleCap.Provider value={chromeTextScale}>
+            <View style={styles.sorts}>
+              {SORTS.map((s) => {
+                const on = sort === s;
+                return (
+                  <Pressable
+                    key={s}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: on }}
+                    onPress={() => pickSort(s)}
+                    style={[styles.sort, on && styles.sortOn]}
+                  >
+                    <AppText variant="bodyStrong" color={on ? colors.white : colors.text}>
+                      {t(`community.sort.${s}`)}
+                    </AppText>
+                  </Pressable>
+                );
+              })}
+              <View style={styles.flex} />
+              {kind === 'improvement' && (
                 <Pressable
-                  key={s}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: on }}
-                  onPress={() => pickSort(s)}
-                  style={[styles.sort, on && styles.sortOn]}
+                  accessibilityRole="button"
+                  accessibilityHint={t('community.exportHint')}
+                  onPress={() => setExportOpen(true)}
+                  style={styles.export}
                 >
-                  <AppText variant="bodyStrong" color={on ? colors.white : colors.text}>
-                    {t(`community.sort.${s}`)}
+                  <Download size={20} color={colors.navy} />
+                  <AppText variant="bodyStrong" color={colors.navy} style={styles.underline}>
+                    {t('community.export')}
                   </AppText>
                 </Pressable>
-              );
-            })}
-            <View style={styles.flex} />
-            {kind === 'improvement' && (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityHint={t('community.exportHint')}
-                onPress={() => setExportOpen(true)}
-                style={styles.export}
-              >
-                <Download size={20} color={colors.navy} />
-                <AppText variant="bodyStrong" color={colors.navy} style={styles.underline}>
-                  {t('community.export')}
-                </AppText>
-              </Pressable>
-            )}
-          </View>
+              )}
+            </View>
+          </TextScaleCap.Provider>
 
           {list.status === 'loading' && list.items.length === 0 ? (
             <ActivityIndicator style={styles.loading} color={colors.navy} size="large" />
@@ -292,7 +305,9 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   flex: { flex: 1 },
   center: { textAlign: 'center' },
-  top: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md },
+  // Wraps on narrow phones: the List / Map toggle drops under the title.
+  top: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md },
+  titleBlock: { flexGrow: 1, flexShrink: 1, minWidth: 180 },
   bigTitle: { fontSize: 32, lineHeight: 40 },
   segment: { flexDirection: 'row', backgroundColor: colors.neutralBadge, borderRadius: radius.sheet, padding: spacing.xs },
   segmentItem: {
@@ -324,7 +339,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
   },
   kindOn: { backgroundColor: colors.navy },
-  sorts: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, paddingTop: spacing.md },
+  kindText: { flexShrink: 1 },
+  sorts: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+  },
   sort: {
     minHeight: touchTarget,
     paddingHorizontal: spacing.md,

@@ -24,7 +24,10 @@ const config: ExpoConfig = {
     // Storage is not needed: the gallery uses the system photo picker.
     // expo-network adds ACCESS_NETWORK_STATE for the offline banner. Its Wi-Fi
     // permission is only for reading the IP address, which Langkah never does.
-    permissions: ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION', 'VIBRATE', 'CAMERA'],
+    // RECEIVE_BOOT_COMPLETED: expo-task-manager hands each walk location to a saved job,
+    // and Android refuses saved jobs without it (the app crashed on the first walk fix).
+    // It shows no prompt, and Langkah never starts anything after the phone restarts.
+    permissions: ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION', 'VIBRATE', 'CAMERA', 'RECEIVE_BOOT_COMPLETED'],
     blockedPermissions: [
       'ACCESS_BACKGROUND_LOCATION',
       'READ_EXTERNAL_STORAGE',

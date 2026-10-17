@@ -20,8 +20,8 @@ UTP Technopreneurship Team Project, Group 4. Android only for the MVP.
 | 3 | Map home, search sheet and route compare screens | Done |
 | 4 | Walking navigation, hazard banner, quick report, haptics | Done |
 | 5 | Sign-in, report flow, community tab, trust rules and report expiry | Done |
-| 6 | Arrival, Me tab, Settings, onboarding, night map, demo mode, empty and error states | Done, being reviewed |
-| 7 | Demo readiness and preview APK | Next |
+| 6 | Arrival, Me tab, Settings, onboarding, night map, demo mode, empty and error states | Done |
+| 7 | Demo readiness: demo photos, payload and accessibility checks, demo script, preview APK | Done, being reviewed |
 
 ### Pilot areas
 
@@ -69,7 +69,7 @@ The budget is RM0: every service above is free and none needs a card.
 | `app/src/i18n/locales/` | `en.json` and `ms.json` |
 | `app/src/theme/theme.ts` | All design tokens (colours, spacing, radii, type) |
 | `supabase/migrations/` | Every schema change, function and RLS policy, in order |
-| `data-scripts/` | `ipoh_extract.py` (clip and check OSM data), `load_to_supabase.py` (load and build the network) and `seed_demo.py` (demo reports and walk). `raw/`, `out/` and `.venv/` are git-ignored. |
+| `data-scripts/` | `ipoh_extract.py` (clip and check OSM data), `load_to_supabase.py` (load and build the network) `seed_demo.py` (demo reports, photos and walk) and `check_payload.py` (Section 7.4 sizes). `demo-photos/` holds the demo report photos and their credits. `raw/`, `out/` and `.venv/` are git-ignored. |
 | `docs/` | The guide, colour scheme, architecture diagram and final screen PNGs |
 | `assets/logo/` | Master logo files. `app/assets/brand/` holds the copies the build uses. |
 | `rulebooks/` | Engineering, security and UI/UX rulebooks |
@@ -114,7 +114,7 @@ Expo Go cannot run MapLibre, so we use our own **development build**: an APK wit
 5. **Fake your location.** In the emulator, click **...** (Extended controls), then **Location**. Search for a place and click **Set location**:
    - Ipoh Railway Station: 4.597368, 101.073437
    - UTP: 4.38545, 100.97958
-6. **Fake a walk** with the demo GPX (see section 5, "Demo hazards"):
+6. **Fake a walk** with the demo GPX (see section 5, "Demo reports"):
    1. Set the location to Ipoh Railway Station and restart the app.
    2. Search **Concubine Lane**, pick the **Fastest** card and press Start.
    3. In **Extended controls**, **Location**, choose **Load GPX/KML**, open `data-scripts/out/demo-walk.gpx` and press **Play**. Raise the playback speed to go faster.
@@ -148,7 +148,15 @@ adb shell cmd locale set-app-locales com.langkah.app --locales ""
 
 ## 3. Build an APK to share (demo and testers)
 
-A **preview** APK runs on its own, with no laptop or dev server:
+A **preview** APK runs on its own, with no laptop or dev server.
+
+**Once, before the first preview build:** EAS builds from a copy of the repo, and `app/.env` is git-ignored, so the build never sees it. Push its three public `EXPO_PUBLIC_*` values to the EAS "preview" environment (the profile reads it through `"environment": "preview"` in `eas.json`). Without this the APK closes at launch with "EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY must be set". Inside `app/`:
+
+```bash
+eas env:push preview --path .env
+```
+
+Check with `eas env:list --environment preview`. Only the three `EXPO_PUBLIC_*` values belong there; never the service role key. Then build:
 
 ```bash
 eas build -p android --profile preview
@@ -159,6 +167,10 @@ Open the build link on an Android phone and install the APK. Android asks once t
 ```bash
 eas build:run -p android --latest
 ```
+
+**Google sign-in in the preview APK:** EAS normally signs every profile of one app with the same keystore, so the Android OAuth client made for the development build usually covers the preview APK too. To check, run `eas credentials -p android`, pick the **preview** profile and compare its **SHA-1** with the one in Google Cloud console, Credentials. If it differs, create one more **OAuth client ID, Android** with package `com.langkah.app` and the new SHA-1. Nothing changes in the app or in Supabase.
+
+If sign-in fails with DEVELOPER_ERROR, this SHA-1 is the cause; demo mode (section 4) still works.
 
 ## 4. Backend (Supabase)
 
@@ -214,7 +226,7 @@ Guests read everything. Writing a report or a vote needs Google sign-in (guide S
 2. **Google Cloud console** (no billing account needed), APIs and Services:
    - **OAuth consent screen:** External, app name Langkah. While it is in Testing, add every tester's Google account under Test users.
    - **Credentials, Create OAuth client ID, Web application:** this gives the Web client ID and secret for Supabase.
-   - **Credentials, Create OAuth client ID, Android:** package `com.langkah.app` and the SHA-1 of the EAS signing key. Get the SHA-1 with `eas credentials -p android` (pick the development profile). Add one Android client per keystore (development and preview).
+   - **Credentials, Create OAuth client ID, Android:** package `com.langkah.app` and the SHA-1 of the EAS signing key. Get the SHA-1 with `eas credentials -p android` (pick the development profile). EAS usually signs every profile with the same key; if a build shows a different SHA-1, add one more Android client for it (section 3).
 3. **`app/.env`:** add `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (the Web client ID from step 2, see `app/.env.example`). It is public by design; the client secret stays in Supabase only.
 
 ### Demo mode (no Google sign-in)
@@ -267,7 +279,9 @@ Copy `data-scripts/.env.example` to `data-scripts/.env` and put in the **Session
 
 ### Demo reports (testing and the demo)
 
-To test hazard banners, routing around hazards and the Community tab without waiting for real reports, add the demo reports: three active hazards on the walk from Ipoh Railway Station to Concubine Lane, one pending hazard, and three improvement requests with upvotes from three demo voters. They have no photos, since Langkah only shows real report photos.
+To test hazard banners, routing around hazards and the Community tab without waiting for real reports, add the demo reports: three active hazards on the walk from Ipoh Railway Station to Concubine Lane, one pending hazard, and three improvement requests with upvotes from three demo voters.
+
+Five of them get an example photo from `data-scripts/demo-photos/`: real Malaysian streets from Wikimedia Commons (a broken path edge, a worn crossing, a blocked five-foot way, a flooded road and potholes). They were **not** taken at the Ipoh pins, so each note says where the photo is from. Authors and licences are in [demo-photos/CREDITS.md](data-scripts/demo-photos/CREDITS.md) and in the app under **Settings**, **About**. Uploading them needs `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `data-scripts/.env` (see `.env.example`; laptop only). Without them the reports are added without photos.
 
 ```bash
 python seed_demo.py
@@ -298,6 +312,55 @@ npm run doctor
 ```
 
 Then test the phase's steps on the emulator (each phase in `CHANGELOG.md` lists them).
+
+**Payload sizes** (guide Section 7.4). Inside `data-scripts/`, this calls the live API with the public key, the way the app does, and compares each answer with its budget:
+
+```bash
+python check_payload.py
+```
+
+**Accessibility** (guide Section 5.4): work through [docs/accessibility-check.md](docs/accessibility-check.md) on the preview APK.
+
+## 7. Demo script (oral presentation, 5 minutes)
+
+### The day before
+
+1. Install the latest **preview** APK on the demo phone and on the emulator (section 3). A preview build needs no laptop server.
+2. Inside `data-scripts/`, run `python seed_demo.py`. The demo hazards stay active for 7 days, so run it again if the demo is later than that.
+3. Turn **demo mode** on (section 4). On the demo device, open **Me**, **Settings** and turn on **Report without signing in**, so nobody waits for a Google sign-in on stage.
+4. Language: English. Clear any old walks: `adb shell pm clear com.langkah.app`, then go through onboarding once.
+5. Record a screen video of the full run (emulator: **Extended controls**, **Screen record**). It is the backup if the Wi-Fi fails, since routes and reports need the internet.
+
+### On stage
+
+Before starting: emulator location at Ipoh Railway Station (4.597368, 101.073437), `data-scripts/out/demo-walk.gpx` loaded in **Extended controls**, **Location**, not yet playing.
+
+| Time | Show | Say |
+|---|---|---|
+| 0:00 | Title slide | Walking in Ipoh means broken five-foot ways, worn zebra crossings and floods after rain. Google Maps is built for cars. Langkah looks at the city from the walker's side, the way Waze does for drivers. |
+| 0:40 | **Map** tab | The map shows crossings, bus stops and the hazards people reported, as orange diamond signs like Malaysian road signs. |
+| 1:00 | Search **Concubine Lane** | Two routes: **Safest**, solid teal, scored on sidewalks, lighting and crossings, and **Fastest**, dashed grey. Safest is a little longer because it goes around three reported hazards. |
+| 1:40 | Pick **Fastest**, press **Start**, press **Play** on the GPX | We take the fastest one on purpose. As we walk, Langkah warns by landmark, not by side of the road, because phone GPS is only accurate to 5 to 10 m. Two short vibrations mean a hazard ahead. |
+| 2:30 | First hazard banner, tap it | Every hazard comes from a person: here a broken path edge, with a photo. These demo photos are real Malaysian streets from Wikimedia Commons, not these exact spots. |
+| 3:00 | **Arrival** screen, tap a face | At the end, one question: how safe did it feel? That rating, never the route itself, helps score the streets. Tap **Spot anything new?** |
+| 3:20 | Report flow: **Blocked path**, add a photo, **Send** | Reporting takes three taps. A hazard changes routes only after two other people confirm it, or one if it has a photo. |
+| 3:50 | **Community** tab, **Top** | Improvements people want, ranked by upvotes: a zebra crossing at the station has three. The council can export this list as a spreadsheet. |
+| 4:20 | **Me**, **Settings**, **Bahasa Melayu** | Every screen works in English and Bahasa Melayu. |
+| 4:40 | Closing slide | All on free tools and open data: OpenStreetMap, Supabase and MapLibre, so it costs RM0 to run for the pilot. Next: more pilot areas such as Seri Iskandar, and offline maps. |
+
+### If something goes wrong
+
+| Problem | What to do |
+|---|---|
+| No internet | Play the backup video. Say the app needs data for routes, and offline maps are planned. |
+| No hazard banner | You started **Safest**. Go back and start **Fastest**. |
+| GPX does not move | Press **Play** again in **Extended controls**, or raise the playback speed. |
+| Report fails with "sign in" | Demo mode is off in the database or in Settings (step 3). Skip to Community and show the existing reports. |
+
+### After the demo
+
+1. Turn demo mode **off** (section 4).
+2. Before a real launch, remove the demo data with `python seed_demo.py --clear`.
 
 ## How we work
 
@@ -342,4 +405,4 @@ Then test the phase's steps on the emulator (each phase in `CHANGELOG.md` lists 
 
 ## Credits
 
-Map data © OpenStreetMap contributors (ODbL 1.0). Tiles by OpenFreeMap / OpenMapTiles. Font: Atkinson Hyperlegible Next by the Braille Institute (SIL OFL). Icons: Lucide (ISC).
+Map data © OpenStreetMap contributors (ODbL 1.0). Tiles by OpenFreeMap / OpenMapTiles. Font: Atkinson Hyperlegible Next by the Braille Institute (SIL OFL). Icons: Lucide (ISC). Demo report photos: Wikimedia Commons, by Encik Tekateki, Wiki Asmah, Two hundred percent and Taufik (CC BY-SA and CC BY, see [data-scripts/demo-photos/CREDITS.md](data-scripts/demo-photos/CREDITS.md)).

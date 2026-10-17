@@ -47,7 +47,8 @@ export function NavBottomBar({ remainingM, remainingS, destName, arrived, onEnd,
           </AppText>
         ) : (
           <>
-            <AppText variant="title" color={colors.safeText}>
+            {/* One line always: on narrow phones the time shrinks a little instead of wrapping. */}
+            <AppText variant="title" color={colors.safeText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               {t('units.min', { count: minutes(remainingS) })}
             </AppText>
             <AppText variant="caption" color={colors.textMuted} numberOfLines={2}>
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     backgroundColor: colors.white,
@@ -92,7 +93,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     minHeight: touchTarget + spacing.sm,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,

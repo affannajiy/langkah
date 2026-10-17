@@ -14,11 +14,15 @@ export function MapCredit({ onPress }: Props) {
       accessibilityRole="button"
       accessibilityHint={t('map.creditA11yHint')}
       onPress={onPress}
-      hitSlop={spacing.sm}
+      // The pill is about 20 dp tall; this makes the tap area 48 dp (Section 5.4).
+      hitSlop={{ top: 14, bottom: 14, left: spacing.sm, right: spacing.sm }}
       style={styles.pill}
     >
-      {/* The one place text is under 14 sp: a legal credit, not UI copy. */}
-      <Text style={styles.text}>{t('map.credit')}</Text>
+      {/* The one place text is under 14 sp: a legal credit, not UI copy. It keeps a fixed
+          size, so on narrow phones it never breaks inside "OpenStreetMap". */}
+      <Text style={styles.text} allowFontScaling={false}>
+        {t('map.credit')}
+      </Text>
     </Pressable>
   );
 }

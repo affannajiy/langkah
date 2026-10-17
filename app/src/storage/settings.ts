@@ -17,6 +17,7 @@ export type Settings = {
   demoMode: boolean; // only has an effect while the server allows demo writes
   onboarded: boolean;
   locationAsked: boolean; // the map asks for location by itself only once
+  batteryTipSeen: boolean; // the keep-running tip before a first walk, on some brands
 };
 
 const STORE = 'langkah.settings.v1';
@@ -29,6 +30,7 @@ export const DEFAULT_SETTINGS: Settings = {
   demoMode: false,
   onboarded: false,
   locationAsked: false,
+  batteryTipSeen: false,
 };
 
 let current: Settings = DEFAULT_SETTINGS;
@@ -54,6 +56,7 @@ function parse(raw: unknown): Settings {
     demoMode: bool(r.demoMode, d.demoMode),
     onboarded: bool(r.onboarded, d.onboarded),
     locationAsked: bool(r.locationAsked, d.locationAsked),
+    batteryTipSeen: bool(r.batteryTipSeen, d.batteryTipSeen),
   };
 }
 

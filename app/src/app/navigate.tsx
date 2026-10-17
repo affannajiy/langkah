@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { castVote, createReport, ReportError } from '../api/reports';
 import type { HazardCategory } from '../api/types';
 import { useAuth } from '../auth/AuthProvider';
+import { TextScaleCap } from '../components/AppText';
 import { MapCredit } from '../components/MapCredit';
 import { Snackbar, useSnackbar } from '../components/Snackbar';
 import { StatusBanner } from '../components/StatusBanner';
@@ -25,7 +26,7 @@ import { bearingAt, makeTrack } from '../nav/geo';
 import { useWalk } from '../nav/useWalk';
 import { getWalk, setArrival, setWalk, type Walk } from '../nav/walkStore';
 import { queueReport, queueVote } from '../storage/reportQueue';
-import { colors, shadow, spacing, touchTarget } from '../theme/theme';
+import { chromeTextScale, colors, shadow, spacing, touchTarget } from '../theme/theme';
 
 const WALK_ZOOM = 17.5;
 const BACK_AGAIN_MS = 3000;
@@ -180,86 +181,89 @@ function WalkScreen({ walk }: { walk: Walk }) {
   const first = walk.route.points[0]!;
 
   return (
-    <View style={[styles.root, { backgroundColor: mapLand }]}>
-      {mapStyle && (
-        <Map
-          ref={mapRef}
-          mapStyle={mapStyle}
-          accessibilityLabel={t('nav.mapA11y')}
-          attribution={false}
-          logo={false}
-          compass={false}
-          onRegionWillChange={(e) => {
-            if (e.nativeEvent.userInteraction) setFollowing(false);
-          }}
-        >
-          <Camera
-            ref={cameraRef}
-            initialViewState={{ center: first, zoom: WALK_ZOOM, bearing: bearingAt(makeTrack(walk.route.points), 0) }}
-            minZoom={MIN_ZOOM}
-            maxZoom={MAX_ZOOM}
-          />
-          <WalkLayers
-            track={track}
-            kind={walk.kind}
-            along={view.along}
-            hazards={hazards}
-            crossings={crossings}
-            end={walk.to.lngLat}
-          />
-          {view.at && <WalkerDot at={view.at} />}
-        </Map>
-      )}
-
-      <View style={[styles.top, { top: insets.top + spacing.md }]} pointerEvents="box-none">
-        <View onLayout={(e) => setCardBottom(insets.top + spacing.md + e.nativeEvent.layout.height)}>
-          <InstructionCard view={view} destName={walk.to.name} />
-        </View>
-        {banner && !view.arrived && <NavBanner banner={banner} onAnswer={onAnswer} onHide={dismissBanner} />}
-        {!servicesOn && !view.arrived && (
-          <StatusBanner
-            icon={LocateOff}
-            text={t('location.servicesOffWalk')}
-            action={{ label: t('location.turnOn'), onPress: () => void turnOnServices() }}
-          />
-        )}
-        {!online && servicesOn && !view.arrived && <StatusBanner icon={CloudOff} text={t('offline.walk')} />}
-      </View>
-
-      <View style={[styles.lower, { bottom: barH + spacing.sm }]} pointerEvents="box-none">
-        <MapCredit onPress={() => mapRef.current?.showAttribution()} />
-        {!following && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('nav.recentre')}
-            onPress={() => setFollowing(true)}
-            style={styles.recentre}
+    // Nothing may cover the walk: big phone text is capped on this screen.
+    <TextScaleCap.Provider value={chromeTextScale}>
+      <View style={[styles.root, { backgroundColor: mapLand }]}>
+        {mapStyle && (
+          <Map
+            ref={mapRef}
+            mapStyle={mapStyle}
+            accessibilityLabel={t('nav.mapA11y')}
+            attribution={false}
+            logo={false}
+            compass={false}
+            onRegionWillChange={(e) => {
+              if (e.nativeEvent.userInteraction) setFollowing(false);
+            }}
           >
-            <LocateFixed size={26} color={colors.interactiveText} />
-          </Pressable>
+            <Camera
+              ref={cameraRef}
+              initialViewState={{ center: first, zoom: WALK_ZOOM, bearing: bearingAt(makeTrack(walk.route.points), 0) }}
+              minZoom={MIN_ZOOM}
+              maxZoom={MAX_ZOOM}
+            />
+            <WalkLayers
+              track={track}
+              kind={walk.kind}
+              along={view.along}
+              hazards={hazards}
+              crossings={crossings}
+              end={walk.to.lngLat}
+            />
+            {view.at && <WalkerDot at={view.at} />}
+          </Map>
         )}
+
+        <View style={[styles.top, { top: insets.top + spacing.md }]} pointerEvents="box-none">
+          <View onLayout={(e) => setCardBottom(insets.top + spacing.md + e.nativeEvent.layout.height)}>
+            <InstructionCard view={view} destName={walk.to.name} />
+          </View>
+          {banner && !view.arrived && <NavBanner banner={banner} onAnswer={onAnswer} onHide={dismissBanner} />}
+          {!servicesOn && !view.arrived && (
+            <StatusBanner
+              icon={LocateOff}
+              text={t('location.servicesOffWalk')}
+              action={{ label: t('location.turnOn'), onPress: () => void turnOnServices() }}
+            />
+          )}
+          {!online && servicesOn && !view.arrived && <StatusBanner icon={CloudOff} text={t('offline.walk')} />}
+        </View>
+
+        <View style={[styles.lower, { bottom: barH + spacing.sm }]} pointerEvents="box-none">
+          <MapCredit onPress={() => mapRef.current?.showAttribution()} />
+          {!following && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('nav.recentre')}
+              onPress={() => setFollowing(true)}
+              style={styles.recentre}
+            >
+              <LocateFixed size={26} color={colors.interactiveText} />
+            </Pressable>
+          )}
+        </View>
+
+        <NavBottomBar
+          remainingM={view.remainingM}
+          remainingS={remainingS}
+          destName={walk.to.name}
+          arrived={view.arrived}
+          onEnd={view.arrived ? finish : end}
+          onQuickReport={openQuick}
+          onHeight={setBarH}
+        />
+
+        <QuickReportSheet
+          visible={!!quick}
+          at={quick?.at ?? null}
+          street={quick?.street ?? null}
+          onSend={onSend}
+          onClose={() => setQuick(null)}
+        />
+
+        <Snackbar message={snackbar.message} onHide={snackbar.hide} bottom={barH + spacing.md} />
       </View>
-
-      <NavBottomBar
-        remainingM={view.remainingM}
-        remainingS={remainingS}
-        destName={walk.to.name}
-        arrived={view.arrived}
-        onEnd={view.arrived ? finish : end}
-        onQuickReport={openQuick}
-        onHeight={setBarH}
-      />
-
-      <QuickReportSheet
-        visible={!!quick}
-        at={quick?.at ?? null}
-        street={quick?.street ?? null}
-        onSend={onSend}
-        onClose={() => setQuick(null)}
-      />
-
-      <Snackbar message={snackbar.message} onHide={snackbar.hide} bottom={barH + spacing.md} />
-    </View>
+    </TextScaleCap.Provider>
   );
 }
 

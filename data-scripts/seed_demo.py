@@ -8,21 +8,29 @@ Adds, owned by one demo account:
 - one pending hazard and three improvement requests with upvotes from three demo
   voters (Phase 5: Community tab, status chips, Top ranking, export),
 and writes a GPX file of the walk so the Android Emulator can play it back.
+Most reports get an example photo from demo-photos/ (Wikimedia Commons, see
+demo-photos/CREDITS.md). They are real Malaysian streets but not the Ipoh pins,
+so each note says where the photo is from.
 
 Usage (inside the data-scripts venv):
     python seed_demo.py                 # add or refresh the demo reports, write out/demo-walk.gpx
     python seed_demo.py --clear         # remove the demo accounts and everything they posted
 
-Needs DATABASE_URL in data-scripts/.env. Safe to run again: it replaces the demo
-accounts' reports each time. Demo accounts have no password and cannot sign in.
-Real reports and votes are never touched. Remove the demo data before a real launch.
-No photos: Langkah only shows real report photos (CLAUDE.md), and we have none yet.
+Needs DATABASE_URL in data-scripts/.env. Photos also need SUPABASE_URL and
+SUPABASE_SERVICE_ROLE_KEY there (laptop only, never in the app or git); without
+them the reports are added without photos. Safe to run again: it replaces the demo
+accounts' reports and photos each time. Demo accounts have no password and cannot
+sign in. Real reports, votes and photos are never touched. Remove the demo data
+before a real launch.
 """
 import argparse
 import datetime as dt
+import json
 import math
 import os
 import sys
+import urllib.error
+import urllib.request
 
 import psycopg
 
@@ -37,24 +45,35 @@ DEMO_VOTERS = [f"6c616e67-6b61-4864-8065-6d6f0000000{i}" for i in (2, 3, 4)]
 WALK_FROM = (101.07344, 4.59737)  # Ipoh Railway Station
 WALK_TO = (101.07846, 4.59619)    # Concubine Lane
 
+PHOTO_DIR = "demo-photos"
+PHOTO_BUCKET = "report-photos"
+PHOTO_PREFIX = "demo-"  # demo photo names in the bucket, so --clear finds them
+
 # On the fastest line of the demo walk, about 200 m, 330 m and 580 m from the station.
+# (category, lon, lat, note, photo file in demo-photos/ or None)
 HAZARDS = [
-    ("broken_sidewalk", 101.07488, 4.59689, "Demo: cracked slabs on Jalan Dato Sagor"),
-    ("unsafe_crossing", 101.07601, 4.59658, "Demo: no gap in traffic near the clock tower"),
-    ("blocked_path", 101.07794, 4.59634, "Demo: stalls block Lorong Panglima"),
+    ("broken_sidewalk", 101.07488, 4.59689,
+     "Demo: broken path edge on Jalan Dato Sagor. Example photo from Johor Bahru.", "broken-sidewalk.jpg"),
+    ("unsafe_crossing", 101.07601, 4.59658,
+     "Demo: worn crossing lines near the clock tower, cars do not stop. Example photo from Kuala Lumpur.",
+     "unsafe-crossing.jpg"),
+    ("blocked_path", 101.07794, 4.59634,
+     "Demo: stalls block the five-foot way on Lorong Panglima. Example photo from Ampang.", "blocked-path.jpg"),
 ]
 
 # Pending: shows in Community with "Needs 2 confirmations", but does not change routes.
 PENDING_HAZARDS = [
-    ("flooding", 101.07807, 4.59498, "Demo: water pools here after rain"),
+    ("flooding", 101.07807, 4.59498, "Demo: water pools here after rain. Example photo from Sandakan.", "flooding.jpg"),
 ]
 
-# Improvement requests: (category, lon, lat, note, number of demo upvotes).
+# Improvement requests: (category, lon, lat, note, number of demo upvotes, photo).
 # 2 or more upvotes from others makes an improvement active (migration 9).
+# Street lights has no photo, so the demo also shows a card without one.
 IMPROVEMENTS = [
-    ("zebra_crossing", 101.07528, 4.59753, "Demo: people cross here to the station with no crossing", 3),
-    ("fix_sidewalk", 101.07856, 4.59659, "Demo: slabs lifted by tree roots", 2),
-    ("street_lights", 101.08164, 4.59709, None, 1),
+    ("zebra_crossing", 101.07528, 4.59753, "Demo: people cross here to the station with no crossing", 3, None),
+    ("fix_sidewalk", 101.07856, 4.59659,
+     "Demo: potholes along the edge fill with water after rain. Example photo from Senai, Johor.", 2, "pothole.jpg"),
+    ("street_lights", 101.08164, 4.59709, None, 1, None),
 ]
 
 WALK_SPEED = 1.3  # m/s, same as route_safe
@@ -112,10 +131,65 @@ def write_gpx(points, path):
     return len(out), t
 
 
-def clear(conn):
+class Storage:
+    """Supabase Storage over plain HTTPS (no extra dependency). Service role key: laptop only."""
+
+    def __init__(self, url, key):
+        self.base = url.rstrip("/") + "/storage/v1/object"
+        self.headers = {"Authorization": f"Bearer {key}", "apikey": key}
+
+    def _send(self, method, path, body, content_type, extra=None):
+        req = urllib.request.Request(f"{self.base}/{path}", data=body, method=method,
+                                     headers={**self.headers, "Content-Type": content_type, **(extra or {})})
+        try:
+            with urllib.request.urlopen(req, timeout=60) as res:
+                return res.read()
+        except urllib.error.HTTPError as e:
+            sys.exit(f"Storage {method} {path} failed: {e.code} {e.read().decode(errors='replace')}")
+
+    def upload(self, name, data):
+        # x-upsert replaces the file, so a rerun keeps the same names.
+        self._send("POST", f"{PHOTO_BUCKET}/{name}", data, "image/jpeg", {"x-upsert": "true"})
+
+    def remove(self, names):
+        self._send("DELETE", PHOTO_BUCKET, json.dumps({"prefixes": names}).encode(), "application/json")
+
+
+def storage_from_env():
+    url, key = os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    if not (url and key):
+        print("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set: demo reports get no photos.")
+        return None
+    return Storage(url, key)
+
+
+def all_photos():
+    rows = [*HAZARDS, *PENDING_HAZARDS, *IMPROVEMENTS]
+    return sorted({r[-1] for r in rows if r[-1]})
+
+
+def upload_photos(storage):
+    """Upload demo-photos/ (already 1280 px JPEG at 70%, see CREDITS.md). Returns file -> bucket path."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    paths, total = {}, 0
+    for file in all_photos():
+        with open(os.path.join(here, PHOTO_DIR, file), "rb") as fh:
+            data = fh.read()
+        name = PHOTO_PREFIX + file
+        storage.upload(name, data)
+        paths[file] = name
+        total += len(data)
+    print(f"Uploaded {len(paths)} demo photos ({total // 1024} KB in all).")
+    return paths
+
+
+def clear(conn, storage):
     # Deleting the accounts removes their reports and votes too (on delete cascade).
     n = conn.execute("delete from auth.users where id = any(%s)", ([DEMO_USER, *DEMO_VOTERS],)).rowcount
     print(f"Removed {n} demo accounts and everything they posted.")
+    if storage:
+        storage.remove([PHOTO_PREFIX + f for f in all_photos()])
+        print("Removed the demo photos.")
 
 
 def add_account(conn, user_id, email, name):
@@ -132,19 +206,20 @@ def add_account(conn, user_id, email, name):
     )
 
 
-def add_report(conn, kind, category, lon, lat, note, status=None):
+def add_report(conn, kind, category, lon, lat, note, photo_path=None, status=None):
     # Status is server-controlled, so only this script (not the app) can set "active".
+    # The photo check in the report trigger skips scripts (no signed-in user).
     return conn.execute(
         f"""
-        insert into public.reports (user_id, kind, category, geom, note{", status" if status else ""})
-        values (%s, %s, %s, extensions.st_setsrid(extensions.st_makepoint(%s, %s), 4326), %s{", %s" if status else ""})
+        insert into public.reports (user_id, kind, category, geom, note, photo_path{", status" if status else ""})
+        values (%s, %s, %s, extensions.st_setsrid(extensions.st_makepoint(%s, %s), 4326), %s, %s{", %s" if status else ""})
         returning id
         """,
-        (DEMO_USER, kind, category, lon, lat, note, *([status] if status else [])),
+        (DEMO_USER, kind, category, lon, lat, note, photo_path, *([status] if status else [])),
     ).fetchone()[0]
 
 
-def seed(conn):
+def seed(conn, photos):
     add_account(conn, DEMO_USER, DEMO_EMAIL, "Langkah demo")
     for i, voter in enumerate(DEMO_VOTERS, start=1):
         add_account(conn, voter, f"voter{i}@langkah.invalid", f"Demo voter {i}")
@@ -152,12 +227,12 @@ def seed(conn):
     conn.execute("delete from public.report_votes where user_id = any(%s)", (DEMO_VOTERS,))
     conn.execute("delete from public.reports where user_id = %s", (DEMO_USER,))
 
-    for category, lon, lat, note in HAZARDS:
-        add_report(conn, "hazard", category, lon, lat, note, status="active")
-    for category, lon, lat, note in PENDING_HAZARDS:
-        add_report(conn, "hazard", category, lon, lat, note)
-    for category, lon, lat, note, upvotes in IMPROVEMENTS:
-        report_id = add_report(conn, "improvement", category, lon, lat, note)
+    for category, lon, lat, note, photo in HAZARDS:
+        add_report(conn, "hazard", category, lon, lat, note, photos.get(photo), status="active")
+    for category, lon, lat, note, photo in PENDING_HAZARDS:
+        add_report(conn, "hazard", category, lon, lat, note, photos.get(photo))
+    for category, lon, lat, note, upvotes, photo in IMPROVEMENTS:
+        report_id = add_report(conn, "improvement", category, lon, lat, note, photos.get(photo))
         for voter in DEMO_VOTERS[:upvotes]:
             # The vote trigger updates the status, as it would for a real vote.
             conn.execute(
@@ -170,7 +245,7 @@ def seed(conn):
 
 def main():
     parser = argparse.ArgumentParser(description="Add or remove the Langkah demo hazards.")
-    parser.add_argument("--clear", action="store_true", help="remove the demo account and its hazards")
+    parser.add_argument("--clear", action="store_true", help="remove the demo accounts, their reports and photos")
     parser.add_argument("--gpx", default=os.path.join("out", "demo-walk.gpx"), help="where to write the demo walk")
     args = parser.parse_args()
 
@@ -180,11 +255,12 @@ def main():
     if not url:
         sys.exit("DATABASE_URL is not set. Copy .env.example to .env and fill it in.")
 
+    storage = storage_from_env()
     with psycopg.connect(url, sslmode="require") as conn:
         if args.clear:
-            clear(conn)
+            clear(conn, storage)
             return
-        seed(conn)
+        seed(conn, upload_photos(storage) if storage else {})
         # The fastest line ignores hazards, so it is the walk that passes all three.
         res = conn.execute(
             "select route_safe(%s, %s, %s, %s, 'day')", (*WALK_FROM, *WALK_TO)

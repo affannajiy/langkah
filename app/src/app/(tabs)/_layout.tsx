@@ -4,9 +4,10 @@ import { Map as MapIcon, UserRound, UsersRound, type LucideIcon } from 'lucide-r
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
-import { tabBarStyles } from '../../navigation/tabBar';
+import { AppText } from '../../components/AppText';
+import { useTabBarStyle } from '../../navigation/tabBar';
 import { useSettings, useSettingsLoaded } from '../../storage/settings';
-import { colors, fontFamily, radius, spacing } from '../../theme/theme';
+import { chromeTextScale, colors, radius, spacing } from '../../theme/theme';
 
 // Active tab gets a soft blue pill behind its icon plus bold text, so the state
 // is shown by shape and weight, not colour alone (docs/screens/Main.png).
@@ -20,10 +21,30 @@ function tabIcon(Icon: LucideIcon) {
   };
 }
 
+// Our own label, so its text grows with the phone's font size only up to
+// chromeTextScale, matching the height useTabBarStyle reserves for it.
+function tabLabel({ focused, children }: { focused: boolean; children: string }) {
+  return (
+    <AppText
+      variant="label"
+      color={focused ? colors.navy : colors.textMuted}
+      maxFontSizeMultiplier={chromeTextScale}
+      numberOfLines={1}
+      // Long labels (Komuniti, Community) shrink a little on narrow phones instead of cutting off.
+      adjustsFontSizeToFit
+      minimumFontScale={0.8}
+      style={styles.label}
+    >
+      {children}
+    </AppText>
+  );
+}
+
 export default function TabsLayout() {
   const { t } = useTranslation();
   const loaded = useSettingsLoaded();
   const { onboarded } = useSettings();
+  const tabBarStyle = useTabBarStyle();
 
   // First launch: language and location first (guide Section 5.5). The loading
   // screen covers the short wait for settings.
@@ -36,9 +57,9 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.navy,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: tabBarStyles.bar,
+        tabBarStyle,
         tabBarItemStyle: styles.item,
-        tabBarLabelStyle: styles.label,
+        tabBarLabel: tabLabel,
       }}
     >
       <Tabs.Screen name="index" options={{ title: t('tabs.map'), tabBarIcon: tabIcon(MapIcon) }} />
@@ -50,7 +71,7 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   item: { minHeight: 56 },
-  label: { fontFamily, fontSize: 14, fontWeight: '700', marginTop: spacing.xs },
+  label: { fontWeight: '700', marginTop: spacing.xs },
   iconPill: {
     width: 56,
     height: 32,

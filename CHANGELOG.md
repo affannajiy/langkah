@@ -1,5 +1,65 @@
 # Changelog
 
+## Phase 7: Demo readiness (2026-10-11)
+
+### Added
+- **Demo report photos** (`data-scripts/demo-photos/`): five real Malaysian street photos from Wikimedia Commons:
+  - a broken path edge (Johor Bahru)
+  - a worn crossing (Kuala Lumpur)
+  - a blocked five-foot way (Ampang)
+  - a flooded road (Sandakan)
+  - potholes (Senai)
+  - Each was resized once to 1280 px JPEG at 70% (134 to 333 KB) with its metadata removed.
+  - Authors and licences (CC BY-SA 4.0, CC BY 4.0, CC BY-SA 2.5) are in `CREDITS.md`, in the README credits and in the app under Settings > About.
+- **`seed_demo.py` uploads them:**
+  - Photos go on the three active hazards, the pending flood and the fix-sidewalk improvement. The street lights request stays without one, so the demo also shows a card with no photo.
+  - Each note says where its photo was really taken.
+  - Uploading needs `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `data-scripts/.env` (laptop only). It uses only the standard library, so there is no new dependency.
+  - `--clear` also removes the photos.
+- **`data-scripts/check_payload.py`:** a read-only check against Section 7.4, using the public key with gzip like the app does. Results on the live project:
+
+  | Payload | Measured | Budget |
+  |---|---|---|
+  | Route polyline, demo walk (637 m) | 119 B | under 1 KB for 2 km |
+  | Route polyline, 2 km walk (1,995 m) | 247 B | under 1 KB for 2 km |
+  | Whole route answer (both routes, steps, gzip) | 683–834 B | – |
+  | One screen of hazards and amenities (3 hazards, 37 amenities) | 487 B | a few KB |
+  | Search, 10 results | 383 B | under 2 KB |
+  | Community page | 535 B | – |
+  | Demo photos | 134–333 KB | – |
+
+  10 of 10 within budget.
+- **`docs/accessibility-check.md`:** the results of the code check, plus a manual checklist to tick on the preview APK: TalkBack, largest font, bright light, one hand, haptics and Bahasa Melayu.
+- **README section 7, "Demo script":** what to do the day before, then a 5-minute on-stage run with what to show and what to say. It also covers what to do if something goes wrong and what to undo after the demo.
+- **README section 3:** how to give the preview build its public settings (`eas env:push`) and how to check its SHA-1 for Google sign-in.
+
+### Fixed (final project check)
+- **The preview APK would have closed at launch.** EAS builds from the repo, where `app/.env` is git-ignored, and the EAS "preview" environment was empty. `eas.json` now names `"environment": "preview"` for the preview profile, and README section 3 says to push the three `EXPO_PUBLIC_*` values once.
+- `LoadingScreen` used a colour literal (#1F3F66) next to the theme's `navyRaised` (#1E3F66). It now uses the token.
+
+### Fixed (accessibility check)
+- The "Safest" badge text was 4.21:1 on its green chip. `safeText` is now #006B4F, which gives 5.15:1 on the chip and 6.53:1 on white.
+- The map credit's tap area was about 36 dp tall and is now 48 dp.
+
+### Fixed (other phone sizes, found on an Honor X9a)
+Tested on the emulator at 411 dp and 320 dp wide, text at 1.0x, 1.3x and 2.0x, with gesture and 3-button navigation.
+- **A sheet peeked over the tab bar and blocked it.** Hidden sheets (Layers, Location) slid down a fixed 400 dp, so a taller sheet (big text, small screen) stayed partly on screen. `Sheet` now slides down by its own measured height, never grows taller than the screen (its content scrolls), and keeps its buttons above the system navigation bar on the walk screen.
+- **The tab bar was squeezed.** Its height was fixed at 80 dp, and Android takes the gesture line or 3-button bar from inside that. `useTabBarStyle()` now adds the system bar and the label's text size.
+- **Big phone text covered the map.** New `chromeTextScale` (1.3) in the theme and a `TextScaleCap` context in `AppText`: controls over the map, the walk screen, the tab bar and the Community header grow up to 1.3x. Search, report, layers, lists and Settings still follow the phone's text size fully.
+- **Route compare:** with big text the cards pushed Start off screen and could not scroll. Start is now pinned at the bottom of the sheet, and the cards scroll above it.
+- **Search results** wrap to 2 lines; with big text the distance moves under the name. Me rows wrap to 2 lines.
+- **Community header** wraps (List / Map drops under the title); Hazards / Improvements and the sort chips no longer overflow.
+- **Walk bar:** the time stays on one line; the map credit keeps a fixed 12 sp so it never breaks inside "OpenStreetMap".
+- **Crash on the first walk location:** `expo-task-manager` saves each background location as a job, and Android refuses that without `RECEIVE_BOOT_COMPLETED`, which the explicit permission list left out. It is added (no prompt; Langkah starts nothing after a restart). **Needs a new build.**
+
+### Added (battery savers)
+- A one-time tip before the first walk on Honor, Huawei, Xiaomi, Oppo, Realme, OnePlus, Vivo and Samsung phones, whose battery savers can stop a walk's location with the screen off. **Start walk** goes on at once; **Open Settings** opens Langkah's app settings. The brand comes from Android (`Platform.constants`), so no new package. English and Bahasa Melayu.
+
+### Not done
+- `npm run lint`: ESLint is not installed in `app/` (`expo lint` would add it, which is a new dependency). `npm run typecheck` passes.
+- The preview APK is not built yet; you run `eas build -p android --profile preview`.
+- `npm audit --omit=dev` lists 32 advisories (20 high). All but one are in build tools that never ship in the APK (Metro, `node-forge` in code signing, `braces`, `xcode`, `uuid` in config plugins). The one in the app is `decode-uri-component` under `expo-router` (slow parsing of a crafted link). npm's suggested "fix" is a downgrade to Expo 44, so it is not applied: take the fix with the next Expo SDK update instead of `npm audit fix --force`.
+
 ## Phase 6: Arrival, Me, onboarding and polish (2026-10-11)
 
 ### Added
