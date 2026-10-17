@@ -1,0 +1,29 @@
+# EAS Build upload filter. When this file exists EAS uses it instead of .gitignore,
+# and it never read the nested data-scripts/.gitignore anyway, so the OSM files and
+# the Python venv (~670 MB) were being uploaded. The build only needs app/ and assets/.
+
+# Same as .gitignore
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+*.apk
+*.aab
+supabase/.temp/
+supabase/.branches/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.vscode/*
+.idea/
+.DS_Store
+Thumbs.db
+council/config.js
+
+# Not part of the app build
+data-scripts/
+docs/
+supabase/
+council/
+*.osm.pbf
