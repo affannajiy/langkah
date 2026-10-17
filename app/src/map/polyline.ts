@@ -35,3 +35,29 @@ export function decodePolyline(encoded: string, precision = 5): LngLat[] {
     return result & 1 ? ~(result >> 1) : result >> 1;
   }
 }
+
+// The other way: [lng, lat] pairs to an encoded polyline, for the live share link.
+export function encodePolyline(points: LngLat[], precision = 5): string {
+  const factor = 10 ** precision;
+  let out = '';
+  let lastLat = 0;
+  let lastLng = 0;
+  for (const [lng, lat] of points) {
+    const la = Math.round(lat * factor);
+    const ln = Math.round(lng * factor);
+    out += writeValue(la - lastLat) + writeValue(ln - lastLng);
+    lastLat = la;
+    lastLng = ln;
+  }
+  return out;
+
+  function writeValue(n: number): string {
+    let v = n < 0 ? ~(n << 1) : n << 1;
+    let s = '';
+    while (v >= 0x20) {
+      s += String.fromCharCode((0x20 | (v & 0x1f)) + 63);
+      v >>= 5;
+    }
+    return s + String.fromCharCode(v + 63);
+  }
+}

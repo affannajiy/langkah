@@ -138,6 +138,17 @@ main { max-width: 1280px; margin: 0 auto; padding: 16px; display: flex; flex-dir
 .chip-active { background: var(--safe-soft); color: var(--safe-text); }
 .chip-pending { background: var(--neutral); color: var(--muted); }
 .chip-expired { background: var(--neutral); color: var(--muted); }
+.chip-planned { background: var(--interactive-soft); color: var(--interactive-text); }
+.chip-fixed { background: var(--safe-soft); color: var(--safe-text); }
+
+/* Staff sign-in and status buttons (Phase 21) */
+.staff { background: var(--white); border-bottom: 1px solid var(--border); }
+.staff-in { max-width: 1280px; margin: 0 auto; padding: 12px 16px 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.staff-in input { min-height: var(--touch); min-width: 260px; flex: 1 1 260px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; }
+.staff-msg { max-width: 1280px; margin: 0 auto; padding: 8px 16px 12px; color: var(--muted); font-size: 15px; }
+.staff-msg:empty { padding-top: 0; }
+.staff-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 8px 12px 56px; }
+.staff-actions .btn { min-height: 40px; font-size: 15px; }
 .empty { color: var(--muted); padding: 16px 4px; }
 
 /* Trend charts */

@@ -1,5 +1,128 @@
 # Changelog
 
+Newest first. Phases 10 to 17 were written up after the fact from their commits, so they are shorter than the earlier entries.
+
+## Phases 18 to 24: Demo upgrade (2026-10-18)
+
+Agreed after the MVP was complete (guide Section 16). Built together, then checked as one: migrations 18 to 22 are applied and each was tested in SQL inside rolled-back transactions; `npm run typecheck` passes, `npx eslint src` has 0 errors, payload check 10 of 10 within budget. **A new development build and a new preview APK are needed** (`expo-speech` is native).
+
+### Phase 18: Live walk share
+- **Share** button on the walk screen (above the bottom bar). A sheet says what the friend sees and when it stops; **Share link** is the consent, then the Android share sheet sends `https://affannajiy.github.io/langkah/walk.html?t=TOKEN`. While live the button reads **Live**; the sheet offers Send link again and Stop sharing.
+- Migration 18: `walk_shares` (one row per walker, latest position only), `share_start`, `share_update`, `share_stop`, `share_view` (anon), pg_cron cleanup every 10 minutes. Arriving or ending wipes the position at once; every share ends after 2 hours.
+- `app/src/nav/liveShare.ts` listens to the walk's own fixes, so it keeps going with the screen off: at most every 15 s, only after 20 m moved or a minute standing still. A reroute sends the new line.
+- `council/walk.html` + `walk.js`: the friend's page (live, stale "no update for 3 min", arrived, ended, link ended). Deployed by the council workflow. Checked in the browser at desktop and phone width.
+- Live share is free for everyone, so it left the Plus perks list (guide Section 15.2; `docs/screens/Plus.png` is older).
+
+### Phase 19: Voice guidance
+- New dependency `expo-speech` (approved). `app/src/nav/voice.ts` speaks about 0.3 s after each pulse: the first instruction, turns ("In 20 metres, turn left onto …"), hazards by landmark, rerouting and arrival. A hazard or arrival cuts off older speech.
+- Speaker button on the walk screen and **Voice guidance** in Settings; off by default.
+
+### Phase 20: Rain and heat
+- `app/src/weather/useWeather.ts`: Open-Meteo for the pilot area's centre (2 decimals), 15 minute cache. Rain now, 60% within the hour, or feels-like 35 °C turns on **prefer cover**.
+- Route compare: a chip ("Raining · prefers cover", "Rain likely · prefers cover", "Hot · prefers cover", or "Prefer cover" by hand) with a tick when on.
+- Migration 19: `route_safe` gains `p_cover` (Safest pays 0.6 more per uncovered metre, rule `uncovered_weather`; the shown score is unchanged) and `p_step_free`. Old 5-argument calls still work.
+- Settings credits Open-Meteo (CC BY 4.0).
+
+### Phase 21: Fixed loop
+- Migration 20: `reports.council_status` (open, planned, fixed), `private.council_staff`, `council_me`, `council_set_status` (staff only), `user_notices` with `my_notices` and `notices_seen`; `cs` added to `community_reports`, `my_reports` and `council_data` (fixed requests leave the ranking and follow it for a year). Fixed pays the reporter +50 once.
+- Dashboard: **Staff sign in** (email magic link, `create_user: false`), Mark planned, Mark fixed, Reopen under each request, Planned and Fixed chips, `council_status` in CSV and GeoJSON. Tested with a temporary staff account (deleted afterwards); the test status change was reset.
+- App: "Planned by council" and "Fixed by council" chips in Community, the detail sheet and Me; a snackbar on the next open; ledger line "Your request was fixed by the council".
+- The owner's email is on the live staff list (added by SQL, not in git).
+
+### Phase 22: Badges and streaks
+- Migration 22: `my_badges()` from walks, reports, the ledger and street answers. No new table, no points.
+- Me tab: **Badges** card with the weekly walk streak and eight badges, each with progress or Earned and a tick.
+
+### Phase 23: Map-the-gaps street checks
+- Migration 21: `street_answers`, `private.street_facts`, `street_answer(ways[], attr, value)`, route questions `q` (up to 3 named streets, one question each), `private.rescore_ways` (scoped rescore, the same rules as `score_segments`: 0 of 511 segments differed in a check), and `score_segments` now applies agreed facts first, so a data refresh keeps them. Answers pay +2, 5 a day; Afrina agrees with the demo user.
+- Arrival screen: **Help check these streets** for Google and demo accounts.
+- A first version of migration 21 copied too much of migration 16 and put back the old ledger reasons; fixed in the file and on the live database the same day.
+
+### Phase 24: Step-free mode
+- Settings, **Avoid steps**. Both routes skip `highway=steps` (53 segments); the start and end never snap onto stairs. The route sheet shows a Step-free tag and how many crossings on the route have no kerb ramp mapped (`stats.kx`). No route: "We could not find a walk without stairs".
+
+### Not done
+- Push notifications for council news (needs Firebase); the notice shows in the app instead.
+- Open-Meteo's free plan is non-commercial: fine for the prototype, not for a launch.
+- A street fact never flips back on its own once applied; a later disagreement needs SQL.
+- `npx expo-doctor`: 7 Expo packages are a patch behind (not changed here).
+
+## Phase 17: Smaller EAS upload (2026-10-18)
+
+### Added
+- **`.easignore`** at the repo root. EAS read only the root `.gitignore`, so `data-scripts/raw/` (OSM files) and `data-scripts/.venv/` were uploaded with every build. The file repeats the `.gitignore` rules and also leaves out `data-scripts/`, `docs/`, `supabase/` and `council/`, which the app build never reads.
+
+### Results
+- Upload went from 539 MB (6 min 22 s) to 6.1 MB (2 s). The preview build passed.
+
+## Phase 16: More map detail (2026-10-18)
+
+### Added
+- **Base map detail** (`useLangkahMapStyle.ts`): Positron POI names from zoom 16 and house numbers from zoom 18, in Langkah colours.
+- **Covered walkways** (migration 17, `road_segments.covered`): five-foot ways, arcades and covered paths from OSM. They show as two thin rails on the map from zoom 15 and on the walk screen. Route cards get an "Under cover" stat (`stats.cov`) and a "covered" chip at 30% or more. Scores and routing do not change.
+- **New amenity kinds**: kerb ramps and tactile paving (Kerbs layer, from zoom 17) and benches, toilets and drinking water (Rest stops layer, from zoom 16). Each has its own icon. Covered is on by default and the other two are off.
+- `ipoh_extract.py` and `load_to_supabase.py` read the new tags. The data was refreshed.
+
+### Known issues
+- OSM in the pilot areas has little of this yet: 3 kerb ramps, 6 toilets, 1 drinking water point, and no benches or tactile paving.
+
+## Phase 15: Pre-build polish and size cut (2026-10-17)
+
+### Changed
+- **Smaller APK**: `expo-build-properties` turns on R8 minify and resource shrinking and drops 32-bit x86 (keeps arm64, armeabi-v7a and x86_64).
+- `expo-sharing` and the in-app CSV and GeoJSON export were removed. The council dashboard has the export now.
+- ESLint is set up. Two React Compiler rules are warnings, since the app does not use the compiler.
+- Fixes from a full audit against the rulebooks: the Community tab, the peek sheet, the search pill, the mode chip and theme tokens.
+
+## Phase 14: Final build fixes (2026-10-17)
+
+### Fixed (from `docs/test-notes.md`)
+- Migration 16 fixes these:
+  - **B2:** every points spend failed, because the balance check rejected the proposed row.
+  - **G11:** deleting your own report kept its points. They are now taken back.
+  - **G2:** unchecked streets counted as safe in the shown score.
+- Also fixed:
+  - The night chip width.
+  - The status bar on the dark map.
+  - The starred count string.
+  - Arrival hazards and distance after a reroute.
+  - The ad cap button.
+  - The bank list wording.
+  - The Active chip on hazard cards.
+
+## Phase 13: Language fix (2026-10-17)
+
+### Changed
+- **English only for the prototype** (owner's call), until the Malay copy is reviewed. `ENGLISH_ONLY` in `app/src/i18n/index.ts` hides the language choice in Settings and on the welcome screen. `ms.json` stays complete, so setting it to `false` brings Bahasa Melayu back.
+- The council dashboard follows the same rule (`ENGLISH_ONLY` in `council/app.js`, strings in `council/strings.js`).
+
+## Phase 12: Council dashboard and sponsored pins (2026-10-17)
+
+### Added
+- **Council dashboard** (`council/`, guide Section 15.7, migration 15) on GitHub Pages. It has:
+  - improvement requests ranked by upvotes, with CSV and GeoJSON export
+  - a hazard heatmap
+  - 12-week trends
+  - the most common report types
+
+  It uses one `council_data` function with the anon key.
+- **Partner shops and sponsored pins** (Section 15.6, migration 14): at most 3 pins on the browse map, and a partner sheet with the offer, Get voucher and Walk here. `partner_report.py` prints views, taps and redeems.
+- `seed_demo.py --council-stats` and `--partner-stats` add sample data for the pitch.
+
+## Phase 11: Mock top-up, ads, shop and Plus (2026-10-17)
+
+### Added
+- **Shop** (vouchers and cosmetics), **Langkah Plus** (20 starred places, gold frame, badge), **mock top-up** (bank and e-wallet flow, marked "DEMO · no real money") and **mock 30 s ads** from 6 parody brands. Migration 13.
+- A low-points sheet with ways to earn, plus avatars and frames on the Me tab.
+
+## Phase 10: Points ledger, demo account and welcome (2026-10-17)
+
+### Added
+- **Langkah Points** (Section 15, migration 12): `point_ledger` and `point_balances`. Points move only through `security definer` functions, with daily caps by Malaysian day. Walks pay per GPS-checked km. Reports, votes, ratings and the daily check-in also earn points.
+- **Wallet** on the Me tab, and a points snackbar.
+- **Try the demo**: a fresh guest filled as Demo Walker, with Afrina (demo) confirming hazards, and Reset demo.
+- The welcome screen offers Google, guest or demo.
+
 ## Final test fixes (2026-10-17)
 
 From the first pass of `docs/final-test.md` on the preview APK (Pixel 8 emulator). JS fixes plus one native plugin, so they need a new build.

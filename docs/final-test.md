@@ -64,6 +64,24 @@ Mark each row Pass, Fail (with a note) or Skip.
 | 44 | Laptop | Council page | Open https://affannajiy.github.io/langkah/ | English only, no language button. Ranked requests with photos, heatmap, 12-week charts, report types. 30/90/365 switch works. CSV and GeoJSON download, no names. || Pass. English only, KPIs load (11 hazards, 54 requests), map, ranked list, trends, types. CSV (55 lines) and GeoJSON built, no names, 5-decimal coords (captured in the page, not saved). CSV uses codes like street_lights, not labels (G18). |
 | 45 | Phone | Council on phone | Open the same page on the phone | Fits the screen, no side scroll, map moves with a finger. | |
 
+### Demo upgrade (Phases 18 to 24, guide Section 16)
+
+Before: a new preview APK (`expo-speech` is native). For row 52, the Pages URL is in Supabase **Redirect URLs** (README section 5, Council dashboard).
+
+| # | Where | Area | Step | Expect | Result |
+|---|---|---|---|---|---|
+| 46 | Emu | Live share | Start a walk, tap **Share**, read the sheet, tap **Share link** | Sheet says what the friend sees and when it stops. Android share sheet opens with the walk.html link. The button now reads **Live**. | |
+| 47 | Laptop | Friend's page | Open the shared link, play the GPX | Dot moves about every 15 s, route line, "About N min left", "Updated just now". Map credit visible. | |
+| 48 | Both | Share ends | Arrive (or End), reload the friend's page | "Arrived at hh:mm" (or "ended the walk"), "position was deleted". In SQL, the row has no position. After 15 min the link says it ended. | |
+| 49 | Emu | Voice | On the walk screen tap the speaker, play the GPX | "Voice guidance on" snackbar. Turns, hazards (by landmark) and arrival spoken after the pulse. Tap again: silence. Settings shows the same switch. | |
+| 50 | Both | Rain and heat | Route compare. Tap **Prefer cover**; when it rains the chip turns on by itself | Chip with an icon, a word and a tick when on. Safest may change near covered walkways (the station); the score does not. | |
+| 51 | Both | Step-free | Settings, **Avoid steps** on, then route through the railway station | Step-free tag on the sheet, no stairs on either route, "Kerbs are not checked at N crossings". Off again restores the usual routes. | |
+| 52 | Laptop | Staff sign-in | Council page, **Staff sign in**, your email, open the link | "Signed in as staff". Mark planned, Mark fixed and Reopen under each request. | |
+| 53 | Both | Fixed loop | Mark one of your own requests **Fixed**, then reopen the app | Snackbar: "Fixed: the council fixed your request … +50 points". Fixed by council chip in Community and Me. Ledger line. The request leaves the ranked list on the page. | |
+| 54 | Both | Street checks | Finish a walk signed in (Google or demo) | "Help check these streets": up to 3 questions. Answer one: "Two walkers agree" (demo) and +2 points. The next route on that street asks the next question. | |
+| 55 | Both | Badges | Open **Me** | Badges card: weekly streak and 8 badges, earned ones say Earned with a tick, others show progress. | |
+| 56 | Both | Plus | Open Langkah Plus | No live walk share perk (it is free for everyone now). | |
+
 ## After
 
 1. Delete your test reports (Me, My reports), or leave them if they are real.

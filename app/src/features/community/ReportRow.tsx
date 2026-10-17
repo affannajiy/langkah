@@ -7,7 +7,7 @@ import { AppText } from '../../components/AppText';
 import { formatDistance, timeAgo } from '../../i18n/format';
 import { colors, radius, spacing } from '../../theme/theme';
 import { categoryIcon, categoryKey } from '../report/categoryIcons';
-import { StatusChip } from './StatusChip';
+import { CouncilChip, StatusChip } from './StatusChip';
 import { HazardVotes, UpvoteButton } from './VoteButtons';
 
 type Props = {
@@ -68,6 +68,7 @@ export const ReportRow = memo(function ReportRow({ report: r, busy, onOpen, onVo
           </AppText>
           {/* Hazards always show their state (routing uses only active ones); improvements only when pending. */}
           {(r.kind === 'hazard' || r.status === 'pending') && <StatusChip status={r.status} />}
+          <CouncilChip status={r.councilStatus} />
         </View>
         {r.kind === 'improvement' && <UpvoteButton report={r} busy={busy} onVote={(v) => onVote(r, v)} />}
       </Pressable>
@@ -100,7 +101,7 @@ export function FeaturedCard({ report: r, busy, onOpen, onVote }: Omit<Props, 'f
           {subtitle}
         </AppText>
         <View style={styles.featuredRow}>
-          <StatusChip status={r.status} />
+          {r.councilStatus === 'open' ? <StatusChip status={r.status} /> : <CouncilChip status={r.councilStatus} />}
           <UpvoteButton report={r} busy={busy} onVote={(v) => onVote(r, v)} wide />
         </View>
       </View>

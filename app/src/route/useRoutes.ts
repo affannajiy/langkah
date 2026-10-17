@@ -2,7 +2,7 @@ import type { LngLat } from '@maplibre/maplibre-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ApiError, routeSafe } from '../api/langkah';
-import type { RouteError, RoutePair, ScoringMode } from '../api/types';
+import type { RouteError, RouteOptions, RoutePair, ScoringMode } from '../api/types';
 
 export type RoutesState =
   | { status: 'idle' }
@@ -10,9 +10,9 @@ export type RoutesState =
   | { status: 'ok'; pair: RoutePair }
   | { status: 'error'; error: RouteError };
 
-// Asks route_safe for both routes whenever the trip or the scoring mode changes.
+// Asks route_safe for both routes whenever the trip, the scoring mode or an option changes.
 // The trip is passed as plain numbers so a new array with the same point does not refetch.
-export function useRoutes(from: LngLat | null, to: LngLat | null, mode: ScoringMode, enabled: boolean) {
+export function useRoutes(from: LngLat | null, to: LngLat | null, mode: ScoringMode, options: RouteOptions, enabled: boolean) {
   const [state, setState] = useState<RoutesState>({ status: 'idle' });
   const [attempt, setAttempt] = useState(0);
   const inflight = useRef<AbortController | null>(null);
@@ -21,6 +21,7 @@ export function useRoutes(from: LngLat | null, to: LngLat | null, mode: ScoringM
   const fy = from?.[1];
   const tx = to?.[0];
   const ty = to?.[1];
+  const { cover, stepFree } = options;
 
   useEffect(() => {
     inflight.current?.abort();
@@ -31,7 +32,7 @@ export function useRoutes(from: LngLat | null, to: LngLat | null, mode: ScoringM
     const controller = new AbortController();
     inflight.current = controller;
     setState({ status: 'loading' });
-    routeSafe([fx, fy], [tx, ty], mode, controller.signal)
+    routeSafe([fx, fy], [tx, ty], mode, { cover, stepFree }, controller.signal)
       .then((pair) => {
         if (!controller.signal.aborted) setState({ status: 'ok', pair });
       })
@@ -43,7 +44,7 @@ export function useRoutes(from: LngLat | null, to: LngLat | null, mode: ScoringM
         setState({ status: 'error', error: code });
       });
     return () => controller.abort();
-  }, [fx, fy, tx, ty, mode, enabled, attempt]);
+  }, [fx, fy, tx, ty, mode, cover, stepFree, enabled, attempt]);
 
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
   return { state, retry };

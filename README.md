@@ -21,7 +21,26 @@ UTP Technopreneurship Team Project, Group 4. Android only for the MVP.
 | 4 | Walking navigation, hazard banner, quick report, haptics | Done |
 | 5 | Sign-in, report flow, community tab, trust rules and report expiry | Done |
 | 6 | Arrival, Me tab, Settings, onboarding, night map, demo mode, empty and error states | Done |
-| 7 | Demo readiness: demo photos, payload and accessibility checks, demo script, preview APK | Done, being reviewed |
+| 7 | Demo readiness: demo photos, payload and accessibility checks, demo script, preview APK | Done |
+| 8 | Test and tune: scoring weights in a table, walk rating report, user test plan | Done |
+| 9 | Final test fixes, orphaned photo cleanup, revenue plan | Done |
+| 10 | Langkah Points ledger, wallet, daily check-in, Try the demo account, welcome screen | Done |
+| 11 | Shop (vouchers, cosmetics), Langkah Plus, mock top-up, mock 30 s ads | Done |
+| 12 | Council dashboard on GitHub Pages, partner shops and sponsored pins | Done |
+| 13 | English only for the prototype (Malay kept behind a switch) | Done |
+| 14 | Final build fixes from `docs/test-notes.md` (points spend, scoring display, reroute stats) | Done |
+| 15 | Pre-build audit, smaller APK (R8, no 32-bit x86), ESLint | Done |
+| 16 | More map detail: POI names, house numbers, covered walkways, kerb ramps, rest stops | Done |
+| 17 | Smaller EAS upload (`.easignore`, 539 MB to 6 MB) | Done |
+| 18 | Live walk share: a link a friend opens to follow the walk until arrival (`council/walk.html`) | Done |
+| 19 | Voice guidance: spoken turns, hazards and arrival after the haptic pulse | Done |
+| 20 | Rain and heat: Safest prefers covered walkways when it rains or is very hot (Open-Meteo) | Done |
+| 21 | Fixed loop: staff sign-in on the council page, Planned and Fixed, reporter notice and +50 | Done |
+| 22 | Badges and the weekly walk streak on Me | Done |
+| 23 | Map-the-gaps: street checks after a walk; two walkers agreeing fill in unknown streets | Done |
+| 24 | Step-free mode: Avoid steps in Settings, kerb warning on the route card | Done |
+
+The MVP in the guide is complete. Phases 18 to 24 are the demo upgrade agreed on 2026-10-18 (guide Section 16).
 
 ### Pilot areas
 
@@ -34,6 +53,10 @@ Routing, search and map data only cover these boxes. Outside them the app says s
 
 A walk can be up to 10 km, so Ipoh to UTP (about 30 km) is refused with a clear message.
 
+## What's next
+
+Guide Section 14: SOS to trusted contacts, full wheelchair routing once kerb ramps are mapped, AI classification of report photos, a self-hosted GraphHopper server once Langkah grows past one city, Tile2Net sidewalks from aerial imagery, an iOS release, a Penang pilot (Bukit Jambul to FIZ), Malay copy reviewed and switched back on, and Play Store prep (privacy policy, crash reporting, Google Play Billing for real top-ups, and a weather source licensed for commercial use).
+
 ## Stack
 
 | Part | What we use |
@@ -42,7 +65,10 @@ A walk can be up to 10 km, so Ipoh to UTP (about 30 km) is refused with a clear 
 | Map | `@maplibre/maplibre-react-native` with the OpenFreeMap Positron style, restyled. No Google Maps. |
 | Backend | Supabase (Singapore): Postgres with PostGIS, pgRouting and pg_trgm, anonymous and Google sign-in, Storage |
 | Data | OpenStreetMap via Geofabrik, processed by Python scripts in `data-scripts/` |
-| Text | i18next with expo-localization, English and Bahasa Melayu, no hard-coded strings |
+| Text | i18next with expo-localization, English and Bahasa Melayu, no hard-coded strings. English only for the prototype (`ENGLISH_ONLY` in `app/src/i18n/index.ts`). |
+| Council dashboard | Plain HTML and JS with MapLibre GL JS, on GitHub Pages |
+| Voice | `expo-speech` (Android text to speech, on the phone) |
+| Weather | Open-Meteo (free, no key), asked about the pilot area only |
 | Font | Atkinson Hyperlegible Next |
 | Builds | EAS (Expo's cloud build), free tier |
 
@@ -53,14 +79,23 @@ The budget is RM0: every service above is free and none needs a card.
 | Folder | Contents |
 |---|---|
 | `app/` | The Expo app. Screens live in `app/src/app/` (Expo Router). |
-| `app/src/api/` | Supabase client and typed calls: `langkah.ts` (search, routes, map view), `reports.ts` (reports, votes, Community, photos) |
+| `app/src/api/` | Supabase client and typed calls: `langkah.ts` (search, routes, map view), `reports.ts` (reports, votes, Community, photos), `points.ts` (wallet, shop, top-up, ads) |
 | `app/src/auth/` | Guest session, Google sign-in (linked to the guest account) and the sign-in sheet |
 | `app/src/features/map/` | Map tab pieces: search sheet, compare sheet, trip bar, home controls, layers |
 | `app/src/app/navigate.tsx` | The walking screen, shown above the tabs |
 | `app/src/app/arrival.tsx`, `settings.tsx`, `welcome.tsx` | Arrival screen, Settings, and first-launch onboarding (language, why location) |
 | `app/src/features/nav/` | Walking screen pieces: instruction card, hazard banner, bottom bar, quick report sheet, route layers |
 | `app/src/features/report/` | The 4-step report flow sheet and the category icons |
-| `app/src/features/community/` | Community tab pieces: rows, detail sheet, map view, votes, CSV and GeoJSON export |
+| `app/src/features/community/` | Community tab pieces: rows, detail sheet, map view, votes |
+| `app/src/app/shop.tsx`, `plus.tsx`, `topup.tsx`, `ad.tsx` | Shop, Langkah Plus, mock top-up and mock ad screens |
+| `app/src/features/points/`, `topup/`, `ads/` | Wallet cards, voucher and low-points sheets, the mock bank and e-wallet steps, the parody ad brands |
+| `app/src/points/` | Points snackbar, Plus status, partner offer text |
+| `app/src/route/` | Route card reasons (the chips) |
+| `app/src/api/share.ts`, `notices.ts`, `streets.ts`, `badges.ts` | Live walk share, council news, street checks and badges (Phases 18 to 23) |
+| `app/src/nav/liveShare.ts`, `nav/voice.ts` | Sends the latest position while a share is live; spoken guidance |
+| `app/src/weather/` | Rain and heat from Open-Meteo for the pilot area (Phase 20) |
+| `app/src/features/arrival/` | Street checks on the Arrival screen (Phase 23) |
+| `app/plugins/` | Config plugins (`withNetworkPing.js`: HTTP/2 pings so requests recover after a network change) |
 | `app/src/nav/` | Walk engine: line snapping, off-route and arrival, haptics, walk location service |
 | `app/src/map/` | Map config (pilot areas), pins, route lines, user dot, location hooks |
 | `app/src/components/` | Shared UI: text, buttons, sheets, chips, route cards, snackbar |
@@ -69,10 +104,11 @@ The budget is RM0: every service above is free and none needs a card.
 | `app/src/i18n/locales/` | `en.json` and `ms.json` |
 | `app/src/theme/theme.ts` | All design tokens (colours, spacing, radii, type) |
 | `supabase/migrations/` | Every schema change, function and RLS policy, in order |
-| `data-scripts/` | `ipoh_extract.py` (clip and check OSM data), `load_to_supabase.py` (load and build the network) `seed_demo.py` (demo reports, photos and walk) and `check_payload.py` (Section 7.4 sizes). `demo-photos/` holds the demo report photos and their credits. `raw/`, `out/` and `.venv/` are git-ignored. |
-| `council/` | The council dashboard: a static web page (plain HTML and JS, no build) on GitHub Pages. `config.js` is git-ignored. |
+| `data-scripts/` | `ipoh_extract.py` (clip and check OSM data), `load_to_supabase.py` (load and build the network), `seed_demo.py` (demo reports, photos, walk, council and partner samples), `check_payload.py` (Section 7.4 sizes), `rating_report.py`, `partner_report.py` and `clean_photos.py`. `demo-photos/` holds the demo report photos and their credits. `raw/`, `out/` and `.venv/` are git-ignored. |
+| `council/` | The council dashboard and the live walk page (`walk.html`): static web pages (plain HTML and JS, no build) on GitHub Pages. `config.js` is git-ignored. |
 | `.github/workflows/` | `council-pages.yml` deploys `council/` to GitHub Pages |
-| `docs/` | The guide, colour scheme, architecture diagram and final screen PNGs |
+| `docs/` | The guide, colour scheme, architecture diagram, final screen PNGs, revenue plan, and the test checklists and notes |
+| `.easignore` | What EAS leaves out of the build upload. It replaces `.gitignore` for EAS, so keep the two in step. |
 | `assets/logo/` | Master logo files. `app/assets/brand/` holds the copies the build uses. |
 | `rulebooks/` | Engineering, security and UI/UX rulebooks |
 
@@ -101,7 +137,7 @@ See [SETUP_CHECKLIST.md](SETUP_CHECKLIST.md) for the full list of tools and free
 
 Expo Go cannot run MapLibre, so we use our own **development build**: an APK with the native code, which loads the JavaScript live from your laptop.
 
-1. **Build the development APK** (first time, and again only when a native package or a permission changes: AsyncStorage in Phase 3, `expo-task-manager` and the walk permissions in Phase 4, Google sign-in, the photo picker, the image resizer and file sharing in Phase 5, `expo-network` in Phase 6). Inside `app/`:
+1. **Build the development APK** (first time, and again only when a native package or a permission changes: AsyncStorage in Phase 3, `expo-task-manager` and the walk permissions in Phase 4, Google sign-in, the photo picker, the image resizer and file sharing in Phase 5, `expo-network` in Phase 6, `expo-build-properties` in Phase 15, `expo-speech` in Phase 19). Inside `app/`:
    ```bash
    eas build -p android --profile development
    ```
@@ -133,6 +169,8 @@ adb shell pm clear com.langkah.app
 ```
 
 ### Testing in Bahasa Melayu
+
+The prototype is English only: `ENGLISH_ONLY` in `app/src/i18n/index.ts` is `true`, so the language choice is hidden and the steps below have no effect. Set it to `false` to bring Malay back.
 
 The language picked in onboarding or in **Me**, **Settings** wins. Until one is picked, Langkah follows the phone. To switch only the app to Malay, without changing the whole emulator:
 
@@ -204,6 +242,17 @@ The project is hosted on Supabase (Singapore region). Every change goes through 
 | `…09_reports_community` | Trust rules (votes set status), `profiles`, `report_create`, `report_vote`, `community_reports`, `community_export`, `street_at`, `sync_profile`, nightly expiry on pg_cron |
 | `…10_me_ratings_demo` | `walk_ratings` and `rate_walk` (Arrival), `my_reports` and `my_stats` (Me tab), the private `app_flags` demo switch and `app_status` |
 | `…11_score_weights` | Table 9 penalties move into `private.score_weights`; `private.score_segments()` rescores without a rebuild (tuning: [docs/user-test-plan.md](docs/user-test-plan.md)) |
+| `…12_points_and_demo` | `point_ledger`, `point_balances`, the earn functions with daily caps, daily check-in, the demo account and Reset demo |
+| `…13_shop_topup_plus` | `shop_items`, `user_items`, `shop_buy`, `plus_buy`, `cosmetic_use`, `topup_mock`, `ad_finish`. Turns off the default EXECUTE grant on `public` |
+| `…14_partners` | `partners`, sponsored pins in `map_in_view`, `partner_seen` counts |
+| `…15_council_dashboard` | `council_data(p_days)` for the dashboard |
+| `…16_final_test_fixes` | `points_add` spend fix, points taken back on report delete, unchecked streets lower the shown score |
+| `…17_walk_detail` | `road_segments.covered`, the new amenity kinds, covered lines in `map_in_view` and `route_safe` (`stats.cov`) |
+| `…18_live_share` | `walk_shares` (latest position only), `share_start`, `share_update`, `share_stop`, `share_view`, cleanup every 10 minutes on pg_cron |
+| `…19_route_options` | `route_safe` gains `p_cover` (prefer cover, rule `uncovered_weather`) and `p_step_free` (no stairs, `stats.kx`) |
+| `…20_fixed_loop` | `reports.council_status`, `private.council_staff`, `council_set_status`, `user_notices`, `my_notices`; `cs` in Community, Me and the dashboard |
+| `…21_street_checks` | `street_answers`, `private.street_facts`, `street_answer`, street questions (`q`) on routes, a scoped rescore |
+| `…22_badges` | `my_badges()`: eight badges and the weekly walk streak |
 
 The app can call only `search_places`, `route_safe`, `map_in_view`, the report and Community functions above, plus the tables RLS allows. Road data is never read directly by the app.
 
@@ -298,7 +347,20 @@ python seed_demo.py --clear
 
 ### Council dashboard (web, guide Section 15.7)
 
-A read-only page for MBI: improvement requests ranked by upvotes (with CSV and GeoJSON download), a hazard heatmap, 12-week trends and the most common report types. It calls one function, `council_data`, with the public anon key. No names or user ids. Public for the prototype; staff sign-in comes before a real sale.
+A page for MBI: improvement requests ranked by upvotes (with CSV and GeoJSON download), a hazard heatmap, 12-week trends and the most common report types. It reads with one function, `council_data`, and the public anon key. No names or user ids. Reading is public for the prototype.
+
+**Staff sign-in (Phase 21, once):** staff mark a request Planned or Fixed; the reporter is told in the app and gets +50 points when it is fixed.
+1. Supabase dashboard, **Authentication**, **URL Configuration**, **Redirect URLs**: add `https://affannajiy.github.io/langkah/` (and `http://localhost:8765/` for the laptop preview).
+2. The staff member needs a Supabase account with that email (a Google sign-in in the app counts, or **Authentication**, **Users**, **Add user**). Nobody can sign up from the page.
+3. Put the email on the staff list in the **SQL editor** (never in git):
+   ```sql
+   insert into private.council_staff (email, name) values ('someone@mbi.gov.my', 'Name');
+   ```
+4. On the page: **Staff sign in**, enter the email, open the link from the email on the same device.
+
+Supabase's built-in mailer sends only a few emails an hour, which is enough for staff.
+
+**Live walk page (Phase 18):** `walk.html?t=TOKEN` deploys with the dashboard; the app's Share button links to it. Nothing to set up.
 
 **Sample data for the pitch** (about 150 backdated reports over 12 weeks by their own sample accounts; open improvements also show in the app's Community tab):
 
@@ -390,6 +452,17 @@ Before starting: emulator location at Ipoh Railway Station (4.597368, 101.073437
 | 4:20 | **Me**, **Settings**, **Bahasa Melayu** | Every screen works in English and Bahasa Melayu. |
 | 4:40 | Closing slide | All on free tools and open data: OpenStreetMap, Supabase and MapLibre, so it costs RM0 to run for the pilot. Next: more pilot areas such as Seri Iskandar, and offline maps. |
 
+**Extras to swap in (Phases 18 to 24),** if there is time or instead of a row above:
+
+| Show | Say |
+|---|---|
+| During the walk, tap **Share**, then **Share link**; open the link on a laptop | A friend follows the walk live until you arrive. Only the latest position is kept, and it is deleted on arrival. |
+| The speaker button on the walk screen | Voice guidance in English, after the vibration, for walkers who keep the phone in a pocket. |
+| Route compare when it rains, or tap **Prefer cover** | Safest leans onto five-foot ways and covered paths. |
+| **Arrival**: answer a street check | Almost every street is unchecked in OpenStreetMap. Two walkers agreeing fill the gap and the street is rescored at once. |
+| Council page: **Staff sign in**, **Mark fixed** | The council closes the loop. The reporter is told in the app and earns 50 points. |
+| **Me**, **Badges** | Badges and a weekly walk streak; they never buy ranking. |
+
 ### If something goes wrong
 
 | Problem | What to do |
@@ -415,7 +488,10 @@ Before starting: emulator location at Ipoh Railway Station (4.597368, 101.073437
 - Only `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` and `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` go in the app. All three are public by design: RLS protects every table, and a Google client ID is sent with every sign-in. The Google **client secret** lives only in the Supabase dashboard.
 - The **service role key** and the **database password** never go in the app, in git or in chat. `.env` files are git-ignored; keep the `.env.example` files up to date.
 - Every new table turns on RLS in the same migration that creates it.
-- Location stays on the phone. It is only sent as the start of a route request (including a reroute) and never stored.
+- Location stays on the phone. It is only sent as the start of a route request (including a reroute) and never stored. The one exception is **live walk share** (Phase 18), and only after the walker taps Share link: the server keeps the latest position (5 decimals) in one row, overwritten in place, wipes it when the walk arrives or ends, and deletes every share 2 hours after it started. The link's token is 128 random bits; the page sends no referrer and asks not to be indexed.
+- Weather (Phase 20) is asked about the middle of the pilot area, never the user's position.
+- Street checks (Phase 23) send only the street's OSM way ids and the answer, never the route. They need a Google or demo account, like reports.
+- Council staff are decided by `private.council_staff`, checked in SQL on every status change. Signing in on the dashboard grants nothing by itself, and the sign-in form never says whether an email is on the list.
 - During a walk, location runs as a foreground service with a visible notification and stops when the walk ends. Langkah never asks for "Allow all the time" location (`ACCESS_BACKGROUND_LOCATION` is blocked).
 - Guests (Supabase anonymous accounts) can read but never write. RLS checks for a Google-signed-in account on every report, vote and photo upload. The one exception is demo mode, a database-only switch (section 4) that lets guests write while it is on.
 - Walk ratings store only the rating, day or night, route kind, score and length. No route line, start or end point.
@@ -447,4 +523,4 @@ Before starting: emulator location at Ipoh Railway Station (4.597368, 101.073437
 
 ## Credits
 
-Map data © OpenStreetMap contributors (ODbL 1.0). Tiles by OpenFreeMap / OpenMapTiles. Font: Atkinson Hyperlegible Next by the Braille Institute (SIL OFL). Icons: Lucide (ISC). Demo report photos: Wikimedia Commons, by Encik Tekateki, Wiki Asmah, Two hundred percent and Taufik (CC BY-SA and CC BY, see [data-scripts/demo-photos/CREDITS.md](data-scripts/demo-photos/CREDITS.md)).
+Map data © OpenStreetMap contributors (ODbL 1.0). Tiles by OpenFreeMap / OpenMapTiles. Weather by Open-Meteo.com (CC BY 4.0). Font: Atkinson Hyperlegible Next by the Braille Institute (SIL OFL). Icons: Lucide (ISC). Demo report photos: Wikimedia Commons, by Encik Tekateki, Wiki Asmah, Two hundred percent and Taufik (CC BY-SA and CC BY, see [data-scripts/demo-photos/CREDITS.md](data-scripts/demo-photos/CREDITS.md)).

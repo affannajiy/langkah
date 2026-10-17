@@ -1,4 +1,5 @@
 import type { LngLat } from '@maplibre/maplibre-react-native';
+import type { TFunction } from 'i18next';
 import * as Location from 'expo-location';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,9 +7,13 @@ import { useTranslation } from 'react-i18next';
 import { ApiError, routeSafe } from '../api/langkah';
 import type { Route, Step } from '../api/types';
 import { bearingAt, makeTrack, metres, snap, type Track } from './geo';
+import { hazardWhere } from '../features/nav/NavBanner';
+import { stepText } from '../features/nav/InstructionCard';
+import { hazardKey } from '../map/MapPins';
 import { haptics } from './haptics';
 import { useRouteFeatures, type RouteCrossing, type RouteHazard } from './useRouteFeatures';
 import { startWalkLocation, stopWalkLocation, subscribeFixes, type Fix } from './walkLocation';
+import { speak, stopSpeaking } from './voice';
 import type { Walk } from './walkStore';
 
 // Turn-by-turn progress for one walk (guide Section 6.3, screen 4): where the walker
@@ -69,6 +74,9 @@ function landmarkFor(h: RouteHazard, crossings: RouteCrossing[], route: Route, t
   return name ? { k: 'street', name } : null;
 }
 
+// Spoken distance, to the nearest 5 m: "In 20 metres, turn left onto Jalan Sultan Idris Shah".
+const spokenMetres = (t: TFunction, m: number) => t('voice.metres', { count: Math.max(5, Math.round(m / 5) * 5) });
+
 function nextStep(route: Route, track: Track, along: number): WalkView['next'] {
   for (const step of route.steps) {
     if (step.t === 'depart') continue;
@@ -80,6 +88,9 @@ function nextStep(route: Route, track: Track, along: number): WalkView['next'] {
 
 export function useWalk(walk: Walk) {
   const { t } = useTranslation();
+  // Voice (Phase 19) speaks from the fix handler, so it reads the latest text through a ref.
+  const say = useRef({ t, dest: walk.to.name });
+  say.current = { t, dest: walk.to.name };
   const [route, setRoute] = useState<Route>(walk.route);
   const track = useMemo(() => makeTrack(route.points), [route]);
   const { hazards, crossings } = useRouteFeatures(track);
@@ -123,6 +134,7 @@ export function useWalk(walk: Walk) {
     // On the line, the last few metres to the end count too.
     setSummary({ walkedM: e.doneM + (e.joined ? tr.total : (e.along ?? 0)), warned: e.alerted.size, route: r });
     haptics.arrive();
+    speak(say.current.t('voice.arrived', { name: say.current.dest }), true);
     setBanner(null);
     setView((v) => ({ ...v, arrived: true, remainingM: 0, next: null }));
     stopWalkLocation();
@@ -133,19 +145,22 @@ export function useWalk(walk: Walk) {
       const e = eng.current;
       e.rerouting = true;
       setBanner({ kind: 'rerouting' });
+      speak(say.current.t('nav.reroute.finding'));
       try {
-        const pair = await routeSafe(from, walk.to.lngLat, walk.mode);
+        const pair = await routeSafe(from, walk.to.lngLat, walk.mode, walk.options);
         const next = walk.kind === 'fastest' && !pair.same ? pair.fastest : pair.safest;
         // The stretch walked off the line, up to where the new route starts, counts too.
         e.doneM += (e.along ?? 0) + (e.lastAt ? metres(e.lastAt, from) : 0);
         Object.assign(e, { along: null, joined: false, offCount: 0, buzzed: new Set<number>(), lastAt: null });
         setRoute(next);
         setBanner({ kind: 'back' });
+        speak(say.current.t('nav.reroute.back'));
       } catch (error) {
         if (error instanceof ApiError && error.code === 'too_close') arrive();
         else {
           console.warn('Reroute failed', error);
           setBanner({ kind: 'rerouteFailed' });
+          speak(say.current.t('nav.reroute.failed'));
         }
       } finally {
         e.rerouting = false;
@@ -167,6 +182,9 @@ export function useWalk(walk: Walk) {
       const onLine = s.off <= OFF_ROUTE_M;
 
       if (onLine && trusted) {
+        // First time on this line: say how to start ("Head along Jalan Panglima").
+        const depart = r.steps[0];
+        if (!e.joined && depart) speak(stepText(depart, say.current.dest, say.current.t));
         e.joined = true;
         e.offCount = 0;
         e.along = s.along;
@@ -196,6 +214,11 @@ export function useWalk(walk: Walk) {
       if (onLine && next && next.step.t !== 'arrive' && next.distM <= TURN_BUZZ_M && !e.buzzed.has(next.step.i)) {
         e.buzzed.add(next.step.i);
         haptics.turn();
+        speak(
+          next.distM < 8
+            ? stepText(next.step, say.current.dest, say.current.t)
+            : say.current.t('voice.inDistance', { distance: spokenMetres(say.current.t, next.distM), action: stepText(next.step, say.current.dest, say.current.t) }),
+        );
       }
 
       // One hazard banner at a time; it never replaces a reroute message.
@@ -204,7 +227,12 @@ export function useWalk(walk: Walk) {
         if (h) {
           e.alerted.add(h.id);
           haptics.hazard();
-          setBanner({ kind: 'hazard', hazard: h, distM: h.along - along, landmark: landmarkFor(h, xs, r, tr) });
+          const landmark = landmarkFor(h, xs, r, tr);
+          const tt = say.current.t;
+          const where = hazardWhere(landmark, tt);
+          const title = tt('nav.hazard.title', { hazard: tt(`hazard.${hazardKey(h.category)}`), distance: spokenMetres(tt, h.along - along) });
+          speak(where ? `${title}. ${where}` : title, true);
+          setBanner({ kind: 'hazard', hazard: h, distM: h.along - along, landmark });
         }
       }
 
@@ -226,6 +254,7 @@ export function useWalk(walk: Walk) {
   // Location runs only while this walk is on screen.
   useEffect(() => {
     let alive = true;
+    const engine = eng.current;
     const unsubscribe = subscribeFixes(onFix);
     Location.getLastKnownPositionAsync()
       .then((pos) => {
@@ -239,6 +268,8 @@ export function useWalk(walk: Walk) {
       alive = false;
       unsubscribe();
       stopWalkLocation();
+      // Let "You have arrived" finish; cut anything else off.
+      if (!engine.arrived) stopSpeaking();
     };
     // Start once per walk; onFix reads the latest state through refs.
   }, []);

@@ -1,6 +1,6 @@
 import type { LngLat } from '@maplibre/maplibre-react-native';
 
-import type { Route, ScoringMode } from '../api/types';
+import type { Route, RouteOptions, ScoringMode, StreetQuest } from '../api/types';
 import type { RouteKind } from '../map/RouteLayers';
 import { resetGpsDistance } from './walkLocation';
 
@@ -11,6 +11,7 @@ export type Walk = {
   route: Route;
   kind: RouteKind;
   mode: ScoringMode;
+  options: RouteOptions; // a reroute plans with the same options
   to: { name: string; lngLat: LngLat };
   startedAt: number;
   // Active hazards on the fastest route, when the walker chose a different, safer
@@ -31,6 +32,7 @@ export type Arrival = {
   kind: RouteKind;
   score: number;
   trail: LngLat[]; // the route just walked, drawn faintly if the user reports next
+  quests: StreetQuest[]; // street checks for the Arrival screen (Phase 23)
 };
 
 let current: Walk | null = null;

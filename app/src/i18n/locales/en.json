@@ -88,7 +88,11 @@
     "stillThere_one": "Still there · 1",
     "stillThere_other": "Still there · {{count}}",
     "gone_one": "Gone · 1",
-    "gone_other": "Gone · {{count}}"
+    "gone_other": "Gone · {{count}}",
+    "council": {
+      "planned": "Planned by council",
+      "fixed": "Fixed by council"
+    }
   },
   "me": {
     "title": "Me",
@@ -273,9 +277,21 @@
       "start_outside_pilot": "You're outside the pilot areas. Choose a start point in central Ipoh or Seri Iskandar.",
       "no_start": "Choose a start point, or allow location to start from where you are.",
       "network": "Could not reach Langkah. Check your internet connection and try again.",
-      "generic": "Something went wrong planning this walk. Try again."
+      "generic": "Something went wrong planning this walk. Try again.",
+      "no_step_free": "We could not find a walk without stairs between these places. Turn off Avoid steps in Settings to see other routes."
     },
-    "retry": "Try again"
+    "retry": "Try again",
+    "cover": {
+      "rain": "Raining · prefers cover",
+      "rainSoon": "Rain likely · prefers cover",
+      "heat": "Hot · prefers cover",
+      "on": "Prefer cover",
+      "hint": "Safest leans onto five-foot ways and covered paths. Turns on by itself when it rains or is very hot."
+    },
+    "stepFree": "Step-free",
+    "stepFreeA11y": "Step-free routes are on. Change it in Settings.",
+    "kerbs_one": "No stairs on this route. Kerbs are not checked at {{count}} crossing, so the kerb there may not be lowered.",
+    "kerbs_other": "No stairs on this route. Kerbs are not checked at {{count}} crossings, so the kerbs there may not be lowered."
   },
   "nav": {
     "mapA11y": "Walking map, turning with your walking direction",
@@ -550,7 +566,13 @@
     "version": "Langkah {{version}}, UTP Technopreneurship Group 4",
     "credits": "Map data © OpenStreetMap contributors, available under the Open Database License. Map style from OpenFreeMap.",
     "photoCredits": "Demo report photos from Wikimedia Commons, taken elsewhere in Malaysia: Encik Tekateki (CC BY-SA 4.0), Wiki Asmah (CC BY 4.0), Two hundred percent (CC BY-SA 2.5) and Taufik (CC BY-SA 4.0).",
-    "osm": "OpenStreetMap copyright and licence"
+    "osm": "OpenStreetMap copyright and licence",
+    "voice": "Voice guidance",
+    "voiceBody": "Speaks turns, hazards ahead and arrival during a walk, after the vibration. You can also turn it on or off on the walk screen.",
+    "avoidSteps": "Avoid steps",
+    "avoidStepsBody": "Routes skip stairs, for wheelchairs, prams and luggage. Kerb ramps are not mapped everywhere yet, so the route card says where kerbs are not checked.",
+    "weatherCredit": "Weather for rain and heat routing by Open-Meteo.com (CC BY 4.0). Langkah asks only about the middle of the pilot area, never your location.",
+    "privacyShare": "Live walk share sends your latest position only after you tap Share link, and deletes it when you arrive or end the walk. Street checks send only the street and your answer."
   },
   "welcome": {
     "chooseTitle": "Choose your language",
@@ -615,7 +637,9 @@
     "plus": "Langkah Plus, 1 month",
     "reportDeleted": "Report deleted, points taken back",
     "plusUntil": "Until {{date}}",
-    "adBrand": "Ad by {{brand}}"
+    "adBrand": "Ad by {{brand}}",
+    "reportFixed": "Your request was fixed by the council",
+    "quest": "Street check answered"
   },
   "topup": {
     "demo": "DEMO · no real money",
@@ -845,8 +869,6 @@
     "rowBody": "More starred places, gold frame and badge",
     "tagline": "Extras for regular walkers. Safety stays free for everyone.",
     "activeUntil": "Plus is on until {{date}}. No auto-renew.",
-    "perkShare": "Live walk share",
-    "perkShareBody": "Family sees your walk until you arrive",
     "later": "Coming later",
     "perkPlaces": "More starred places",
     "perkPlacesBody": "{{count}} places instead of 3",
@@ -900,5 +922,105 @@
     "walk": "Walk here",
     "voucher": "Get voucher · {{cost}} pts",
     "why": "Shops pay to show here. Routes, alerts and reports never change for them."
+  },
+  "share": {
+    "button": "Share live walk",
+    "liveA11y": "Sharing your walk live. Open share options",
+    "liveTag": "Live",
+    "askTitle": "Share your walk live?",
+    "askBody": "Anyone with the link sees where you are on a map, where you are heading and when you should arrive. It stops when you arrive or end the walk, and your position is deleted then. Links stop working after 2 hours.",
+    "start": "Share link",
+    "starting": "Making the link…",
+    "liveTitle": "Your walk is shared",
+    "liveBody": "People with the link see your position until you arrive or end the walk. Then it is deleted.",
+    "again": "Send link again",
+    "stop": "Stop sharing",
+    "stopped": "Stopped sharing. Your position was deleted.",
+    "close": "Close share options",
+    "offline": "No internet. Live share needs a connection.",
+    "failed": "Could not start live share. Try again.",
+    "message": "I'm walking to {{name}} with Langkah. Follow my walk live until I arrive: {{url}}"
+  },
+  "voice": {
+    "button": "Voice guidance",
+    "on": "Voice guidance on",
+    "onSnack": "Voice guidance on. Turns and hazards are spoken.",
+    "offSnack": "Voice guidance off.",
+    "metres_one": "{{count}} metre",
+    "metres_other": "{{count}} metres",
+    "inDistance": "In {{distance}}, {{action}}",
+    "arrived": "You have arrived at {{name}}"
+  },
+  "notice": {
+    "at": "{{what}} on {{street}}",
+    "planned": "Good news: the council has planned your request: {{what}}.",
+    "fixed": "Fixed: the council fixed your request: {{what}}.",
+    "fixedPoints_one": "Fixed: the council fixed your request: {{what}}. +{{count}} point.",
+    "fixedPoints_other": "Fixed: the council fixed your request: {{what}}. +{{count}} points.",
+    "more_one": "{{count}} more update on Me.",
+    "more_other": "{{count}} more updates on Me."
+  },
+  "quest": {
+    "title": "Help check these streets",
+    "body": "You just walked here. Your answers fill gaps in the map once another walker agrees. +2 points each.",
+    "q": {
+      "sidewalk": "Was there a sidewalk on {{street}}?",
+      "lit": "Is {{street}} lit at night?",
+      "covered": "Is there a covered walkway (five-foot way) along {{street}}?"
+    },
+    "a": {
+      "sidewalk": {
+        "both": "Both sides",
+        "one": "One side",
+        "none": "None",
+        "unsure": "Not sure"
+      },
+      "lit": {
+        "yes": "Yes",
+        "no": "No",
+        "unsure": "Not sure"
+      },
+      "covered": {
+        "yes": "Yes",
+        "no": "No",
+        "unsure": "Not sure"
+      }
+    },
+    "saved": "Thanks. It counts once another walker agrees.",
+    "agreed": "Thanks. Two walkers agree, so this street is now updated.",
+    "skipped": "Skipped. Nothing was sent.",
+    "failed": "Could not send. Tap an answer to try again."
+  },
+  "badges": {
+    "title": "Badges",
+    "weeks_one": "{{count}} week in a row with a walk",
+    "weeks_other": "{{count}} weeks in a row with a walk",
+    "noWeeks": "No walk streak yet",
+    "streakNote": "One walk in a week keeps it going. Badges earn no points.",
+    "keepGoing": "Walk once this week to keep your streak.",
+    "count": "{{count}} of {{total}} earned",
+    "earned": "Earned",
+    "progress": "{{n}} of {{goal}}",
+    "km": "{{n}} of {{goal}} km",
+    "name": {
+      "first_walk": "First walk",
+      "km10": "10 km walked",
+      "km50": "50 km walked",
+      "first_report": "First report",
+      "hazards5": "5 hazards confirmed",
+      "checkin7": "7-day check-in",
+      "street_checker": "Street checker",
+      "got_fixed": "Got it fixed"
+    },
+    "how": {
+      "first_walk": "Finish a walk with Langkah",
+      "km10": "Walk 10 km in total with Langkah",
+      "km50": "Walk 50 km in total with Langkah",
+      "first_report": "Post your first report",
+      "hazards5": "5 of your hazard reports confirmed by others",
+      "checkin7": "Check in 7 days in a row",
+      "street_checker": "Answer 10 street checks after walks",
+      "got_fixed": "A request of yours fixed by the council"
+    }
   }
 }

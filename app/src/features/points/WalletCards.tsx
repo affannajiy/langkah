@@ -226,6 +226,10 @@ function describe(l: LedgerLine, t: T): { title: string; sub: string | null } {
       const item = s(m.item);
       return { title: l.reason === 'voucher' ? t('ledger.voucher') : t('ledger.cosmetic'), sub: s(m.name) ?? (item ? itemText(t, item, 'name') : null) };
     }
+    case 'report_fixed':
+      return { title: t('ledger.reportFixed'), sub: place('improvement') };
+    case 'quest':
+      return { title: t('ledger.quest'), sub: street };
     case 'report_deleted':
       return { title: t('ledger.reportDeleted'), sub: place(m.kind === 'improvement' ? 'improvement' : 'hazard') };
     case 'plus':

@@ -489,7 +489,7 @@ There are two kinds of APK. The **development build** connects to a teammate's l
 | OpenFreeMap is a free, donation-funded service, so it could slow down or change.                                                | Our style works with any OpenMapTiles source, and the fallback is our own central Ipoh PMTiles file hosted on Supabase Storage.             |
 | Supabase free projects pause after about 7 days of no activity.                                                                 | Keep the project active and open the dashboard the day before any demo.                                                                     |
 | Alerts while the phone is locked need background location permission.                                                           | Covered by the development build. Ask for the permission only when the user starts their first walk.                                        |
-| Location data is personal data under the Personal Data Protection Act 2010 (PDPA).                                              | Ask for consent, do not store walking history, and write a short privacy notice.                                                            |
+| Location data is personal data under the Personal Data Protection Act 2010 (PDPA).                                              | Ask for consent, do not store walking history, and write a short privacy notice. Live walk share (Section 16.1) keeps only the latest position, only after the walker taps Share link, and wipes it when the walk ends. |
 | Phone GPS is only accurate to about 5 to 10 m in the city, so the app cannot always tell which side of the road the user is on. | Use sidewalk-level data for planning and display, and word alerts by landmark ("Cross at the zebra crossing ahead"), never by assumed side. |
 | The scoring weights are subjective.                                                                                             | Document them, tune them with test users and present them honestly as version 1.                                                            |
 
@@ -497,7 +497,7 @@ There are two kinds of APK. The **development build** connects to a teammate's l
 
 ## 14. Future Work
 
-Firstly, SOS and live location sharing with trusted contacts, which came up during planning but is outside the approved scope. Secondly, OKU (wheelchair) routing on top of the kerb ramp and tactile paving layer, and AI classification of report photos, from the original idea. Thirdly, staff sign-in and status updates for the council dashboard (Section 15.7), a self-hosted GraphHopper routing server once Langkah grows past a single city, and AI-generated sidewalk networks from aerial imagery with Tile2Net (Hosseini et al., 2023) to go beyond the hand-drawn pilot corridors. Lastly, an iOS release and a Penang expansion covering the Bukit Jambul to FIZ walk that inspired the project.
+Live walk share, step-free routes and council status updates came in the demo upgrade (Section 16). Still to come: firstly, an SOS button that alerts trusted contacts, on top of live walk share. Secondly, full OKU (wheelchair) routing once kerb ramps and tactile paving are mapped well enough (step-free mode only avoids stairs today), and AI classification of report photos, from the original idea. Thirdly, a self-hosted GraphHopper routing server once Langkah grows past a single city, and AI-generated sidewalk networks from aerial imagery with Tile2Net (Hosseini et al., 2023) to go beyond the hand-drawn pilot corridors. Lastly, an iOS release and a Penang expansion covering the Bukit Jambul to FIZ walk that inspired the project.
 
 ## 15. Langkah Points
 
@@ -523,7 +523,7 @@ Langkah Points work like Grab points. 100 points is about RM1. Points are closed
 
 Spending (Phase 11): shop vouchers (150 to 700), cosmetics (200 to 800) and Langkah Plus (690 for 30 days, no auto-renew). Everyone, guests too, may spend the points they earned; only top-up needs a Google or demo account. Reports and votes are never paid for. Spending cannot be undone, so it asks in a dialog first; too few points opens a bottom sheet with ways to earn.
 
-Langkah Plus gives 20 starred places instead of 3 (stars stay on the phone, like Home and Work), the gold frame and the Plus badge. Live walk share is listed as coming later. Plus never sells points and never touches routes, alerts or reports.
+Langkah Plus gives 20 starred places instead of 3 (stars stay on the phone, like Home and Work), the gold frame and the Plus badge. Live walk share is free for everyone (Section 16.1), not a Plus perk, so it no longer shows on the Plus screen (docs/screens/Plus.png is older). Plus never sells points and never touches routes, alerts, reports or safety tools.
 
 ### 15.3 How points move
 
@@ -555,8 +555,55 @@ Every mock top-up screen shows "DEMO · no real money". Nothing is typed, saved 
 - It shows open improvement requests ranked by upvotes (photo, street, status, CSV and GeoJSON with the same columns as the app export), a hazard heatmap for 30, 90 or 365 days with expired hazards included and each hazard weighted 1 + its Still there votes, 12-week trends (new hazards, new requests, new upvotes, by Malaysian week) and the most common report types.
 - One `security definer` function, `council_data(p_days)`, returns all of it. No names, no user ids, coordinates at 5 decimals, and a reporter's vote on their own report never counts. User notes are set as text on the page, never as HTML, and the CSV escapes a leading `=`, `+`, `-` or `@`.
 - Hosting: GitHub Pages, deployed by `.github/workflows/council-pages.yml`, which writes `config.js` from repo variables so no key is committed. Only the public anon key is used.
-- Public for the prototype. Before a real sale: staff sign-in by email magic link, with a staff list checked in SQL.
+- Reading stays public for the prototype. Staff sign in by email magic link to change a request's status (Section 16.4); a staff list in SQL decides who may.
 - Sample data for the pitch: `seed_demo.py --council-stats` adds backdated reports by their own sample accounts; `--clear-council-stats` removes them.
+
+## 16. Demo Upgrade (Phases 18 to 24)
+
+Decided by the owner on 2026-10-18 after the MVP was complete, in order of demo impact. Each one builds on what is already there and costs nothing: no new paid service and no card.
+
+### 16.1 Live walk share (Phase 18)
+
+- During a walk, Share opens a sheet that says what a friend will see and when it stops. Tapping Share link is the consent; then the Android share sheet sends a link. Guests may share too: a share is never public content.
+- The friend's page is `council/walk.html?t=TOKEN` on the same GitHub Pages site: a map with the walker's latest position, the planned route, the destination, time left and "updated 20 s ago", then "Arrived at 14:32". It calls `share_view(token)` with the anon key every 10 s. The page sets no referrer and asks not to be indexed.
+- The server keeps one row per walker (`walk_shares`) with the latest position only, overwritten in place, at most every 15 s (20 m moved, or a minute standing still), coordinates at 5 decimals. A new link replaces the old one. The token is 128 random bits.
+- Arriving or ending the walk wipes the position, route and destination at once; the emptied row stays 15 minutes so the page can say Arrived or Ended, then pg_cron deletes it. Every share ends 2 hours after it started, even if the phone never says so.
+
+### 16.2 Voice guidance (Phase 19)
+
+- `expo-speech` (free, approved 2026-10-18) speaks turns ("In 20 metres, turn left onto Jalan Sultan Idris Shah"), hazards by landmark, rerouting and arrival, about 0.3 s after the haptic pulse: haptics first, then text, then voice.
+- Off by default. A speaker button on the walk screen and a Settings switch turn it on. A hazard or arrival cuts off anything still being said.
+
+### 16.3 Rain and heat (Phase 20)
+
+- On route compare the app asks Open-Meteo (free, no key) about the middle of the pilot area, never the walker's own spot, at most every 15 minutes. Rain now, a 60% chance within the hour, or feels-like 35 °C (MetMalaysia heat level 1) turns on "prefer cover"; a chip shows why and turns it off or on for the trip.
+- With prefer cover on, Safest pays an extra 0.6 per metre not under cover (`private.score_weights` rule `uncovered_weather`). The shown score does not change: weather is not a safety fact about a street. Fastest never changes.
+- OSM has only about 4 km of covered walkways in the pilot areas, mostly the railway station, so today this changes few routes. Street checks (16.6) add more.
+- Open-Meteo's free plan is for non-commercial use. Before a real launch, switch to MET Malaysia data or a paid plan.
+
+### 16.4 The Fixed loop (Phase 21)
+
+- Council staff sign in on the dashboard with an email magic link (Supabase, no sign-up: only existing accounts get a link). The staff list `private.council_staff` decides who may change a request: Open, Planned or Fixed. Being signed in grants nothing by itself.
+- Planned and Fixed each tell the reporter once, as a snackbar the next time they open the app, and Fixed pays +50 points once (a reopen never pays twice). Requests show a "Planned by council" or "Fixed by council" chip in Community and on Me.
+- Fixed requests leave the ranked list and show after it for a year. Points still never touch the ranking: upvotes earn nothing.
+- Setup: add the Pages URL to Supabase Auth's redirect URLs, and add staff emails by SQL (never in git).
+
+### 16.5 Badges and streaks (Phase 22)
+
+- Eight badges on the Me tab, worked out from what is already stored: First walk, 10 km, 50 km, First report, 5 hazards confirmed, 7-day check-in, Street checker (10 street checks) and Got it fixed. Each shows its progress; earned ones say Earned with a tick.
+- The streak counts Malaysian weeks in a row with at least one walk, not days, so nobody walks just to keep it. Badges pay no points.
+
+### 16.6 Map-the-gaps street checks (Phase 23)
+
+- Almost every street in the pilot areas is "not yet checked" in OSM. After a walk, a signed-in walker sees up to 3 short questions about named streets on the route just walked: is there a sidewalk, is it lit at night, is it covered. Not sure is never sent. Only the street and the answer go to the server, never the route.
+- An answer changes nothing alone. When 2 different walkers agree (and more than disagree), it becomes a street fact: it fills in what OSM left unknown, never overrides OSM, and those streets are rescored at once. Facts are kept apart from the OSM rows, so a data refresh applies them again.
+- +2 points per answer, 5 paid a day. Demo: Afrina (demo) agrees with the demo user at once, so the change shows on one phone.
+
+### 16.7 Step-free mode (Phase 24)
+
+- Settings, Avoid steps: both routes skip stairs (`highway=steps`, 53 segments in the pilot areas). The route sheet shows a Step-free tag.
+- Kerb ramps are barely mapped yet (3 in the pilot areas), so the route card says how many crossings on the route have no kerb ramp mapped near them. This is not full wheelchair routing (Section 14).
+- If no walk without stairs exists, the sheet says so and points to the setting.
 
 ## References
 

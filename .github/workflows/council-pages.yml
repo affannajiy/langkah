@@ -37,7 +37,7 @@ jobs:
             exit 1
           fi
           mkdir -p _site
-          cp council/index.html council/style.css council/app.js council/strings.js council/icon.png _site/
+          cp council/index.html council/style.css council/app.js council/strings.js council/icon.png council/walk.html council/walk.js _site/
           printf "window.LANGKAH_CONFIG = { url: '%s', anonKey: '%s' };\n" "$SUPABASE_URL" "$SUPABASE_ANON_KEY" > _site/config.js
 
       - uses: actions/configure-pages@v5

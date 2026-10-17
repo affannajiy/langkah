@@ -28,6 +28,7 @@
   let mapReady = false;
   let popup = null;
   let picked = null; // id of the highlighted request
+  let session = null; // staff sign-in: { token, email, exp, staff }
 
   function t(key, vars) {
     let s = (S[lang] && S[lang][key]) || S.en[key] || key;
@@ -102,6 +103,7 @@
     });
     $('catsTitle').textContent = t('catsTitle', { n: days });
     $('csv').textContent = t('csv');
+    renderStaff();
     $('geojson').textContent = t('geojson');
     fillSelect($('hzCat'), 'hazard', HZ_CATS, t('allHz'));
     fillSelect($('imCat'), 'improvement', IM_CATS, t('allIm'));
@@ -130,9 +132,13 @@
     renderMap();
   }
 
+  // Open and planned requests are ranked; fixed ones follow without a rank.
   function ranked() {
     const f = $('imCat').value;
-    return data.im.map((r, i) => Object.assign({ rank: i + 1 }, r)).filter((r) => !f || r.cat === f);
+    let n = 0;
+    return data.im
+      .map((r) => Object.assign({ rank: r.cs === 'fixed' ? null : ++n }, r))
+      .filter((r) => !f || r.cat === f);
   }
 
   function chip(status) {
@@ -141,6 +147,16 @@
     c.firstChild.setAttribute('aria-hidden', 'true');
     return c;
   }
+
+  // What the council did: Planned or Fixed (open requests show their usual status).
+  function councilChip(cs) {
+    const c = el('span', 'chip chip-' + cs);
+    c.append(el('span', null, cs === 'fixed' ? '✓' : '◷'), el('span', null, t('cs_' + cs)));
+    c.firstChild.setAttribute('aria-hidden', 'true');
+    return c;
+  }
+
+  const statusWord = (r) => (r.cs && r.cs !== 'open' ? t('cs_' + r.cs) : t('status_' + r.status));
 
   const PLUS = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><path fill="#fff" d="M11 7h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg>';
 
@@ -167,12 +183,25 @@
       const what = el('span', 'what');
       what.append(el('b', null, cat('improvement', r.cat)), el('span', null, (r.street || t('noStreet')) + ' · ' + day(r.created)));
       const votes = el('span', 'votes');
-      votes.append(el('b', null, num(r.upvotes)), chip(r.status));
-      b.append(el('span', 'rank', String(r.rank)), thumb, what, votes);
-      b.setAttribute('aria-label', r.rank + '. ' + cat('improvement', r.cat) + ', ' + (r.street || t('noStreet')) + ', ' +
-        t('upvotes', { n: r.upvotes }) + ', ' + t('status_' + r.status));
+      votes.append(el('b', null, num(r.upvotes)), r.cs && r.cs !== 'open' ? councilChip(r.cs) : chip(r.status));
+      b.append(el('span', 'rank', r.rank == null ? '✓' : String(r.rank)), thumb, what, votes);
+      b.setAttribute('aria-label', (r.rank == null ? '' : r.rank + '. ') + cat('improvement', r.cat) + ', ' + (r.street || t('noStreet')) + ', ' +
+        t('upvotes', { n: r.upvotes }) + ', ' + statusWord(r));
       b.onclick = () => focusRequest(r);
       li.append(b);
+      // Staff: change the status right under the request.
+      if (session && session.staff) {
+        const acts = el('div', 'staff-actions');
+        [['planned', 'markPlanned'], ['fixed', 'markFixed'], ['open', 'reopen']].forEach(([s, label]) => {
+          if ((r.cs || 'open') === s) return;
+          const a = el('button', 'btn', t(label));
+          a.type = 'button';
+          a.setAttribute('aria-label', t(label) + ': ' + cat('improvement', r.cat) + ', ' + (r.street || t('noStreet')));
+          a.onclick = () => setStatus(r, s, a);
+          acts.append(a);
+        });
+        li.append(acts);
+      }
       list.append(li);
     });
     const left = rows.length - shown;
@@ -403,7 +432,7 @@
       img.alt = t('photoAlt');
       box.append(img);
     }
-    box.append(el('p', null, (r.street || t('noStreet')) + ' · ' + t('upvotes', { n: r.upvotes }) + ' · ' + t('status_' + r.status)));
+    box.append(el('p', null, (r.street || t('noStreet')) + ' · ' + t('upvotes', { n: r.upvotes }) + ' · ' + statusWord(r)));
     box.append(el('p', null, t('reported', { date: day(r.created) })));
     if (r.note) box.append(el('p', 'note', r.note));
     openPopup([r.lon, r.lat], box);
@@ -422,8 +451,8 @@
     const rows = ranked();
     let body, type;
     if (format === 'csv') {
-      const lines = ['rank,id,category,upvotes,status,street,lon,lat,created_at,note'];
-      rows.forEach((r) => lines.push([r.rank, r.id, r.cat, r.upvotes, r.status, r.street, r.lon, r.lat, r.created, r.note].map(cell).join(',')));
+      const lines = ['rank,id,category,upvotes,status,council_status,street,lon,lat,created_at,note'];
+      rows.forEach((r) => lines.push([r.rank, r.id, r.cat, r.upvotes, r.status, r.cs, r.street, r.lon, r.lat, r.created, r.note].map(cell).join(',')));
       body = '﻿' + lines.join('\r\n') + '\r\n'; // BOM so Excel reads UTF-8
       type = 'text/csv';
     } else {
@@ -432,7 +461,7 @@
         features: rows.map((r) => ({
           type: 'Feature',
           geometry: { type: 'Point', coordinates: [r.lon, r.lat] },
-          properties: { rank: r.rank, id: r.id, category: r.cat, upvotes: r.upvotes, status: r.status, street: r.street, created_at: r.created, note: r.note },
+          properties: { rank: r.rank, id: r.id, category: r.cat, upvotes: r.upvotes, status: r.status, council_status: r.cs, street: r.street, created_at: r.created, note: r.note },
         })),
       });
       type = 'application/geo+json';
@@ -446,7 +475,131 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
+  // ---------------------------------------------------------------- staff
+  // Magic link sign-in (guide Section 16.4). The link brings the session back in the
+  // address bar's #fragment; it is kept for this tab only and cleared from the URL.
+  // Being signed in grants nothing by itself: council_me checks the staff list.
+  const SESSION_KEY = 'langkah.council.session';
+  const pageUrl = () => location.origin + location.pathname;
+  const api = (path) => CFG.url.replace(/\/$/, '') + path;
+
+  function readSession() {
+    const h = new URLSearchParams(location.hash.slice(1));
+    if (h.get('access_token')) {
+      const exp = Date.now() + Number(h.get('expires_in') || 3600) * 1000;
+      session = { token: h.get('access_token'), exp, email: null, staff: false };
+      try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch (e) { /* private window */ }
+      history.replaceState(null, '', pageUrl() + location.search);
+    } else if (h.get('error_description')) {
+      history.replaceState(null, '', pageUrl() + location.search);
+      return h.get('error_description');
+    } else {
+      try { session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null'); } catch (e) { session = null; }
+    }
+    if (session && !(session.exp > Date.now() + 60000)) signOut();
+    return null;
+  }
+
+  function signOut() {
+    session = null;
+    try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* private window */ }
+  }
+
+  async function rpcAs(name, body) {
+    const res = await fetch(api('/rest/v1/rpc/' + name), {
+      method: 'POST',
+      headers: { apikey: CFG.anonKey, Authorization: 'Bearer ' + session.token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {}),
+    });
+    if (res.status === 401) { signOut(); throw new Error('expired'); }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+
+  async function checkStaff() {
+    if (!session) return;
+    try {
+      const me = await rpcAs('council_me');
+      session.email = me.email || null;
+      session.staff = me.staff === true;
+      try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch (e) { /* private window */ }
+      staffMsg(session.staff ? null : t('staffNotStaff'));
+    } catch (e) {
+      console.error(e);
+      staffMsg(t('staffExpired'));
+    }
+    renderStaff();
+    if (data) renderList();
+  }
+
+  function staffMsg(text) {
+    $('staffMsg').textContent = text || '';
+    if (text) $('staffBox').hidden = false;
+  }
+
+  function renderStaff() {
+    const b = $('staff');
+    const on = session && session.staff;
+    b.textContent = on ? t('staffSignOut') : t('staffSignIn');
+    b.setAttribute('aria-label', on ? t('staffSignedIn', { email: session.email || '' }) + '. ' + t('staffSignOut') : t('staffSignIn'));
+    $('staffForm').hidden = !!on;
+    $('staffSend').textContent = t('staffSend');
+    $('staffEmail').placeholder = t('staffEmailHint');
+    if (on && !$('staffMsg').textContent) staffMsg(t('staffSignedIn', { email: session.email || '' }));
+  }
+
+  async function sendLink(e) {
+    e.preventDefault();
+    const email = $('staffEmail').value.trim().toLowerCase();
+    if (!email) return;
+    $('staffSend').disabled = true;
+    try {
+      const res = await fetch(api('/auth/v1/otp?redirect_to=' + encodeURIComponent(pageUrl())), {
+        method: 'POST',
+        headers: { apikey: CFG.anonKey, 'Content-Type': 'application/json' },
+        // Only accounts that already exist get a link; nobody can sign up here.
+        body: JSON.stringify({ email, create_user: false }),
+      });
+      // The same answer for any address, so the page never says who is staff.
+      staffMsg(res.ok || res.status === 400 || res.status === 422 ? t('staffSent') : res.status === 429 ? t('staffWait') : t('staffFailed'));
+    } catch (err) {
+      console.error(err);
+      staffMsg(t('staffFailed'));
+    } finally {
+      $('staffSend').disabled = false;
+    }
+  }
+
+  async function setStatus(r, status, button) {
+    button.disabled = true;
+    try {
+      const res = await rpcAs('council_set_status', { p_id: r.id, p_status: status });
+      if (res.error) throw new Error(res.error);
+      staffMsg(t('statusSaved', { what: cat('improvement', r.cat), status: t('cs_' + status) }));
+      await load();
+    } catch (e) {
+      console.error(e);
+      staffMsg(e.message === 'expired' ? t('staffExpired') : t('statusFailed'));
+      button.disabled = false;
+      renderStaff();
+    }
+  }
+
   // ---------------------------------------------------------------- wiring
+  $('staff').onclick = () => {
+    if (session && session.staff) {
+      signOut();
+      staffMsg(t('staffSignedOut'));
+      renderStaff();
+      if (data) renderList();
+      return;
+    }
+    const box = $('staffBox');
+    box.hidden = !box.hidden;
+    $('staff').setAttribute('aria-expanded', String(!box.hidden));
+    if (!box.hidden) $('staffEmail').focus();
+  };
+  $('staffForm').onsubmit = sendLink;
   $('lang').onclick = () => {
     lang = lang === 'ms' ? 'en' : 'ms';
     store.set('langkah.council.lang', lang);
@@ -475,6 +628,10 @@
     setState('config');
     return;
   }
+  const linkError = readSession();
+  renderStaff();
+  if (linkError) staffMsg(t('staffLinkBad'));
   initMap();
   load();
+  checkStaff();
 })();

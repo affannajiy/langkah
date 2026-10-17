@@ -40,6 +40,7 @@ import { useScoringMode } from '../../map/useScoringMode';
 import { tabBarStyles, useTabBarStyle } from '../../navigation/tabBar';
 import { useOnline } from '../../net/useOnline';
 import { useRoutes } from '../../route/useRoutes';
+import { useWeather } from '../../weather/useWeather';
 import {
   isStarred,
   MAX_STARRED_FREE,
@@ -138,7 +139,7 @@ export default function MapScreen() {
   const [pinStreet, setPinStreet] = useState<string | null>(null);
   // The route just walked, drawn faintly when the report flow opens from Arrival.
   const [trail, setTrail] = useState<LngLat[] | null>(null);
-  const { layers: toggles, locationAsked, batteryTipSeen } = useSettings();
+  const { layers: toggles, locationAsked, batteryTipSeen, avoidSteps } = useSettings();
   const [batteryTip, setBatteryTip] = useState(false);
   const [partner, setPartner] = useState<SponsoredPin | null>(null);
 
@@ -239,7 +240,14 @@ export default function MapScreen() {
     return null;
   }, [trip, fromLL, toLL]);
 
-  const routes = useRoutes(fromLL, toLL, mode, comparing && !tripError);
+  // Rain or heat turns on "prefer cover" by itself; the chip overrides it for this trip
+  // (guide Section 16.3). Step-free comes from Settings (Section 16.7).
+  const weather = useWeather(comparing ? fromLL : null);
+  const [coverPick, setCoverPick] = useState<boolean | null>(null);
+  const coverReason = weather?.rain === 'now' ? 'rain' : weather?.rain === 'soon' ? 'rainSoon' : weather?.hot ? 'heat' : null;
+  const cover = coverPick ?? coverReason !== null;
+  const routeOptions = useMemo(() => ({ cover, stepFree: avoidSteps }), [cover, avoidSteps]);
+  const routes = useRoutes(fromLL, toLL, mode, routeOptions, comparing && !tripError);
   const pair = routes.state.status === 'ok' ? routes.state.pair : null;
 
   // Latest layout sizes for the camera fit.
@@ -302,6 +310,7 @@ export default function MapScreen() {
 
   const closeTrip = useCallback(() => {
     setTrip(null);
+    setCoverPick(null);
     setBatteryTip(false);
     setScreen({ kind: 'home' });
   }, []);
@@ -390,6 +399,7 @@ export default function MapScreen() {
       route: pair[kind],
       kind,
       mode,
+      options: pair.options,
       to: { name: label(trip.to) ?? '', lngLat: toLL },
       startedAt: Date.now(),
       fastestHazards: kind === 'safest' && !pair.same ? pair.fastest.stats.hz : null,
@@ -684,6 +694,8 @@ export default function MapScreen() {
               star={starTo ? { on: isStarred(starTo), onPress: onStar } : undefined}
               mode={mode}
               onToggleMode={toggleMode}
+              cover={{ on: cover, reason: coverReason, onToggle: () => setCoverPick(!cover) }}
+              stepFree={avoidSteps}
               selected={selected}
               onSelect={setSelected}
               onStart={startWalk}

@@ -16,7 +16,7 @@ import { colors, radius, shadow, spacing, touchTarget } from '../../theme/theme'
 import { categoryKey } from '../report/categoryIcons';
 import { ImprovementMark } from './CommunityPins';
 import { useSubtitle } from './ReportRow';
-import { StatusChip } from './StatusChip';
+import { CouncilChip, StatusChip } from './StatusChip';
 import { HazardVotes, UpvoteButton } from './VoteButtons';
 
 type Props = {
@@ -79,6 +79,7 @@ export function ReportDetailSheet({ report: r, busy, bottom, onVote, onClose, ow
 
           <View style={styles.chips}>
             <StatusChip status={r.status} />
+            <CouncilChip status={r.councilStatus} />
             <AppText variant="label" color={colors.textMuted}>
               {hazard
                 ? t('community.voteCounts', { confirms: r.confirms, gone: r.gone })

@@ -88,7 +88,11 @@
     "stillThere_one": "Masih ada · {{count}}",
     "stillThere_other": "Masih ada · {{count}}",
     "gone_one": "Sudah tiada · {{count}}",
-    "gone_other": "Sudah tiada · {{count}}"
+    "gone_other": "Sudah tiada · {{count}}",
+    "council": {
+      "planned": "Dirancang oleh majlis",
+      "fixed": "Dibaiki oleh majlis"
+    }
   },
   "me": {
     "title": "Saya",
@@ -273,9 +277,21 @@
       "start_outside_pilot": "Anda berada di luar kawasan perintis. Pilih titik mula di pusat bandar Ipoh atau Seri Iskandar.",
       "no_start": "Pilih titik mula, atau benarkan lokasi untuk bermula dari tempat anda berada.",
       "network": "Tidak dapat menghubungi Langkah. Semak sambungan internet anda dan cuba lagi.",
-      "generic": "Ada masalah semasa merancang perjalanan ini. Cuba lagi."
+      "generic": "Ada masalah semasa merancang perjalanan ini. Cuba lagi.",
+      "no_step_free": "Kami tidak menemui laluan tanpa tangga antara tempat ini. Matikan Elak tangga dalam Tetapan untuk melihat laluan lain."
     },
-    "retry": "Cuba lagi"
+    "retry": "Cuba lagi",
+    "cover": {
+      "rain": "Hujan · utamakan teduhan",
+      "rainSoon": "Mungkin hujan · utamakan teduhan",
+      "heat": "Panas · utamakan teduhan",
+      "on": "Utamakan teduhan",
+      "hint": "Laluan Paling Selamat lebih menggunakan kaki lima dan laluan berbumbung. Dihidupkan sendiri apabila hujan atau sangat panas."
+    },
+    "stepFree": "Tanpa tangga",
+    "stepFreeA11y": "Laluan tanpa tangga dihidupkan. Ubah dalam Tetapan.",
+    "kerbs_one": "Tiada tangga di laluan ini. Bebendul belum disemak di {{count}} lintasan, jadi bebendul di situ mungkin tidak direndahkan.",
+    "kerbs_other": "Tiada tangga di laluan ini. Bebendul belum disemak di {{count}} lintasan, jadi bebendul di situ mungkin tidak direndahkan."
   },
   "nav": {
     "mapA11y": "Peta berjalan, berpusing mengikut arah anda berjalan",
@@ -550,7 +566,13 @@
     "version": "Langkah {{version}}, Kumpulan 4 Teknousahawan UTP",
     "credits": "Data peta © penyumbang OpenStreetMap, di bawah Open Database License. Gaya peta daripada OpenFreeMap.",
     "photoCredits": "Foto laporan demo daripada Wikimedia Commons, diambil di tempat lain di Malaysia: Encik Tekateki (CC BY-SA 4.0), Wiki Asmah (CC BY 4.0), Two hundred percent (CC BY-SA 2.5) dan Taufik (CC BY-SA 4.0).",
-    "osm": "Hak cipta dan lesen OpenStreetMap"
+    "osm": "Hak cipta dan lesen OpenStreetMap",
+    "voice": "Panduan suara",
+    "voiceBody": "Menyebut belokan, bahaya di hadapan dan ketibaan semasa berjalan, selepas getaran. Anda juga boleh menghidupkan atau mematikannya di skrin perjalanan.",
+    "avoidSteps": "Elak tangga",
+    "avoidStepsBody": "Laluan tidak melalui tangga, untuk kerusi roda, kereta sorong bayi dan bagasi. Tanjakan bebendul belum dipetakan di semua tempat, jadi kad laluan menyatakan di mana bebendul belum disemak.",
+    "weatherCredit": "Cuaca untuk laluan hujan dan panas oleh Open-Meteo.com (CC BY 4.0). Langkah hanya bertanya tentang tengah kawasan perintis, bukan lokasi anda.",
+    "privacyShare": "Perkongsian perjalanan langsung menghantar lokasi terkini anda hanya selepas anda mengetik Kongsi pautan, dan memadamnya apabila anda tiba atau menamatkan perjalanan. Semakan jalan hanya menghantar nama jalan dan jawapan anda."
   },
   "welcome": {
     "chooseTitle": "Pilih bahasa anda",
@@ -615,7 +637,9 @@
     "plus": "Langkah Plus, 1 bulan",
     "reportDeleted": "Laporan dipadam, mata ditarik balik",
     "plusUntil": "Hingga {{date}}",
-    "adBrand": "Iklan oleh {{brand}}"
+    "adBrand": "Iklan oleh {{brand}}",
+    "reportFixed": "Permintaan anda dibaiki oleh majlis",
+    "quest": "Semakan jalan dijawab"
   },
   "topup": {
     "demo": "DEMO · bukan wang sebenar",
@@ -845,8 +869,6 @@
     "rowBody": "Lebih banyak tempat berbintang, bingkai emas dan lencana",
     "tagline": "Tambahan untuk pejalan tetap. Keselamatan kekal percuma untuk semua.",
     "activeUntil": "Plus aktif hingga {{date}}. Tiada pembaharuan automatik.",
-    "perkShare": "Kongsi perjalanan secara langsung",
-    "perkShareBody": "Keluarga melihat perjalanan anda sehingga anda tiba",
     "later": "Akan datang",
     "perkPlaces": "Lebih banyak tempat berbintang",
     "perkPlacesBody": "{{count}} tempat, bukan 3",
@@ -900,5 +922,105 @@
     "walk": "Jalan ke sini",
     "voucher": "Dapatkan baucar · {{cost}} mata",
     "why": "Kedai membayar untuk dipaparkan di sini. Laluan, amaran dan laporan tidak pernah berubah kerananya."
+  },
+  "share": {
+    "button": "Kongsi perjalanan secara langsung",
+    "liveA11y": "Perjalanan anda sedang dikongsi. Buka pilihan kongsi",
+    "liveTag": "Langsung",
+    "askTitle": "Kongsi perjalanan anda secara langsung?",
+    "askBody": "Sesiapa yang ada pautan ini boleh melihat lokasi anda di peta, destinasi anda dan bila anda dijangka tiba. Perkongsian berhenti apabila anda tiba atau tamatkan perjalanan, dan lokasi anda dipadam ketika itu. Pautan tamat selepas 2 jam.",
+    "start": "Kongsi pautan",
+    "starting": "Menyediakan pautan…",
+    "liveTitle": "Perjalanan anda sedang dikongsi",
+    "liveBody": "Mereka yang ada pautan boleh melihat lokasi anda sehingga anda tiba atau tamatkan perjalanan. Selepas itu ia dipadam.",
+    "again": "Hantar pautan sekali lagi",
+    "stop": "Berhenti berkongsi",
+    "stopped": "Perkongsian dihentikan. Lokasi anda telah dipadam.",
+    "close": "Tutup pilihan kongsi",
+    "offline": "Tiada internet. Perkongsian langsung memerlukan sambungan.",
+    "failed": "Tidak dapat memulakan perkongsian langsung. Cuba lagi.",
+    "message": "Saya sedang berjalan ke {{name}} dengan Langkah. Ikuti perjalanan saya secara langsung sehingga saya tiba: {{url}}"
+  },
+  "voice": {
+    "button": "Panduan suara",
+    "on": "Panduan suara dihidupkan",
+    "onSnack": "Panduan suara dihidupkan. Belokan dan bahaya akan disebut.",
+    "offSnack": "Panduan suara dimatikan.",
+    "metres_one": "{{count}} meter",
+    "metres_other": "{{count}} meter",
+    "inDistance": "Dalam {{distance}}, {{action}}",
+    "arrived": "Anda telah tiba di {{name}}"
+  },
+  "notice": {
+    "at": "{{what}} di {{street}}",
+    "planned": "Berita baik: majlis telah merancang permintaan anda: {{what}}.",
+    "fixed": "Dibaiki: majlis telah membaiki permintaan anda: {{what}}.",
+    "fixedPoints_one": "Dibaiki: majlis telah membaiki permintaan anda: {{what}}. +{{count}} mata.",
+    "fixedPoints_other": "Dibaiki: majlis telah membaiki permintaan anda: {{what}}. +{{count}} mata.",
+    "more_one": "{{count}} lagi kemas kini di Saya.",
+    "more_other": "{{count}} lagi kemas kini di Saya."
+  },
+  "quest": {
+    "title": "Bantu semak jalan ini",
+    "body": "Anda baru berjalan di sini. Jawapan anda mengisi kekosongan peta selepas seorang lagi pejalan kaki bersetuju. +2 mata setiap satu.",
+    "q": {
+      "sidewalk": "Adakah ada laluan pejalan kaki di {{street}}?",
+      "lit": "Adakah {{street}} terang pada waktu malam?",
+      "covered": "Adakah ada laluan berbumbung (kaki lima) di sepanjang {{street}}?"
+    },
+    "a": {
+      "sidewalk": {
+        "both": "Kedua-dua belah",
+        "one": "Sebelah",
+        "none": "Tiada",
+        "unsure": "Tidak pasti"
+      },
+      "lit": {
+        "yes": "Ya",
+        "no": "Tidak",
+        "unsure": "Tidak pasti"
+      },
+      "covered": {
+        "yes": "Ya",
+        "no": "Tidak",
+        "unsure": "Tidak pasti"
+      }
+    },
+    "saved": "Terima kasih. Ia dikira selepas seorang lagi pejalan kaki bersetuju.",
+    "agreed": "Terima kasih. Dua pejalan kaki bersetuju, jadi jalan ini kini dikemas kini.",
+    "skipped": "Dilangkau. Tiada apa-apa dihantar.",
+    "failed": "Tidak dapat dihantar. Ketik jawapan untuk cuba lagi."
+  },
+  "badges": {
+    "title": "Lencana",
+    "weeks_one": "{{count}} minggu berturut-turut dengan perjalanan",
+    "weeks_other": "{{count}} minggu berturut-turut dengan perjalanan",
+    "noWeeks": "Belum ada rentetan perjalanan",
+    "streakNote": "Satu perjalanan seminggu sudah cukup. Lencana tidak memberi mata.",
+    "keepGoing": "Berjalan sekali minggu ini untuk mengekalkan rentetan anda.",
+    "count": "{{count}} daripada {{total}} diperoleh",
+    "earned": "Diperoleh",
+    "progress": "{{n}} daripada {{goal}}",
+    "km": "{{n}} daripada {{goal}} km",
+    "name": {
+      "first_walk": "Perjalanan pertama",
+      "km10": "10 km berjalan",
+      "km50": "50 km berjalan",
+      "first_report": "Laporan pertama",
+      "hazards5": "5 bahaya disahkan",
+      "checkin7": "Daftar masuk 7 hari",
+      "street_checker": "Penyemak jalan",
+      "got_fixed": "Berjaya dibaiki"
+    },
+    "how": {
+      "first_walk": "Habiskan satu perjalanan dengan Langkah",
+      "km10": "Berjalan 10 km kesemuanya dengan Langkah",
+      "km50": "Berjalan 50 km kesemuanya dengan Langkah",
+      "first_report": "Hantar laporan pertama anda",
+      "hazards5": "5 laporan bahaya anda disahkan oleh orang lain",
+      "checkin7": "Daftar masuk 7 hari berturut-turut",
+      "street_checker": "Jawab 10 semakan jalan selepas berjalan",
+      "got_fixed": "Permintaan anda dibaiki oleh majlis"
+    }
   }
 }

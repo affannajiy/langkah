@@ -75,6 +75,18 @@ export default function SettingsScreen() {
             value={settings.vibration}
             onChange={(vibration) => updateSettings({ vibration })}
           />
+          <SwitchRow
+            label={t('settings.voice')}
+            body={t('settings.voiceBody')}
+            value={settings.voice}
+            onChange={(voice) => updateSettings({ voice })}
+          />
+          <SwitchRow
+            label={t('settings.avoidSteps')}
+            body={t('settings.avoidStepsBody')}
+            value={settings.avoidSteps}
+            onChange={(avoidSteps) => updateSettings({ avoidSteps })}
+          />
         </Section>
 
         <Section title={t('layers.title')}>
@@ -96,12 +108,14 @@ export default function SettingsScreen() {
           <AppText color={colors.text}>{t('settings.privacyReports')}</AppText>
           <AppText color={colors.text}>{t('settings.privacyPhotos')}</AppText>
           <AppText color={colors.text}>{t('settings.privacyRatings')}</AppText>
+          <AppText color={colors.text}>{t('settings.privacyShare')}</AppText>
         </Section>
 
         <Section title={t('settings.about')}>
           <AppText color={colors.text}>{t('settings.version', { version: Constants.expoConfig?.version ?? '' })}</AppText>
           <AppText color={colors.text}>{t('settings.credits')}</AppText>
           <AppText color={colors.text}>{t('settings.photoCredits')}</AppText>
+          <AppText color={colors.text}>{t('settings.weatherCredit')}</AppText>
           <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(OSM_COPYRIGHT)} style={styles.link}>
             <AppText variant="bodyStrong" color={colors.interactiveText}>
               {t('settings.osm')}

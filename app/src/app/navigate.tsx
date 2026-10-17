@@ -3,7 +3,7 @@ import { Redirect, useRouter } from 'expo-router';
 import { CloudOff, LocateFixed, LocateOff } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BackHandler, Pressable, StyleSheet, View } from 'react-native';
+import { BackHandler, Pressable, Share, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { castVote, createReport, ReportError } from '../api/reports';
@@ -14,20 +14,25 @@ import { MapCredit } from '../components/MapCredit';
 import { Snackbar, useSnackbar } from '../components/Snackbar';
 import { StatusBanner } from '../components/StatusBanner';
 import { InstructionCard } from '../features/nav/InstructionCard';
+import { LiveShareSheet } from '../features/nav/LiveShareSheet';
 import { NavBanner } from '../features/nav/NavBanner';
 import { NavBottomBar } from '../features/nav/NavBottomBar';
 import { QuickReportSheet } from '../features/nav/QuickReportSheet';
 import { WalkerDot, WalkLayers } from '../features/nav/WalkLayers';
+import { WalkTools } from '../features/nav/WalkTools';
 import { MAX_ZOOM, MIN_ZOOM } from '../map/config';
 import { useLangkahMapStyle } from '../map/useLangkahMapStyle';
 import { useMapStatusBar } from '../map/useMapStatusBar';
 import { useLocationPermission } from '../map/useLocationPermission';
 import { useOnline } from '../net/useOnline';
 import { bearingAt, makeTrack } from '../nav/geo';
+import { setShareEta, setShareRoute, startLiveShare, stopLiveShare, useLiveShare } from '../nav/liveShare';
 import { useWalk } from '../nav/useWalk';
 import { getWalk, setArrival, setWalk, type Walk } from '../nav/walkStore';
 import { gpsDistance } from '../nav/walkLocation';
+import { speak, stopSpeaking } from '../nav/voice';
 import { queueReport, queueVote } from '../storage/reportQueue';
+import { updateSettings, useSettings } from '../storage/settings';
 import { useSideInset } from '../theme/layout';
 import { chromeTextScale, colors, shadow, spacing, touchTarget } from '../theme/theme';
 
@@ -63,7 +68,19 @@ function WalkScreen({ walk }: { walk: Walk }) {
   const [cardBottom, setCardBottom] = useState(insets.top + 140);
   const [barH, setBarH] = useState(120);
   const [quick, setQuick] = useState<{ at: LngLat | null; street: string | null } | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const share = useLiveShare();
+  const { voice } = useSettings();
   const backAt = useRef(0);
+
+  // Live share (guide Section 16.1): time left and a new line after a reroute ride
+  // along with the next position. Arriving or leaving the walk ends the share.
+  useEffect(() => setShareEta(remainingS), [remainingS]);
+  useEffect(() => setShareRoute(route.points), [route]);
+  useEffect(() => {
+    if (view.arrived) stopLiveShare(true);
+  }, [view.arrived]);
+  useEffect(() => () => stopLiveShare(false), []);
 
   // Heading-up camera that follows the walker, until the user moves the map.
   useEffect(() => {
@@ -79,6 +96,7 @@ function WalkScreen({ walk }: { walk: Walk }) {
   }, [following, view.at, view.heading, cardBottom, barH]);
 
   const end = useCallback(() => {
+    stopLiveShare(false);
     setWalk(null);
     if (router.canGoBack()) router.back();
     else router.replace('/');
@@ -103,6 +121,7 @@ function WalkScreen({ walk }: { walk: Walk }) {
       kind: walk.kind,
       score: walked.score,
       trail: summary.route.points,
+      quests: summary.route.quests,
     });
     setWalk(null);
     router.replace('/arrival');
@@ -165,12 +184,70 @@ function WalkScreen({ walk }: { walk: Walk }) {
     [banner, dismissBanner, canWrite, snackbar, t],
   );
 
+  const sendLink = useCallback(
+    async (url: string) => {
+      try {
+        await Share.share({ message: t('share.message', { name: walk.to.name, url }) });
+      } catch (error) {
+        console.warn('Share sheet failed', error);
+      }
+    },
+    [t, walk.to.name],
+  );
+
+  // The tap on Share link in the sheet is the consent; nothing is sent before it.
+  const onShareLink = useCallback(async () => {
+    if (share.status === 'starting') return;
+    if (share.status === 'live') {
+      setShareOpen(false);
+      await sendLink(share.url);
+      return;
+    }
+    if (!online) {
+      setShareOpen(false);
+      snackbar.show({ text: t('share.offline') });
+      return;
+    }
+    try {
+      const url = await startLiveShare({
+        destName: walk.to.name,
+        dest: walk.to.lngLat,
+        route: route.points,
+        at: view.at ?? fix?.lngLat ?? null,
+        etaS: remainingS,
+      });
+      setShareOpen(false);
+      await sendLink(url);
+    } catch (error) {
+      console.warn('Live share failed', error);
+      setShareOpen(false);
+      snackbar.show({ text: t('share.failed') });
+    }
+  }, [share, online, walk.to, route.points, view.at, fix, remainingS, sendLink, snackbar, t]);
+
+  const onVoice = useCallback(() => {
+    updateSettings({ voice: !voice });
+    if (voice) stopSpeaking();
+    else speak(t('voice.on'));
+    snackbar.show({ text: t(voice ? 'voice.offSnack' : 'voice.onSnack') });
+  }, [voice, snackbar, t]);
+
+  const onStopShare = useCallback(() => {
+    setShareOpen(false);
+    stopLiveShare(false);
+    snackbar.show({ text: t('share.stopped') });
+  }, [snackbar, t]);
+
   // Back closes Quick report first. Otherwise it asks for a second press, since a
   // dialog must never interrupt a walk (guide Section 5.3).
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       if (quick) {
         setQuick(null);
+        return true;
+      }
+      if (shareOpen) {
+        setShareOpen(false);
         return true;
       }
       if (view.arrived) {
@@ -186,7 +263,7 @@ function WalkScreen({ walk }: { walk: Walk }) {
       return true;
     });
     return () => sub.remove();
-  }, [quick, view.arrived, end, finish, snackbar, t]);
+  }, [quick, shareOpen, view.arrived, end, finish, snackbar, t]);
 
   const first = walk.route.points[0]!;
 
@@ -242,15 +319,20 @@ function WalkScreen({ walk }: { walk: Walk }) {
 
         <View style={[styles.lower, { bottom: barH + spacing.sm }]} pointerEvents="box-none">
           <MapCredit onPress={() => mapRef.current?.showAttribution()} />
-          {!following && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('nav.recentre')}
-              onPress={() => setFollowing(true)}
-              style={styles.recentre}
-            >
-              <LocateFixed size={26} color={colors.interactiveText} />
-            </Pressable>
+          {!view.arrived && (
+            <View style={styles.tools} pointerEvents="box-none">
+              <WalkTools share={share} onShare={() => setShareOpen(true)} voiceOn={voice} onVoice={onVoice} />
+              {!following && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('nav.recentre')}
+                  onPress={() => setFollowing(true)}
+                  style={styles.recentre}
+                >
+                  <LocateFixed size={26} color={colors.interactiveText} />
+                </Pressable>
+              )}
+            </View>
           )}
         </View>
 
@@ -272,6 +354,14 @@ function WalkScreen({ walk }: { walk: Walk }) {
           onClose={() => setQuick(null)}
         />
 
+        <LiveShareSheet
+          visible={shareOpen && !view.arrived}
+          share={share}
+          onShare={() => void onShareLink()}
+          onStop={onStopShare}
+          onClose={() => setShareOpen(false)}
+        />
+
         <Snackbar message={snackbar.message} onHide={snackbar.hide} bottom={barH + spacing.md} />
       </View>
     </TextScaleCap.Provider>
@@ -289,6 +379,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'space-between',
   },
+  tools: { alignItems: 'flex-end', gap: spacing.sm },
   recentre: {
     width: touchTarget + spacing.sm,
     height: touchTarget + spacing.sm,

@@ -9,10 +9,12 @@ import {
   type Place,
   type Route,
   type RouteError,
+  type RouteOptions,
   type RoutePair,
   type RouteStats,
   type ScoringMode,
   type Step,
+  type StreetQuest,
 } from './types';
 
 // The app's only door to the Langkah functions (search_places, route_safe, map_in_view).
@@ -87,7 +89,16 @@ export async function searchPlaces(query: string, near: LngLat | null, signal?: 
 // --- routing ------------------------------------------------------------
 
 const STEP_TYPES = new Set(['depart', 'left', 'right', 'slight_left', 'slight_right', 'straight', 'cross', 'arrive']);
-const ROUTE_ERRORS = new Set(['bad_mode', 'bad_point', 'too_far', 'too_close', 'start_off_network', 'end_off_network', 'no_route']);
+const ROUTE_ERRORS = new Set([
+  'bad_mode',
+  'bad_point',
+  'too_far',
+  'too_close',
+  'start_off_network',
+  'end_off_network',
+  'no_route',
+  'no_step_free',
+]);
 
 function parseStats(v: unknown): RouteStats {
   if (!isObj(v)) throw new ApiError('bad_response', 'stats');
@@ -101,6 +112,7 @@ function parseStats(v: unknown): RouteStats {
     hz: num(v.hz),
     // Older servers send no cov: read as 0.
     cov: v.cov == null ? 0 : num(v.cov),
+    kx: v.kx == null ? null : num(v.kx),
   };
 }
 
@@ -135,7 +147,22 @@ function parseRoute(v: unknown): Route {
     steps: Array.isArray(v.steps) ? v.steps.map(parseStep).filter((s): s is Step => s !== null) : [],
     unchecked,
     covered: polylines(v.cv),
+    quests: quests(v.q),
   };
+}
+
+// Street questions; anything malformed is skipped. Older servers send none.
+function quests(v: unknown): StreetQuest[] {
+  if (!Array.isArray(v)) return [];
+  return v.filter(isObj).flatMap((q) =>
+    Array.isArray(q.w) &&
+    q.w.length > 0 &&
+    q.w.every((w) => typeof w === 'number') &&
+    typeof q.n === 'string' &&
+    (q.a === 'sidewalk' || q.a === 'lit' || q.a === 'covered')
+      ? [{ ways: (q.w as number[]).slice(0, 10), name: q.n, attr: q.a }]
+      : [],
+  );
 }
 
 // A list of encoded polylines; anything broken is skipped.
@@ -147,7 +174,15 @@ function polylines(v: unknown): LngLat[][] {
     .filter((pts) => pts.length >= 2);
 }
 
-export async function routeSafe(from: LngLat, to: LngLat, mode: ScoringMode, signal?: AbortSignal): Promise<RoutePair> {
+export const NO_OPTIONS: RouteOptions = { cover: false, stepFree: false };
+
+export async function routeSafe(
+  from: LngLat,
+  to: LngLat,
+  mode: ScoringMode,
+  options: RouteOptions = NO_OPTIONS,
+  signal?: AbortSignal,
+): Promise<RoutePair> {
   const data = await rpc(
     'route_safe',
     {
@@ -156,6 +191,8 @@ export async function routeSafe(from: LngLat, to: LngLat, mode: ScoringMode, sig
       end_lon: round5(to[0]),
       end_lat: round5(to[1]),
       mode,
+      p_cover: options.cover,
+      p_step_free: options.stepFree,
     },
     signal,
   );
@@ -166,6 +203,7 @@ export async function routeSafe(from: LngLat, to: LngLat, mode: ScoringMode, sig
   return {
     mode: data.mode === 'night' ? 'night' : 'day',
     same: data.same === true,
+    options: { cover: data.cover === true, stepFree: data.stepFree === true },
     safest: parseRoute(data.safest),
     fastest: parseRoute(data.fastest),
   };

@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
+import { myNotices, noticesSeen } from '../api/notices';
 import { dailyCheckin, demoReset, demoStart, isDemoUser } from '../api/points';
 import { supabase } from '../api/supabase';
 import { notifyPoints } from '../points/notice';
@@ -187,6 +188,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       dailyCheckin()
         .then((r) => {
           if (r.points > 0) notifyPoints({ kind: 'checkin', points: r.points, day: r.day });
+        })
+        // Then council news on the user's requests (Phase 21), newest last, after the
+        // check-in snackbar has had its turn.
+        .finally(() => {
+          myNotices()
+            .then((list) => {
+              const last = list[list.length - 1];
+              if (!last) return;
+              setTimeout(() => {
+                notifyPoints({
+                  kind: 'council',
+                  status: last.kind,
+                  category: last.category,
+                  street: last.street,
+                  points: last.points,
+                  more: list.length - 1,
+                });
+              }, 3500);
+              return noticesSeen(list.map((n) => n.id));
+            })
+            .catch((error: unknown) => console.warn('Notices failed', error));
         })
         .catch((error: unknown) => {
           checkedIn.current = null; // try again on the next open

@@ -30,3 +30,6 @@ export function nearestPilotArea([lng, lat]: LngLat): LngLatBounds {
 // Map tiles kept on the phone after viewing (MapLibre's default is 50 MB).
 // The pilot areas are small, so 20 MB holds them with room to spare.
 export const TILE_CACHE_BYTES = 20 * 1024 * 1024;
+
+// The page a friend opens for a live walk share (council/walk.html on GitHub Pages).
+export const SHARE_PAGE_URL = 'https://affannajiy.github.io/langkah/walk.html';

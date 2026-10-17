@@ -33,6 +33,7 @@ import {
   type CommunityReport,
   type MyStats,
 } from '../../api/reports';
+import { myBadges, type Badges } from '../../api/badges';
 import { myItems, myWallet, type OwnedItem, type Wallet } from '../../api/points';
 import { useAuth } from '../../auth/AuthProvider';
 import { AppText } from '../../components/AppText';
@@ -42,9 +43,10 @@ import { ScrimSheet } from '../../components/ScrimSheet';
 import { StatusBanner } from '../../components/StatusBanner';
 import { ReportDetailSheet } from '../../features/community/ReportDetailSheet';
 import { Thumb } from '../../features/community/ReportRow';
-import { StatusChip } from '../../features/community/StatusChip';
+import { CouncilChip, StatusChip } from '../../features/community/StatusChip';
 import { categoryKey } from '../../features/report/categoryIcons';
 import { Avatar } from '../../features/points/Avatar';
+import { BadgesCard } from '../../features/points/BadgesCard';
 import { itemText } from '../../features/points/catalog';
 import { useOpenTopUp } from '../../features/points/useOpenTopUp';
 import { VoucherBody } from '../../features/points/VoucherSheet';
@@ -96,6 +98,7 @@ export default function MeScreen() {
   const [waiting, setWaiting] = useState(0);
   const [busy, setBusy] = useState(false);
   const [stats, setStats] = useState<MyStats | null>(null);
+  const [badges, setBadges] = useState<Badges | null>(null);
   const [mine, setMine] = useState<Mine>({ status: 'loading', items: [], more: false });
   const [open, setOpen] = useState<CommunityReport | null>(null);
   const [ownerBusy, setOwnerBusy] = useState(false);
@@ -114,6 +117,7 @@ export default function MeScreen() {
     // No session at all (guest sign-in failed): nothing of yours to load, which is not a network error.
     if (!hasSession) {
       setStats(null);
+      setBadges(null);
       setWallet(null);
       setVouchers([]);
       setMine({ status: 'ok', items: [], more: false });
@@ -126,6 +130,9 @@ export default function MeScreen() {
     myItems()
       .then((items) => setVouchers(items.filter((i) => i.code !== null)))
       .catch((error: unknown) => console.warn('Could not load vouchers', error));
+    myBadges()
+      .then(setBadges)
+      .catch((error: unknown) => console.warn('Could not load badges', error));
     try {
       const [s, items] = await Promise.all([myStats(), myReports(0)]);
       setStats(s);
@@ -447,6 +454,15 @@ export default function MeScreen() {
           </View>
         )}
 
+        {badges && (
+          <>
+            <AppText variant="heading" color={colors.navy} accessibilityRole="header">
+              {t('badges.title')}
+            </AppText>
+            <BadgesCard data={badges} />
+          </>
+        )}
+
         <AppText variant="heading" color={colors.navy} accessibilityRole="header">
           {t('me.savedTitle')}
         </AppText>
@@ -576,6 +592,7 @@ export default function MeScreen() {
                   </AppText>
                   <View style={styles.chipRow}>
                     <StatusChip status={r.status} />
+                    <CouncilChip status={r.councilStatus} />
                     <AppText variant="label" color={colors.textMuted}>
                       {r.kind === 'hazard'
                         ? t('community.voteCounts', { confirms: r.confirms, gone: r.gone })

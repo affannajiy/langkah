@@ -41,7 +41,14 @@ export type RouteStats = {
   ux: number; // unmarked main-road crossings
   hz: number; // active hazards within 15 m
   cov: number; // % under cover (five-foot ways, arcades); display only
+  kx: number | null; // step-free walks only: crossings with no kerb ramp mapped near them
 };
+
+// Route options (Phases 20 and 24): prefer cover in rain or heat, and skip stairs.
+export type RouteOptions = { cover: boolean; stepFree: boolean };
+
+// A question about a street on the route, for after the walk (Phase 23).
+export type StreetQuest = { ways: number[]; name: string; attr: 'sidewalk' | 'lit' | 'covered' };
 
 export type Route = {
   points: LngLat[];
@@ -54,11 +61,14 @@ export type Route = {
   unchecked: [number, number][];
   // Covered walkways along the route, one line each.
   covered: LngLat[][];
+  // Streets on this route with something unknown, asked about on arrival.
+  quests: StreetQuest[];
 };
 
 export type RoutePair = {
   mode: ScoringMode;
   same: boolean;
+  options: RouteOptions; // what the server planned with
   safest: Route;
   fastest: Route;
 };
@@ -71,6 +81,7 @@ export type RouteError =
   | 'start_off_network'
   | 'end_off_network'
   | 'no_route'
+  | 'no_step_free'
   // App-side failures
   | 'outside_pilot'
   | 'start_outside_pilot'

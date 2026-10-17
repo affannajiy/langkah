@@ -8,7 +8,9 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { walkFinish } from '../api/points';
 import { rateWalk } from '../api/reports';
+import { useAuth } from '../auth/AuthProvider';
 import { AppText } from '../components/AppText';
+import { StreetChecks } from '../features/arrival/StreetChecks';
 import { formatDistance, minutes } from '../i18n/format';
 import { getArrival, setArrival, setReportAfterWalk, type Arrival } from '../nav/walkStore';
 import { cappedContent } from '../theme/layout';
@@ -75,6 +77,7 @@ function ArrivalView({ arrival: a }: { arrival: Arrival }) {
   const insets = useSafeAreaInsets();
   const [rating, setRating] = useState<Rating | null>(null);
   const [points, setPoints] = useState<number | null>(null);
+  const { canWrite } = useAuth();
   const left = useRef(false);
   // Walk points (guide Section 15): sent once, as soon as the screen opens.
   const finished = useRef<Promise<string | null> | null>(null);
@@ -192,6 +195,9 @@ function ArrivalView({ arrival: a }: { arrival: Arrival }) {
             {t('arrival.rateNote')} {t('points.rateBonus')}
           </AppText>
         </View>
+
+        {/* Street checks need a signed-in walker, like reports (guests read only). */}
+        {canWrite && a.quests.length > 0 && <StreetChecks quests={a.quests} />}
       </ScrollView>
 
       <View style={styles.actions}>

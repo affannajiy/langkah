@@ -1,4 +1,5 @@
 import { CircleCheck, Route as RouteIcon, TriangleAlert } from 'lucide-react-native';
+import type { TFunction } from 'i18next';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
@@ -6,7 +7,7 @@ import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, View } from
 import { AppText } from '../../components/AppText';
 import { formatDistance } from '../../i18n/format';
 import { hazardKey } from '../../map/MapPins';
-import type { Banner } from '../../nav/useWalk';
+import type { Banner, HazardLandmark } from '../../nav/useWalk';
 import { colors, radius, shadow, spacing, touchTarget } from '../../theme/theme';
 
 export const HAZARD_BANNER_MS = 6000;
@@ -17,6 +18,14 @@ type Props = {
   onAnswer: (vote: 'confirm' | 'gone') => void;
   onHide: () => void;
 };
+
+// Where a hazard is, by landmark (never by side of the road). Also spoken (Phase 19).
+export function hazardWhere(landmark: HazardLandmark, t: TFunction): string | null {
+  if (landmark?.k === 'beforeCrossing') return t('nav.hazard.beforeCrossing');
+  if (landmark?.k === 'afterCrossing') return t('nav.hazard.afterCrossing');
+  if (landmark?.k === 'street') return t('nav.hazard.onStreet', { street: landmark.name });
+  return null;
+}
 
 // Banners under the instruction card (guide Section 5.3). They never block the map,
 // need no tap and hide themselves; the hazard one after about 6 s with a countdown line.
@@ -59,14 +68,7 @@ export function NavBanner({ banner, onAnswer, onHide }: Props) {
 
   const { hazard, distM, landmark } = banner;
   const title = t('nav.hazard.title', { hazard: t(`hazard.${hazardKey(hazard.category)}`), distance: formatDistance(distM) });
-  const sub =
-    landmark?.k === 'beforeCrossing'
-      ? t('nav.hazard.beforeCrossing')
-      : landmark?.k === 'afterCrossing'
-        ? t('nav.hazard.afterCrossing')
-        : landmark?.k === 'street'
-          ? t('nav.hazard.onStreet', { street: landmark.name })
-          : null;
+  const sub = hazardWhere(landmark, t);
 
   return (
     <View style={[styles.card, styles.hazard]} accessibilityLiveRegion="assertive">

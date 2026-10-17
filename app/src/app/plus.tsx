@@ -20,8 +20,8 @@ const PRICE = 690;
 
 // Langkah Plus (guide Section 15.2; docs/screens/Plus.png). 690 points for 30 days,
 // no auto-renew. Perks: more starred places, the gold frame and Plus badge. Live
-// walk share comes later. Routes, alerts and reports are never behind Plus, and
-// Plus never sells points.
+// walk share is free for everyone (Phase 18): routes, alerts, reports and safety
+// tools are never behind Plus, and Plus never sells points.
 export default function PlusScreen() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -80,7 +80,6 @@ export default function PlusScreen() {
   }
 
   const perks = [
-    { title: t('plus.perkShare'), body: t('plus.perkShareBody'), later: true },
     { title: t('plus.perkPlaces'), body: t('plus.perkPlacesBody', { count: MAX_STARRED_PLUS }), later: false },
     { title: t('plus.perkBadge'), body: t('plus.perkBadgeBody'), later: false },
   ];

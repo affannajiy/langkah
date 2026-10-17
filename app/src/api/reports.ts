@@ -19,6 +19,9 @@ export type ReportStatus = 'pending' | 'active' | 'expired';
 export type Vote = 'confirm' | 'gone' | 'upvote';
 export type CommunitySort = 'top' | 'newest' | 'nearest';
 
+// What the council did with an improvement request (Phase 21).
+export type CouncilStatus = 'open' | 'planned' | 'fixed';
+
 export type CommunityReport = {
   id: string;
   kind: ReportKind;
@@ -27,6 +30,7 @@ export type CommunityReport = {
   note: string | null;
   photoUrl: string | null;
   status: ReportStatus;
+  councilStatus: CouncilStatus;
   createdAt: string;
   expiresAt: string | null;
   by: string | null; // first name, only when not posted anonymously
@@ -109,6 +113,7 @@ function parseReport(v: unknown): CommunityReport | null {
     note: optStr(v.note),
     photoUrl: photo ? photoUrl(photo) : null,
     status,
+    councilStatus: v.cs === 'planned' || v.cs === 'fixed' ? v.cs : 'open',
     createdAt: typeof v.created === 'string' ? v.created : new Date().toISOString(),
     expiresAt: optStr(v.expires),
     by: optStr(v.by),

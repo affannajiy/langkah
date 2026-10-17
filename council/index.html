@@ -29,9 +29,20 @@
           <button type="button" role="radio" data-days="365"></button>
         </div>
         <button type="button" class="lang" id="lang"></button>
+        <button type="button" class="lang" id="staff" aria-expanded="false" aria-controls="staffBox"></button>
       </div>
     </div>
   </header>
+
+  <!-- Staff sign-in (guide Section 16.4): email magic link; a staff list in SQL decides. -->
+  <section id="staffBox" class="staff" hidden>
+    <form id="staffForm" class="staff-in">
+      <label for="staffEmail" data-t="staffEmail"></label>
+      <input id="staffEmail" type="email" autocomplete="email" required>
+      <button type="submit" class="btn" id="staffSend"></button>
+    </form>
+    <p id="staffMsg" class="staff-msg" role="status" aria-live="polite"></p>
+  </section>
 
   <main>
     <p class="notice" role="note"><span class="notice-mark" aria-hidden="true">i</span><span data-t="prototype"></span></p>

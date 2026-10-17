@@ -1,4 +1,4 @@
-import { CircleAlert, Footprints, Star } from 'lucide-react-native';
+import { Accessibility, Check, CircleAlert, CloudRain, Footprints, Star, Sun, Umbrella } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
@@ -31,6 +31,9 @@ type Props = {
   maxHeight: number;
   // Star the destination (starred places, more with Plus). Absent for "your location".
   star?: { on: boolean; onPress: () => void };
+  // Prefer covered walkways (Phase 20): on by itself in rain or heat, or by the chip.
+  cover: { on: boolean; reason: 'rain' | 'rainSoon' | 'heat' | null; onToggle: () => void };
+  stepFree: boolean; // Settings, Avoid steps (Phase 24)
 };
 
 // Height of BottomSheet's drag handle area.
@@ -42,6 +45,7 @@ const KNOWN_ERRORS = new Set<RouteError>([
   'start_off_network',
   'end_off_network',
   'no_route',
+  'no_step_free',
   'outside_pilot',
   'start_outside_pilot',
   'no_start',
@@ -116,6 +120,7 @@ export function CompareSheet(props: Props) {
                 )}
               </View>
             </View>
+            <Options cover={props.cover} stepFree={props.stepFree} />
             <Body {...props} />
           </View>
           {index > 0 && ok && (
@@ -187,14 +192,57 @@ function Body({ state, destinationName, selected, onSelect, onRetry, onChooseSta
   }
 
   const { pair } = state;
+  const kx = (selected === 'fastest' && !pair.same ? pair.fastest : pair.safest).stats.kx;
 
   return (
     <View style={styles.cards} accessibilityRole="radiogroup">
+      {pair.options.stepFree && kx !== null && kx > 0 && (
+        <View style={styles.optionNote}>
+          <Accessibility size={20} color={colors.interactiveText} />
+          <AppText variant="caption" color={colors.text} style={styles.flex}>
+            {t('route.kerbs', { count: kx })}
+          </AppText>
+        </View>
+      )}
       <RouteCard kind="safest" route={pair.safest} both={pair.same} selected={selected === 'safest'} onPress={() => onSelect('safest')} />
       {pair.same ? (
         <AppText color={colors.textMuted}>{t('route.same')}</AppText>
       ) : (
         <RouteCard kind="fastest" route={pair.fastest} selected={selected === 'fastest'} onPress={() => onSelect('fastest')} />
+      )}
+    </View>
+  );
+}
+
+// Route options under the title: the cover chip (a toggle) and, when Settings asks
+// for it, a plain step-free tag. Icon and word on each, never colour alone.
+function Options({ cover, stepFree }: Pick<Props, 'cover' | 'stepFree'>) {
+  const { t } = useTranslation();
+  const Icon = cover.reason === 'rain' || cover.reason === 'rainSoon' ? CloudRain : cover.reason === 'heat' ? Sun : Umbrella;
+  const label = cover.on && cover.reason ? t(`route.cover.${cover.reason}`) : t('route.cover.on');
+  return (
+    <View style={styles.options}>
+      <Pressable
+        accessibilityRole="switch"
+        accessibilityState={{ checked: cover.on }}
+        accessibilityHint={t('route.cover.hint')}
+        onPress={cover.onToggle}
+        style={({ pressed }) => [styles.option, cover.on && styles.optionOn, pressed && styles.pressed]}
+      >
+        <Icon size={20} color={cover.on ? colors.interactiveText : colors.textMuted} />
+        <AppText variant="label" color={cover.on ? colors.interactiveText : colors.textMuted}>
+          {label}
+        </AppText>
+        {/* On also shows a tick, so the state never rests on colour alone. */}
+        {cover.on && <Check size={18} color={colors.interactiveText} strokeWidth={2.5} />}
+      </Pressable>
+      {stepFree && (
+        <View style={[styles.option, styles.optionOn]} accessible accessibilityLabel={t('route.stepFreeA11y')}>
+          <Accessibility size={20} color={colors.interactiveText} />
+          <AppText variant="label" color={colors.interactiveText}>
+            {t('route.stepFree')}
+          </AppText>
+        </View>
       )}
     </View>
   );
@@ -278,6 +326,27 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     gap: spacing.md,
+  },
+  options: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  option: {
+    minHeight: touchTarget,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  optionOn: { backgroundColor: colors.interactiveSoft, borderColor: colors.interactiveSoft },
+  optionNote: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    alignItems: 'flex-start',
+    padding: spacing.sm,
+    borderRadius: radius.card,
+    backgroundColor: colors.interactiveSoft,
   },
   note: { marginTop: spacing.sm, padding: spacing.md, borderRadius: radius.card, backgroundColor: colors.surface },
 });

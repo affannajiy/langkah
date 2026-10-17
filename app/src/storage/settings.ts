@@ -20,6 +20,8 @@ export type Settings = {
   language: Language | null; // null: follow the phone until the user picks one
   autoNight: boolean; // night scoring and the dark map after 19:30
   vibration: boolean; // turn, hazard and arrival pulses
+  voice: boolean; // spoken turns and hazards during a walk (Phase 19)
+  avoidSteps: boolean; // step-free routes (Phase 24)
   layers: LayerToggles;
   onboarded: boolean;
   locationAsked: boolean; // the map asks for location by itself only once
@@ -32,6 +34,8 @@ export const DEFAULT_SETTINGS: Settings = {
   language: null,
   autoNight: true,
   vibration: true,
+  voice: false,
+  avoidSteps: false,
   // The map stays calm: the newer, busier layers start off.
   layers: { crossings: true, busStops: true, shelters: true, covered: true, kerbs: false, rest: false },
   onboarded: false,
@@ -54,6 +58,8 @@ function parse(raw: unknown): Settings {
     language: r.language === 'en' || r.language === 'ms' ? r.language : null,
     autoNight: bool(r.autoNight, d.autoNight),
     vibration: bool(r.vibration, d.vibration),
+    voice: bool(r.voice, d.voice),
+    avoidSteps: bool(r.avoidSteps, d.avoidSteps),
     layers: {
       crossings: bool(l.crossings, d.layers.crossings),
       busStops: bool(l.busStops, d.layers.busStops),
