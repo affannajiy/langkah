@@ -54,19 +54,42 @@ export function PointsCard({
       </View>
       <View style={styles.actions}>
         <Action icon={Plus} label={t('points.topUp')} primary onPress={onTopUp} />
-        <Action icon={MonitorPlay} label={t('points.ad')} onPress={onAd} />
+        {/* After the 5th ad the button says so; a tap still explains with a snackbar. */}
+        <Action
+          icon={MonitorPlay}
+          label={wallet.adsLeft > 0 ? t('points.ad') : t('points.adDone')}
+          muted={wallet.adsLeft <= 0}
+          onPress={onAd}
+        />
         <Action icon={Gift} label={t('points.shop')} onPress={onShop} />
       </View>
     </View>
   );
 }
 
-function Action({ icon: Icon, label, primary, onPress }: { icon: LucideIcon; label: string; primary?: boolean; onPress: () => void }) {
+function Action({
+  icon: Icon,
+  label,
+  primary,
+  muted,
+  onPress,
+}: {
+  icon: LucideIcon;
+  label: string;
+  primary?: boolean;
+  muted?: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [styles.action, primary ? styles.actionPrimary : styles.actionDark, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.action,
+        primary ? styles.actionPrimary : styles.actionDark,
+        muted && styles.actionMuted,
+        pressed && styles.pressed,
+      ]}
     >
       <Icon size={26} color={primary ? colors.navy : colors.white} />
       <AppText variant="bodyStrong" color={primary ? colors.navy : colors.white}>
@@ -203,6 +226,8 @@ function describe(l: LedgerLine, t: T): { title: string; sub: string | null } {
       const item = s(m.item);
       return { title: l.reason === 'voucher' ? t('ledger.voucher') : t('ledger.cosmetic'), sub: s(m.name) ?? (item ? itemText(t, item, 'name') : null) };
     }
+    case 'report_deleted':
+      return { title: t('ledger.reportDeleted'), sub: place(m.kind === 'improvement' ? 'improvement' : 'hazard') };
     case 'plus':
       return { title: t('ledger.plus'), sub: s(m.until) ? t('ledger.plusUntil', { date: shortDate(String(m.until)) }) : null };
     default:
@@ -227,6 +252,7 @@ const styles = StyleSheet.create({
   },
   actionPrimary: { backgroundColor: colors.white },
   actionDark: { backgroundColor: '#1F3D60' },
+  actionMuted: { opacity: 0.6 },
   card: { backgroundColor: colors.white, borderRadius: radius.card, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   chips: { flexDirection: 'row', gap: spacing.xs },

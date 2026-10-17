@@ -32,6 +32,7 @@ import { RouteLayers, type RouteKind } from '../../map/RouteLayers';
 import { useHere } from '../../map/useHere';
 import { UserDot } from '../../map/UserDot';
 import { useLangkahMapStyle } from '../../map/useLangkahMapStyle';
+import { useMapStatusBar } from '../../map/useMapStatusBar';
 import { useLocationPermission } from '../../map/useLocationPermission';
 import { setWalk, takeReportAfterWalk } from '../../nav/walkStore';
 import { useMapView } from '../../map/useMapView';
@@ -105,6 +106,7 @@ export default function MapScreen() {
   const navigation = useNavigation();
   const router = useRouter();
   const { style: mapStyle, land: mapLand } = useLangkahMapStyle();
+  useMapStatusBar(mapLand);
   const { access, request, servicesOn, turnOnServices } = useLocationPermission();
   const online = useOnline();
   const here = useHere(access);

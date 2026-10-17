@@ -20,6 +20,7 @@ import { QuickReportSheet } from '../features/nav/QuickReportSheet';
 import { WalkerDot, WalkLayers } from '../features/nav/WalkLayers';
 import { MAX_ZOOM, MIN_ZOOM } from '../map/config';
 import { useLangkahMapStyle } from '../map/useLangkahMapStyle';
+import { useMapStatusBar } from '../map/useMapStatusBar';
 import { useLocationPermission } from '../map/useLocationPermission';
 import { useOnline } from '../net/useOnline';
 import { bearingAt, makeTrack } from '../nav/geo';
@@ -49,6 +50,7 @@ function WalkScreen({ walk }: { walk: Walk }) {
   const insets = useSafeAreaInsets();
   const side = useSideInset(spacing.md);
   const { style: mapStyle, land: mapLand } = useLangkahMapStyle();
+  useMapStatusBar(mapLand);
   const snackbar = useSnackbar();
   const { canWrite } = useAuth();
   const online = useOnline();
@@ -91,7 +93,11 @@ function WalkScreen({ walk }: { walk: Walk }) {
       walkedM: summary.walkedM,
       gpsM: gpsDistance(),
       durationS: Math.max(60, (Date.now() - walk.startedAt) / 1000),
-      avoided: walk.fastestHazards === null ? null : Math.max(0, walk.fastestHazards - walked.stats.hz),
+      // Hazards met: on the first line, on the line after a reroute, or warned about on the way.
+      avoided:
+        walk.fastestHazards === null
+          ? null
+          : Math.max(0, walk.fastestHazards - Math.max(walked.stats.hz, summary.route.stats.hz, summary.warned)),
       warned: summary.warned,
       mode: walk.mode,
       kind: walk.kind,

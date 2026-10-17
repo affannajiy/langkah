@@ -297,6 +297,8 @@ A virtual street audit is the inspection of streets through street-level photos 
 
 The penalties live in the `private.score_weights` table, so a tuning change is one SQL update and a rescore, with no new migration. `docs/user-test-plan.md` lists the steps.
 
+**Shown score and unchecked streets (final test, 17 Oct 2026).** The route score is `100 - 25 × average penalty`. With +0.2 for an unchecked street, a route that was all unchecked still showed 94, which broke the "never shown as safe" rule. A second weight, `unchecked_score` (0.8), now lowers only the shown score for each unchecked metre, so such a route shows about 74. The routing weight stays at +0.2: raising it made Safest choose shorter lines through hazards, because unknown length outweighed the hazard penalty. Migration 16.
+
 ### 7.2 Keeping reports trustworthy
 
 This answers the moderation issue raised in the Week 3 progress report. Both kinds of report live in one reports table, with one map-pin screen and one voting flow.

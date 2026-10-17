@@ -100,18 +100,21 @@ export function CompareSheet(props: Props) {
               <AppText variant="heading" color={colors.navy} accessibilityRole="header" style={styles.title}>
                 {state.status === 'ok' ? t('route.title', { count: routeCount }) : t('route.titleAny')}
               </AppText>
-              <ModeChip mode={mode} size="long" onPress={onToggleMode} />
-              {props.star && (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={props.star.on ? t('starred.remove', { name: props.destinationName }) : t('starred.add', { name: props.destinationName })}
-                  accessibilityState={{ selected: props.star.on }}
-                  onPress={props.star.onPress}
-                  style={({ pressed }) => [styles.star, props.star?.on && styles.starOn, pressed && styles.pressed]}
-                >
-                  <Star size={22} color={props.star.on ? colors.hazardText : colors.navy} fill={props.star.on ? colors.hazard : 'none'} />
-                </Pressable>
-              )}
+              {/* Chip and star stay together, so the wider night chip never pushes the star onto its own line. */}
+              <View style={styles.controls}>
+                <ModeChip mode={mode} size="long" onPress={onToggleMode} />
+                {props.star && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={props.star.on ? t('starred.remove', { name: props.destinationName }) : t('starred.add', { name: props.destinationName })}
+                    accessibilityState={{ selected: props.star.on }}
+                    onPress={props.star.onPress}
+                    style={({ pressed }) => [styles.star, props.star?.on && styles.starOn, pressed && styles.pressed]}
+                  >
+                    <Star size={22} color={props.star.on ? colors.hazardText : colors.navy} fill={props.star.on ? colors.hazard : 'none'} />
+                  </Pressable>
+                )}
+              </View>
             </View>
             <Body {...props} />
           </View>
@@ -246,7 +249,8 @@ const styles = StyleSheet.create({
   },
   starOn: { backgroundColor: colors.hazardSoft, borderColor: colors.hazard },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
-  title: { flex: 1, minWidth: 160 },
+  title: { flex: 1, minWidth: 120 },
+  controls: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginLeft: 'auto' },
   cards: { gap: spacing.sm + spacing.xs },
   loading: { minHeight: 200, alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
   error: { gap: spacing.md, paddingVertical: spacing.md },

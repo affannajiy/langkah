@@ -109,6 +109,7 @@ export function useWalk(walk: Walk) {
     lastReroute: 0,
     arrived: false,
     doneM: 0, // metres walked on earlier routes, before a reroute
+    lastAt: null as LngLat | null, // last point counted: on the line, or the first fix before joining
   });
   const [summary, setSummary] = useState<WalkSummary | null>(null);
   const live = useRef({ route, track, hazards, crossings, banner });
@@ -135,8 +136,9 @@ export function useWalk(walk: Walk) {
       try {
         const pair = await routeSafe(from, walk.to.lngLat, walk.mode);
         const next = walk.kind === 'fastest' && !pair.same ? pair.fastest : pair.safest;
-        e.doneM += e.along ?? 0;
-        Object.assign(e, { along: null, joined: false, offCount: 0, buzzed: new Set<number>() });
+        // The stretch walked off the line, up to where the new route starts, counts too.
+        e.doneM += (e.along ?? 0) + (e.lastAt ? metres(e.lastAt, from) : 0);
+        Object.assign(e, { along: null, joined: false, offCount: 0, buzzed: new Set<number>(), lastAt: null });
         setRoute(next);
         setBanner({ kind: 'back' });
       } catch (error) {
@@ -168,9 +170,12 @@ export function useWalk(walk: Walk) {
         e.joined = true;
         e.offCount = 0;
         e.along = s.along;
+        e.lastAt = s.at;
         if (b?.kind === 'rerouteFailed') setBanner(null);
       } else if (e.joined && trusted) {
         e.offCount += 1;
+      } else if (!e.joined && trusted && !e.lastAt) {
+        e.lastAt = f.lngLat;
       }
 
       if (metres(f.lngLat, tr.points[tr.points.length - 1]!) <= ARRIVE_M || (e.joined && onLine && tr.total - s.along <= ARRIVE_M)) {

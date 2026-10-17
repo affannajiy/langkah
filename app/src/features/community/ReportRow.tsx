@@ -64,7 +64,8 @@ export const ReportRow = memo(function ReportRow({ report: r, busy, onOpen, onVo
           <AppText variant="caption" color={colors.textMuted} numberOfLines={2}>
             {subtitle}
           </AppText>
-          {r.status === 'pending' && <StatusChip status="pending" />}
+          {/* Hazards always show their state (routing uses only active ones); improvements only when pending. */}
+          {(r.kind === 'hazard' || r.status === 'pending') && <StatusChip status={r.status} />}
         </View>
         {r.kind === 'improvement' && <UpvoteButton report={r} busy={busy} onVote={(v) => onVote(r, v)} />}
       </Pressable>

@@ -17,7 +17,8 @@ export type LedgerReason =
   | 'topup'
   | 'voucher'
   | 'cosmetic'
-  | 'plus';
+  | 'plus'
+  | 'report_deleted';
 
 export type LedgerLine = {
   id: number;

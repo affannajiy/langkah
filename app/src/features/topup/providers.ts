@@ -18,7 +18,7 @@ export const BANKS: Provider[] = [
   { name: 'RBH Bank', product: 'RBH Now', initials: 'RB', brand: '#1F4E9E', onBrand: '#FFFFFF', page: '#EDF2FA', method: 'bank' },
   { name: 'Long Hong Bank', product: 'LongHong Connect', initials: 'LH', brand: '#123A73', onBrand: '#FFFFFF', page: '#ECF0F7', method: 'bank' },
   { name: 'BankRakyatku', product: 'iRakyatku', initials: 'BR', brand: '#007A99', onBrand: '#FFFFFF', page: '#E8F5F8', method: 'bank' },
-  { name: 'Afnan Bank', product: 'AfnanOnline', initials: 'AF', brand: '#1D3557', onBrand: '#F4A261', page: '#EEF1F6', method: 'bank' },
+  { name: 'Afnan Bank', product: 'AfnanGo', initials: 'AF', brand: '#1D3557', onBrand: '#F4A261', page: '#EEF1F6', method: 'bank' },
 ];
 
 export const WALLETS: Provider[] = [

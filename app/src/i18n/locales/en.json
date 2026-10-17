@@ -566,6 +566,7 @@
     "worth": "About RM{{rm}} in vouchers",
     "topUp": "Top up",
     "ad": "Ad +20",
+    "adDone": "Ads done",
     "shop": "Shop",
     "checkin": "Daily check-in",
     "dayOf": "Day {{day}} of 7",
@@ -595,6 +596,7 @@
     "voucher": "Shop voucher",
     "cosmetic": "Frame or badge",
     "plus": "Langkah Plus, 1 month",
+    "reportDeleted": "Report deleted, points taken back",
     "plusUntil": "Until {{date}}",
     "adBrand": "Ad by {{brand}}"
   },
@@ -870,7 +872,7 @@
     "removed": "Star removed from {{name}}",
     "full": "Starred places are full ({{count}}). Plus gives you 20.",
     "getPlus": "Get Plus",
-    "count": "{{n}} of {{max}}",
+    "count": "{{count}} of {{max}}",
     "empty": "Star a place on the route sheet to find it fast in Search.",
     "openHint": "Shows routes to this place"
   },

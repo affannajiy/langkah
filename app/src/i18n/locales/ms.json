@@ -566,6 +566,7 @@
     "worth": "Kira-kira RM{{rm}} dalam baucar",
     "topUp": "Tambah nilai",
     "ad": "Iklan +20",
+    "adDone": "Iklan selesai",
     "shop": "Kedai",
     "checkin": "Daftar masuk harian",
     "dayOf": "Hari {{day}} daripada 7",
@@ -595,6 +596,7 @@
     "voucher": "Baucar kedai",
     "cosmetic": "Bingkai atau lencana",
     "plus": "Langkah Plus, 1 bulan",
+    "reportDeleted": "Laporan dipadam, mata ditarik balik",
     "plusUntil": "Hingga {{date}}",
     "adBrand": "Iklan oleh {{brand}}"
   },
@@ -870,7 +872,7 @@
     "removed": "Bintang dibuang daripada {{name}}",
     "full": "Tempat berbintang sudah penuh ({{count}}). Plus memberi anda 20.",
     "getPlus": "Dapatkan Plus",
-    "count": "{{n}} daripada {{max}}",
+    "count": "{{count}} daripada {{max}}",
     "empty": "Bintangkan tempat pada helaian laluan supaya mudah dicari dalam Carian.",
     "openHint": "Menunjukkan laluan ke tempat ini"
   },
