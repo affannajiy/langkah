@@ -6,7 +6,7 @@ import { AppState } from 'react-native';
 import { dailyCheckin, demoReset, demoStart, isDemoUser } from '../api/points';
 import { supabase } from '../api/supabase';
 import { notifyPoints } from '../points/notice';
-import { clearRecentPlaces, requestMapHome } from '../storage/places';
+import { clearRecentPlaces, clearStarred, requestMapHome } from '../storage/places';
 import { flushQueue } from '../storage/reportQueue';
 import { SignInSheet, type SignInReason } from './SignInSheet';
 
@@ -251,6 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await demoReset();
       await clearRecentPlaces();
+      await clearStarred();
       requestMapHome();
       return true;
     } catch (error) {

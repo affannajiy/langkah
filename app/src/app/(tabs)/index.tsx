@@ -37,7 +37,20 @@ import { useScoringMode } from '../../map/useScoringMode';
 import { tabBarStyles, useTabBarStyle } from '../../navigation/tabBar';
 import { useOnline } from '../../net/useOnline';
 import { useRoutes } from '../../route/useRoutes';
-import { takeChooseSaved, takeMapHome, useRecentPlaces, useSavedPlaces, type SavedKey, type StoredPlace } from '../../storage/places';
+import {
+  isStarred,
+  MAX_STARRED_FREE,
+  takeChooseSaved,
+  takeMapHome,
+  takeRoute,
+  toggleStar,
+  useRecentPlaces,
+  useSavedPlaces,
+  useStarred,
+  type SavedKey,
+  type StoredPlace,
+} from '../../storage/places';
+import { usePlusActive } from '../../points/plus';
 import { flushQueue, queuedCount } from '../../storage/reportQueue';
 import { updateSettings, useSettings } from '../../storage/settings';
 import { useSideInset } from '../../theme/layout';
@@ -257,6 +270,17 @@ export default function MapScreen() {
   }, [pair, compareH]);
 
   const label = (e: Endpoint | null) => (!e ? null : e.kind === 'me' ? t('route.yourLocation') : e.place.name);
+
+  // Star the destination. Free accounts keep 3 stars, Plus 20 (guide Section 15.2).
+  useStarred(); // re-render when stars change
+  const plus = usePlusActive();
+  const starTo = trip?.to.kind === 'place' ? trip.to.place : null;
+  function onStar() {
+    if (!starTo) return;
+    const r = toggleStar(starTo, plus);
+    if (r === 'full') snackbar.show({ text: t('starred.full', { count: MAX_STARRED_FREE }), actionLabel: t('starred.getPlus'), onAction: () => router.push('/plus') });
+    else snackbar.show({ text: r === 'added' ? t('starred.added', { name: starTo.name }) : t('starred.removed', { name: starTo.name }) });
+  }
   const meNow = (): Endpoint => ({ kind: 'me', at: here });
 
   const startTrip = useCallback(
@@ -266,6 +290,10 @@ export default function MapScreen() {
     },
     [here],
   );
+
+  // For the focus effect below, which must not re-run when the location moves.
+  const startTripRef = useRef(startTrip);
+  startTripRef.current = startTrip;
 
   const closeTrip = useCallback(() => {
     setTrip(null);
@@ -436,7 +464,7 @@ export default function MapScreen() {
     if (message) snackbar.show({ text: message });
   }
 
-  // Back from Arrival ("Spot anything new?") or from the Me tab's saved places.
+  // Back from Arrival ("Spot anything new?") or from the Me tab's saved and starred places.
   useFocusEffect(
     useCallback(() => {
       const after = takeReportAfterWalk();
@@ -457,6 +485,12 @@ export default function MapScreen() {
         setTrip(null);
         setLayersOpen(false);
         setScreen({ kind: 'search', purpose: { kind: 'save', key }, back: 'home' });
+        return;
+      }
+      const route = takeRoute();
+      if (route) {
+        setLayersOpen(false);
+        startTripRef.current(route);
       }
       // openReport only sets state; it needs no dependency.
     }, []),
@@ -598,6 +632,7 @@ export default function MapScreen() {
             <CompareSheet
               state={tripError ? { status: 'error', error: tripError } : routes.state}
               destinationName={label(trip.to) ?? ''}
+              star={starTo ? { on: isStarred(starTo), onPress: onStar } : undefined}
               mode={mode}
               onToggleMode={toggleMode}
               selected={selected}

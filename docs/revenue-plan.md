@@ -1,6 +1,6 @@
 # Revenue plan and Phases 10 to 13
 
-Decided on 2026-10-17 and revised the same day (one coin, mock top-up, demo account, parody ads). The rules the code follows are in Section 15 of `Langkah Tech Stack.md`. Phase 10 is built; Phases 11 to 13 are planned.
+Decided on 2026-10-17 and revised the same day (one coin, mock top-up, demo account, parody ads). The rules the code follows are in Section 15 of `Langkah Tech Stack.md`. Phases 10 and 11 are built; Phases 12 and 13 are planned.
 
 ## Why not a monthly fee
 
@@ -154,7 +154,10 @@ Every phase follows the usual rules: RLS in the same migration, every string in 
 5. **Demo account:** the fill RPC, Afrina in the seed script, Reset demo. Remove the old demo toggle and "New guest".
 6. **Me tab:** wallet card (points, last 10 ledger lines, Top up button that shows "coming soon" until Phase 11).
 
-### Phase 11: Top up, ads, shop, Plus (mock)
+### Phase 11: Top up, ads, shop, Plus (mock) (built)
+
+Built as planned, with these choices: ads keep the one app font (brand looks come from weight, size and colour); Plus ships the gold frame, Plus badge and 20 starred places (on the phone), with live walk share marked "coming later"; guests may spend earned points; the Cosmetics tab and voucher code sheet follow the Shop card style. Migration 13 also closes the default EXECUTE grants that left `points_add` and `demo_fill` callable from the app.
+
 1. **Top up:** amount, method, bank or wallet list, mock login or PIN, TAC, processing, receipt. A `topup_mock` RPC adds the points with a ledger line and checks the RM500 a month cap.
 2. **Mock ads:** the 6 brands and formats above.
 3. **Points shop:** vouchers from made-up Ipoh shops, with a redeem code screen.

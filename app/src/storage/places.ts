@@ -12,7 +12,13 @@ export type StoredPlace = { name: string; area: string | null; category: string 
 
 const SAVED_STORE = 'langkah.saved.v1';
 const RECENT_STORE = 'langkah.recent.v1';
+const STARRED_STORE = 'langkah.starred.v1';
 const MAX_RECENT = 5;
+
+// Starred places beyond Home, UTP and Work: 3 free, 20 with Langkah Plus (guide
+// Section 15.2). When Plus ends, the extra stars stay; only adding more stops.
+export const MAX_STARRED_FREE = 3;
+export const MAX_STARRED_PLUS = 20;
 
 // UTP is set from the start: the team's campus, inside the Seri Iskandar pilot area.
 const UTP: StoredPlace = {
@@ -102,6 +108,17 @@ export function takeChooseSaved(): SavedKey | null {
   return key;
 }
 
+// The Me tab's starred places open the Map tab's route compare. Taken once.
+let routeNext: StoredPlace | null = null;
+export function requestRoute(place: StoredPlace) {
+  routeNext = place;
+}
+export function takeRoute(): StoredPlace | null {
+  const place = routeNext;
+  routeNext = null;
+  return place;
+}
+
 // Reset demo: the Map tab flies back to Ipoh Railway Station on its next focus. Taken once.
 let mapHomeNext = false;
 export function requestMapHome() {
@@ -126,6 +143,76 @@ export function useSavedPlaces() {
     void readSaved();
   }, []);
   return { saved: current, setPlace: setSavedPlace };
+}
+
+// Starred places, shared by the route sheet, Search and the Me tab.
+let starred: StoredPlace[] = [];
+let starredRead: Promise<void> | null = null;
+const starredListeners = new Set<() => void>();
+const emitStarred = () => starredListeners.forEach((l) => l());
+
+const samePlace = (a: StoredPlace, b: StoredPlace) =>
+  a.name === b.name && Math.abs(a.lngLat[0] - b.lngLat[0]) < 1e-4 && Math.abs(a.lngLat[1] - b.lngLat[1]) < 1e-4;
+
+function readStarred(): Promise<void> {
+  starredRead ??= readJson(STARRED_STORE).then((raw) => {
+    if (!Array.isArray(raw)) return;
+    starred = raw.map(toPlace).filter((p): p is StoredPlace => p !== null).slice(0, MAX_STARRED_PLUS);
+    emitStarred();
+  });
+  return starredRead;
+}
+
+function setStarred(next: StoredPlace[]) {
+  starred = next;
+  emitStarred();
+  writeJson(STARRED_STORE, next);
+}
+
+export function isStarred(place: StoredPlace): boolean {
+  return starred.some((p) => samePlace(p, place));
+}
+
+// Adds or removes a star. 'full' when the limit for this account is reached.
+export function toggleStar(place: StoredPlace, plus: boolean): 'added' | 'removed' | 'full' {
+  if (isStarred(place)) {
+    setStarred(starred.filter((p) => !samePlace(p, place)));
+    return 'removed';
+  }
+  if (starred.length >= (plus ? MAX_STARRED_PLUS : MAX_STARRED_FREE)) return 'full';
+  setStarred([place, ...starred]);
+  return 'added';
+}
+
+export function unstar(place: StoredPlace) {
+  setStarred(starred.filter((p) => !samePlace(p, place)));
+}
+
+export function restoreStar(place: StoredPlace, index: number) {
+  if (isStarred(place)) return;
+  const next = [...starred];
+  next.splice(Math.min(index, next.length), 0, place);
+  setStarred(next);
+}
+
+export async function clearStarred(): Promise<void> {
+  setStarred([]);
+}
+
+export function useStarred(): StoredPlace[] {
+  const current = useSyncExternalStore(
+    (l) => {
+      starredListeners.add(l);
+      return () => {
+        starredListeners.delete(l);
+      };
+    },
+    () => starred,
+  );
+  useEffect(() => {
+    void readStarred();
+  }, []);
+  return current;
 }
 
 export function useRecentPlaces() {

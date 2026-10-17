@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import { CircleParking, Gift, MonitorPlay, Plus, type LucideIcon } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -5,7 +6,18 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import type { LedgerLine, Wallet } from '../../api/points';
 import { AppText } from '../../components/AppText';
 import { colors, radius, spacing, touchTarget } from '../../theme/theme';
+import { shortDate } from '../../i18n/format';
 import { categoryKey } from '../report/categoryIcons';
+import { itemText } from './catalog';
+
+const AD_NAMES: Record<string, string> = {
+  gfc: 'GFC',
+  mcg: "McGuffin's",
+  tealove: 'tealove',
+  zas: 'ZAS kopi',
+  secret: 'Secret Resipi',
+  newtown: 'New Town Kopitiam',
+};
 
 // The Me tab's wallet (guide Section 15; docs/screens/Wallet.png): points card,
 // daily check-in and the last 10 ledger lines.
@@ -145,7 +157,7 @@ export function LedgerCard({ lines }: { lines: LedgerLine[] }) {
   );
 }
 
-type T = ReturnType<typeof useTranslation>['t'];
+type T = TFunction;
 
 const s = (v: unknown) => (typeof v === 'string' && v.length > 0 ? v : null);
 
@@ -174,8 +186,10 @@ function describe(l: LedgerLine, t: T): { title: string; sub: string | null } {
       return { title: t('ledger.rating'), sub: null };
     case 'checkin':
       return { title: t('ledger.checkin', { day: Number(m.day) || 1 }), sub: null };
-    case 'ad':
-      return { title: t('ledger.ad', { count: Number(m.count) || 1 }), sub: null };
+    case 'ad': {
+      const brand = s(m.brand);
+      return { title: t('ledger.ad', { count: Number(m.count) || 1 }), sub: brand ? t('ledger.adBrand', { brand: AD_NAMES[brand] ?? brand }) : null };
+    }
     case 'topup':
       return {
         title: t('ledger.topup', { via: s(m.via) ?? '' }),
@@ -183,6 +197,13 @@ function describe(l: LedgerLine, t: T): { title: string; sub: string | null } {
       };
     case 'welcome':
       return { title: t('ledger.welcome'), sub: null };
+    case 'voucher':
+    case 'cosmetic': {
+      const item = s(m.item);
+      return { title: l.reason === 'voucher' ? t('ledger.voucher') : t('ledger.cosmetic'), sub: item ? itemText(t, item, 'name') : null };
+    }
+    case 'plus':
+      return { title: t('ledger.plus'), sub: s(m.until) ? t('ledger.plusUntil', { date: shortDate(String(m.until)) }) : null };
     default:
       return { title: t('ledger.other'), sub: null };
   }

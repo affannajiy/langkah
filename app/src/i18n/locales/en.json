@@ -565,7 +565,6 @@
     "topUp": "Top up",
     "ad": "Ad +20",
     "shop": "Shop",
-    "soon": "Coming soon",
     "checkin": "Daily check-in",
     "dayOf": "Day {{day}} of 7",
     "chip": "Day {{day}}, {{points}} points",
@@ -590,6 +589,302 @@
     "topup": "Top up via {{via}}",
     "topupSub": "RM{{rm}} · Ref {{ref}}",
     "welcome": "Welcome to Langkah",
-    "other": "Points"
+    "other": "Points",
+    "voucher": "Shop voucher",
+    "cosmetic": "Frame or badge",
+    "plus": "Langkah Plus, 1 month",
+    "plusUntil": "Until {{date}}",
+    "adBrand": "Ad by {{brand}}"
+  },
+  "topup": {
+    "demo": "DEMO · no real money",
+    "demoBank": "DEMO · no real money · not a real bank",
+    "demoWallet": "DEMO · no real money · not a real wallet",
+    "title": "Top up points",
+    "youHave": "You have",
+    "points": "{{value}} points",
+    "bonus": "+{{value}} bonus",
+    "selected": "{{rm}} · Selected",
+    "orType": "Or type an amount",
+    "customHint": "1 to 100",
+    "customBad": "Type a whole amount from RM1 to RM100.",
+    "overCap": "Top ups are capped at RM500 a month. You can add {{rm}} more this month.",
+    "rate": "100 points per RM1. Bonus only on packs.",
+    "youPay": "You pay",
+    "youGet": "You get",
+    "plusPoints": "+{{value}} points",
+    "choosePay": "Choose how to pay",
+    "payWith": "Pay {{rm}} with",
+    "bank": "Online banking",
+    "wallet": "E-wallet",
+    "bankList": "{{names}} and {{count}} more",
+    "methodNote": "This is a demo. No bank or wallet is contacted and no money moves.",
+    "chooseBank": "Choose your bank",
+    "chooseWallet": "Choose your e-wallet",
+    "online": "{{product}} online",
+    "ewallet": "Pay with your PIN",
+    "payTo": "Pay to",
+    "langkahPoints": "Langkah Points",
+    "userId": "User ID",
+    "password": "Password",
+    "filledIn": "Filled in for the demo. Never type a real bank password here.",
+    "logIn": "Log in",
+    "onlineBanking": "{{product}} online banking",
+    "hidden": "hidden",
+    "locked": "filled in for the demo",
+    "tacNotice": "Demo notification from {{name}}: TAC {{tac}} for {{rm}}.",
+    "noticeFrom": "{{name}} (demo)",
+    "now": "now",
+    "tacPrefix": "TAC",
+    "tacSuffix": "for {{rm}} to Langkah Points. Demo only.",
+    "from": "From",
+    "to": "To",
+    "amount": "Amount",
+    "savings": "Savings ••• 0042",
+    "tacCode": "TAC code",
+    "tacFilled": "Filled in from the notification",
+    "approve": "Approve {{rm}}",
+    "cancel": "Cancel top up",
+    "walletPay": "Pay {{rm}} to Langkah Points",
+    "pin": "Enter your 6-digit PIN",
+    "pinProgress": "{{count}} of 6 digits filled in",
+    "pinFilling": "Filling in by itself for the demo",
+    "processing": "Processing",
+    "processingBody": "Waiting for {{name}} to confirm {{rm}}",
+    "done": "Top up done",
+    "newBalance": "New balance {{value}} points",
+    "paidWith": "Paid with",
+    "pack": "Pack",
+    "packBonus": "{{base}} + {{bonus}} bonus",
+    "reference": "Reference",
+    "date": "Date",
+    "noMoney": "Demo top up. No money was taken.",
+    "spend": "Spend in the shop",
+    "doneButton": "Done",
+    "failed": "Top up not completed",
+    "backToWallet": "Back to wallet",
+    "cancelled": "Top up cancelled. No points added, no money taken.",
+    "earned": "+{{value}} points added",
+    "error": {
+      "network": "No money was taken and no points were added. Check your connection and try again.",
+      "month_cap": "Top ups are capped at RM500 a month. No money was taken.",
+      "sign_in_needed": "Sign in with Google or use the demo to top up. No money was taken.",
+      "bad_amount": "That amount cannot be topped up. No money was taken.",
+      "bad_method": "That bank or wallet is not in the demo. No money was taken."
+    }
+  },
+  "ads": {
+    "pill": "Ad · {{clock}}",
+    "mock": "Mock ad, made-up brand",
+    "storyLine": "Ad · {{clock}} · mock ad, made-up brand",
+    "close": "Close the ad",
+    "closeIn_one": "Close, available in {{count}} second",
+    "closeIn_other": "Close, available in {{count}} seconds",
+    "footer": "+20 Langkah Points when the ad ends",
+    "paid_one": "+{{count}} point added. You can close the ad.",
+    "paid_other": "+{{count}} points added. You can close the ad.",
+    "capped": "No points: you have watched 5 ads today. You can close the ad.",
+    "offline": "Could not reach Langkah, so no points this time. You can close the ad.",
+    "checking": "Adding your points",
+    "earned_one": "+{{count}} point from the ad",
+    "earned_other": "+{{count}} points from the ad",
+    "early": "Ad closed early. No points this time.",
+    "none": "No more ads today. Come back tomorrow for 5 more.",
+    "gfc": {
+      "tag": "Gurney Fried Chicken · finger lickin' close",
+      "art": "A bucket of fried chicken",
+      "deal": "Zingy bucket for 2",
+      "cta": "Order now"
+    },
+    "mcg": {
+      "tag": "I'm lovin' Ipoh",
+      "title": "Swipe the Raya menu",
+      "rendang": "Big McG Rendang",
+      "rendangBody": "Double beef, rendang sauce, limited time",
+      "pie": "Gula Melaka Pie",
+      "pieBody": "Warm and crispy, palm sugar filling",
+      "teh": "Teh Tarik Frappe",
+      "tehBody": "Pulled tea, iced and blended",
+      "of": "{{n}} of 3",
+      "cta": "Get it on McG Delivery"
+    },
+    "tealove": {
+      "new": "New",
+      "teaser": "Something new is brewing",
+      "flavour": "Brown Sugar Pandan Boba",
+      "offer": "Buy 1 Free 1 · this week",
+      "cta": "Swipe up to find a store"
+    },
+    "zas": {
+      "tag": "Kopi for the whole jalan",
+      "title": "Scratch to reveal your promo",
+      "yourCode": "Your code",
+      "tapHint": "Tap the card to scratch it",
+      "offer": "50% off any latte",
+      "keep": "Keep tapping. Valid at ZAS kopi Ipoh outlets, made-up offer.",
+      "valid": "Valid at ZAS kopi Ipoh outlets until 31 Oct. Made-up offer.",
+      "cta": "Save code",
+      "saved": "Saved for the demo"
+    },
+    "secret": {
+      "title": "Chocolate Indulgence",
+      "voucher": "Voucher",
+      "until": "Until 31 Oct",
+      "off": "RM5 off",
+      "body": "any whole cake, Ipoh Parade outlet (made-up offer)",
+      "cta": "Save voucher",
+      "saved": "Saved for the demo"
+    },
+    "newtown": {
+      "since": "Kopitiam · since 1999 Ipoh",
+      "quiz": "Quick quiz, 1 question",
+      "question": "Kopi O or Kopi C?",
+      "hint": "Pick your usual. Either answer unlocks the deal.",
+      "o": "Black, with sugar",
+      "c": "With evaporated milk",
+      "unlocks": "Unlocks:",
+      "unlocked": "Unlocked:",
+      "deal": "free kaya toast with any kopi"
+    }
+  },
+  "shop": {
+    "title": "Points shop",
+    "pts": "{{value}} pts",
+    "balanceA11y": "You have {{value}} points",
+    "tab": {
+      "vouchers": "Vouchers",
+      "cosmetics": "Cosmetics"
+    },
+    "off": "off",
+    "redeem": "Redeem",
+    "get": "Get",
+    "use": "Use",
+    "inUse": "In use",
+    "owned": "Owned",
+    "withPlus": "With Plus",
+    "madeUp": "Made-up shops for the demo. In Phase 12 real Ipoh partners fill this list.",
+    "cosmeticsNote": "Frames and badges show on your Me tab. They never change routes or reports.",
+    "loadFailed": "Could not load the shop.",
+    "confirmTitle": "Spend points on {{item}}?",
+    "confirmBody": "This uses {{cost}} points and cannot be undone.",
+    "wearing": "{{item}} is on. See it on your Me tab.",
+    "removed": "{{item}} taken off",
+    "voucherLine": "RM{{rm}} off · {{detail}}",
+    "code": "Voucher code",
+    "showCashier": "Show this code at the counter.",
+    "redeemedOn": "Redeemed {{date}}. Demo voucher from a made-up shop.",
+    "myVouchers": "My vouchers",
+    "error": {
+      "network": "Could not finish. No points were spent.",
+      "not_enough": "Not enough points. Nothing was spent.",
+      "owned": "You already have this.",
+      "no_item": "This is no longer in the shop.",
+      "not_owned": "Get this first."
+    },
+    "item": {
+      "kopi_kinta": {
+        "name": "Kopi Kinta Corner",
+        "detail": "Any kopi or teh, Old Town"
+      },
+      "roti_pak_mat": {
+        "name": "Roti Bakar Pak Mat",
+        "detail": "Kaya toast set"
+      },
+      "tau_fu_fa": {
+        "name": "Lorong Tau Fu Fa",
+        "detail": "Any bowl, Concubine Lane"
+      },
+      "kinta_bookstop": {
+        "name": "Kinta Bookstop",
+        "detail": "Books over RM30"
+      },
+      "frame_teal": {
+        "name": "Teal ring",
+        "detail": "Avatar frame in Langkah green"
+      },
+      "frame_batik": {
+        "name": "Batik ring",
+        "detail": "Dashed pink avatar frame"
+      },
+      "frame_limestone": {
+        "name": "Limestone ring",
+        "detail": "Double grey frame, after Ipoh's hills"
+      },
+      "badge_early": {
+        "name": "Early walker",
+        "detail": "Badge with a sunrise"
+      },
+      "badge_night": {
+        "name": "Night owl",
+        "detail": "Badge with a moon"
+      },
+      "badge_kinta": {
+        "name": "Kinta walker",
+        "detail": "Badge with footprints"
+      },
+      "plus_frame": {
+        "name": "Plus gold frame",
+        "detail": "Free while Plus is on"
+      },
+      "plus_badge": {
+        "name": "Plus badge",
+        "detail": "Free while Plus is on"
+      }
+    }
+  },
+  "plus": {
+    "row": "Langkah Plus",
+    "rowOn": "Langkah Plus is on",
+    "rowUntil": "Langkah Plus until {{date}}",
+    "rowBody": "More starred places, gold frame and badge",
+    "tagline": "Extras for regular walkers. Safety stays free for everyone.",
+    "activeUntil": "Plus is on until {{date}}. No auto-renew.",
+    "perkShare": "Live walk share",
+    "perkShareBody": "Family sees your walk until you arrive",
+    "later": "Coming later",
+    "perkPlaces": "More starred places",
+    "perkPlacesBody": "{{count}} places instead of 3",
+    "perkBadge": "Plus badge and frame",
+    "perkBadgeBody": "Gold frame on your profile",
+    "free": "Routes, hazard alerts and reports are never behind Plus.",
+    "month": "1 month",
+    "get": "Get Plus for {{cost}} points",
+    "extend": "Add 1 month for {{cost}} points",
+    "youHave": "You have {{value}} points. No auto-renew in the demo.",
+    "confirmTitle": "Get Langkah Plus?",
+    "extendTitle": "Add 1 more month of Plus?",
+    "confirmBody": "This uses {{cost}} points and cannot be undone. Plus lasts 30 days.",
+    "confirm": "Get Plus",
+    "done": "Plus is on until {{date}}",
+    "itemName": "Langkah Plus for 1 month"
+  },
+  "low": {
+    "title": "You need {{value}} more points",
+    "body": "{{item}} costs {{cost}}. You have {{have}}.",
+    "ad": "Watch a short ad",
+    "adLeft_one": "{{count}} of 5 left today",
+    "adLeft_other": "{{count}} of 5 left today",
+    "adNone": "No ads left today",
+    "walk": "Walk with Langkah",
+    "walkBody": "10 points per km",
+    "perKm": "+10/km",
+    "vote": "Vote on hazards near you",
+    "voteBody": "Still there or Gone",
+    "checkin": "Daily check-in",
+    "checkinBody": "Day {{day}} of 7, +50 on day 7",
+    "topUp": "Top up points",
+    "notNow": "Not now"
+  },
+  "starred": {
+    "title": "Starred places",
+    "add": "Star {{name}}",
+    "remove": "Remove the star from {{name}}",
+    "added": "{{name}} starred",
+    "removed": "Star removed from {{name}}",
+    "full": "Starred places are full ({{count}}). Plus gives you 20.",
+    "getPlus": "Get Plus",
+    "count": "{{n}} of {{max}}",
+    "empty": "Star a place on the route sheet to find it fast in Search.",
+    "openHint": "Shows routes to this place"
   }
 }

@@ -1,5 +1,5 @@
 import type { LngLat } from '@maplibre/maplibre-react-native';
-import { Clock, LocateFixed, Search, ShieldCheck, X } from 'lucide-react-native';
+import { Clock, LocateFixed, Search, ShieldCheck, Star, X } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -24,7 +24,7 @@ import { PlaceChip } from '../../components/PlaceChip';
 import { formatDistance } from '../../i18n/format';
 import { isInPilotArea } from '../../map/config';
 import { placeIcon, SAVED_ICONS } from '../../map/placeIcon';
-import { SAVED_KEYS, type SavedKey, type SavedPlaces, type StoredPlace } from '../../storage/places';
+import { SAVED_KEYS, useStarred, type SavedKey, type SavedPlaces, type StoredPlace } from '../../storage/places';
 import { useSideInset } from '../../theme/layout';
 import { chromeTextScale, colors, fontFamily, radius, shadow, spacing, touchTarget, type } from '../../theme/theme';
 
@@ -245,6 +245,7 @@ type StartProps = {
 // Before typing: my location (for a start point), saved places and recent searches.
 function StartContent({ purpose, near, saved, recent, onPickSaved, onSavedLongPress, onPickRecent, onUseMyLocation }: StartProps) {
   const { t } = useTranslation();
+  const starred = useStarred();
   return (
     <View style={styles.start}>
       {purpose.kind === 'from' && near && (
@@ -275,6 +276,19 @@ function StartContent({ purpose, near, saved, recent, onPickSaved, onSavedLongPr
               />
             ))}
           </View>
+        </View>
+      )}
+      {purpose.kind !== 'save' && starred.length > 0 && (
+        <View style={styles.section}>
+          <AppText variant="bodyStrong" color={colors.navy} accessibilityRole="header">
+            {t('starred.title')}
+          </AppText>
+          {starred.map((p, i) => (
+            <View key={`${p.name}:${i}`}>
+              {i > 0 && <Separator />}
+              <PlaceRow place={{ ...p, distM: null }} icon={Star} onPress={() => onPickRecent(p)} />
+            </View>
+          ))}
         </View>
       )}
       {recent.length > 0 && (

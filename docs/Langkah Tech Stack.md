@@ -519,12 +519,16 @@ Langkah Points work like Grab points. 100 points is about RM1. Points are closed
 | Watch a 30 s ad (mock, Phase 11) | +20 | 5 a day |
 | Top up (mock, Phase 11) | packs from RM5 = 500 | Google or demo account only, RM500 a month |
 
-Spending (Phase 11): shop vouchers (300), cosmetics (200 to 800) and Langkah Plus (690 a month). Reports and votes are never paid for.
+Spending (Phase 11): shop vouchers (150 to 700), cosmetics (200 to 800) and Langkah Plus (690 for 30 days, no auto-renew). Everyone, guests too, may spend the points they earned; only top-up needs a Google or demo account. Reports and votes are never paid for. Spending cannot be undone, so it asks in a dialog first; too few points opens a bottom sheet with ways to earn.
+
+Langkah Plus gives 20 starred places instead of 3 (stars stay on the phone, like Home and Work), the gold frame and the Plus badge. Live walk share is listed as coming later. Plus never sells points and never touches routes, alerts or reports.
 
 ### 15.3 How points move
 
 - A `point_ledger` table holds every change, and `point_balances` holds one balance per user. RLS is on; users read only their own rows; the app cannot insert or update either table.
 - Points move only through `security definer` functions. Caps are enforced in SQL by the Malaysian day (Asia/Kuala_Lumpur). A `ref` on each line stops the same earn being paid twice.
+- Supabase grants EXECUTE on new functions to `anon` and `authenticated` by default. Migration 13 turns that default off for the `public` schema, so helpers such as `points_add` stay private and every app entry point is granted by name.
+- The shop: `shop_items` (id, kind, price; wording lives in the app's translation files) and `user_items` (what a user bought; a voucher row carries its code). `shop_buy`, `plus_buy`, `cosmetic_use`, `topup_mock` and `ad_finish` are the only ways in.
 - Walk distance is measured on the phone from the GPS fixes. Fixes worse than 30 m and jumps faster than 4 m/s are dropped. Only metres and seconds are sent; the server rejects an average faster than 3 m/s. The track never leaves the phone.
 - Guests earn points, but guest points live only on that phone's account. If a guest signs in with a Google account that already has Langkah, the guest's points stay behind.
 
@@ -534,7 +538,7 @@ The first launch offers Sign in with Google, Continue as guest, and Try the demo
 
 ### 15.5 Money rules
 
-Every mock top-up screen shows "DEMO · no real money". Nothing is typed, saved or sent to a bank, and there is no card option. Before any real sale: check the Bank Negara e-money policy document (bought points that pay for other shops' vouchers may count as e-money), and use Google Play Billing for top-ups on Android (15% fee).
+Every mock top-up screen shows "DEMO · no real money". Nothing is typed, saved or sent to a bank, and there is no card option. The bank login and TAC fill themselves; the server picks the points from the pack and caps top-ups at RM500 per Malaysian month. Mock ads are parody brands with our own art, offered only from the wallet and never during a walk. Before any real sale: check the Bank Negara e-money policy document (bought points that pay for other shops' vouchers may count as e-money), and use Google Play Billing for top-ups on Android (15% fee).
 
 ## References
 

@@ -33,3 +33,20 @@ export function timeAgo(iso: string, now = Date.now()): string {
 export function shortDate(iso: string): string {
   return new Intl.DateTimeFormat(locale(), { day: 'numeric', month: 'short' }).format(new Date(iso));
 }
+
+// "1,100" points in either language.
+export function formatPoints(points: number): string {
+  return new Intl.NumberFormat(locale()).format(points);
+}
+
+// "RM10.00".
+export function formatRm(rm: number): string {
+  return `RM${new Intl.NumberFormat(locale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(rm)}`;
+}
+
+// "17 Oct 2026, 8:42 PM", for receipts.
+export function dateTime(iso: string): string {
+  return new Intl.DateTimeFormat(locale(), { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }).format(
+    new Date(iso),
+  );
+}

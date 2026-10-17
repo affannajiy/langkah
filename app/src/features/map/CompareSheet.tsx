@@ -1,4 +1,4 @@
-import { CircleAlert, Footprints } from 'lucide-react-native';
+import { CircleAlert, Footprints, Star } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
@@ -29,6 +29,8 @@ type Props = {
   onCollapsedHeight: (h: number) => void;
   // Tallest the sheet may grow, so the trip bar and map credit stay visible.
   maxHeight: number;
+  // Star the destination (starred places, more with Plus). Absent for "your location".
+  star?: { on: boolean; onPress: () => void };
 };
 
 // Height of BottomSheet's drag handle area.
@@ -99,6 +101,17 @@ export function CompareSheet(props: Props) {
                 {state.status === 'ok' ? t('route.title', { count: routeCount }) : t('route.titleAny')}
               </AppText>
               <ModeChip mode={mode} size="long" onPress={onToggleMode} />
+              {props.star && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={props.star.on ? t('starred.remove', { name: props.destinationName }) : t('starred.add', { name: props.destinationName })}
+                  accessibilityState={{ selected: props.star.on }}
+                  onPress={props.star.onPress}
+                  style={({ pressed }) => [styles.star, props.star?.on && styles.starOn, pressed && styles.pressed]}
+                >
+                  <Star size={22} color={props.star.on ? colors.hazardText : colors.navy} fill={props.star.on ? colors.hazard : 'none'} />
+                </Pressable>
+              )}
             </View>
             <Body {...props} />
           </View>
@@ -222,6 +235,16 @@ function Details({ route }: { route: Route }) {
 
 const styles = StyleSheet.create({
   main: { paddingHorizontal: spacing.md, gap: spacing.md },
+  star: {
+    width: touchTarget,
+    height: touchTarget,
+    borderRadius: touchTarget / 2,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  starOn: { backgroundColor: colors.hazardSoft, borderColor: colors.hazard },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
   title: { flex: 1, minWidth: 160 },
   cards: { gap: spacing.sm + spacing.xs },

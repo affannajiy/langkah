@@ -3,12 +3,15 @@ import {
   Briefcase,
   ChevronRight,
   CloudOff,
+  Crown,
   CloudUpload,
   FlaskConical,
   GraduationCap,
   House,
   Settings as SettingsIcon,
   ShieldCheck,
+  Star,
+  Ticket,
   UserRound,
   X,
   type LucideIcon,
@@ -30,22 +33,40 @@ import {
   type CommunityReport,
   type MyStats,
 } from '../../api/reports';
-import { myWallet, type Wallet } from '../../api/points';
+import { myItems, myWallet, type OwnedItem, type Wallet } from '../../api/points';
 import { useAuth } from '../../auth/AuthProvider';
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
 import { Snackbar, useSnackbar } from '../../components/Snackbar';
+import { ScrimSheet } from '../../components/ScrimSheet';
 import { StatusBanner } from '../../components/StatusBanner';
 import { ReportDetailSheet } from '../../features/community/ReportDetailSheet';
 import { Thumb } from '../../features/community/ReportRow';
 import { StatusChip } from '../../features/community/StatusChip';
 import { categoryKey } from '../../features/report/categoryIcons';
+import { Avatar } from '../../features/points/Avatar';
+import { itemText } from '../../features/points/catalog';
+import { useOpenTopUp } from '../../features/points/useOpenTopUp';
+import { VoucherBody } from '../../features/points/VoucherSheet';
 import { CheckinCard, LedgerCard, PointsCard } from '../../features/points/WalletCards';
 import { pickPhoto } from '../../features/report/pickPhoto';
-import { timeAgo } from '../../i18n/format';
+import { shortDate, timeAgo } from '../../i18n/format';
 import { useOnline } from '../../net/useOnline';
 import { usePointsNotice } from '../../points/notice';
-import { requestChooseSaved, SAVED_KEYS, useSavedPlaces, type SavedKey } from '../../storage/places';
+import { usePlusActive } from '../../points/plus';
+import {
+  MAX_STARRED_FREE,
+  MAX_STARRED_PLUS,
+  requestChooseSaved,
+  requestRoute,
+  restoreStar,
+  SAVED_KEYS,
+  unstar,
+  useSavedPlaces,
+  useStarred,
+  type SavedKey,
+  type StoredPlace,
+} from '../../storage/places';
 import { queuedCount, subscribeQueue } from '../../storage/reportQueue';
 import { cappedContent } from '../../theme/layout';
 import { colors, radius, spacing, touchTarget } from '../../theme/theme';
@@ -65,6 +86,11 @@ export default function MeScreen() {
   const snackbar = useSnackbar();
   const { ready, hasSession, isFull, canWrite, name, demo, requireSignIn, signOut, resetDemo } = useAuth();
   const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [vouchers, setVouchers] = useState<OwnedItem[]>([]);
+  const [voucherOpen, setVoucherOpen] = useState<OwnedItem | null>(null);
+  const openTopUp = useOpenTopUp();
+  const starred = useStarred();
+  const plus = usePlusActive();
   const [resetting, setResetting] = useState(false);
   const { saved, setPlace } = useSavedPlaces();
   const [waiting, setWaiting] = useState(0);
@@ -89,6 +115,7 @@ export default function MeScreen() {
     if (!hasSession) {
       setStats(null);
       setWallet(null);
+      setVouchers([]);
       setMine({ status: 'ok', items: [], more: false });
       return;
     }
@@ -96,6 +123,9 @@ export default function MeScreen() {
     myWallet()
       .then(setWallet)
       .catch((error: unknown) => console.warn('Could not load the wallet', error));
+    myItems()
+      .then((items) => setVouchers(items.filter((i) => i.code !== null)))
+      .catch((error: unknown) => console.warn('Could not load vouchers', error));
     try {
       const [s, items] = await Promise.all([myStats(), myReports(0)]);
       setStats(s);
@@ -121,10 +151,28 @@ export default function MeScreen() {
   }, []);
   usePointsNotice(reloadWallet);
 
-  // Top up, ads and the shop arrive in Phase 11. A guest is asked to sign in first.
-  async function topUp() {
-    if (!isFull && !demo.isDemo && !(await requireSignIn('topup'))) return;
-    snackbar.show({ text: t('points.soon') });
+  // Ads only from the wallet, never during a walk; 5 a day.
+  function watchAd() {
+    if (wallet && wallet.adsLeft <= 0) {
+      snackbar.show({ text: t('ads.none') });
+      return;
+    }
+    router.push('/ad');
+  }
+
+  function removeStar(place: StoredPlace, index: number) {
+    unstar(place);
+    snackbar.show({
+      text: t('starred.removed', { name: place.name }),
+      actionLabel: t('common.undo'),
+      onAction: () => restoreStar(place, index),
+    });
+  }
+
+  // A starred place opens the route compare on the Map tab.
+  function openStarred(place: StoredPlace) {
+    requestRoute(place);
+    router.navigate('/');
   }
 
   // Cannot be undone, so a dialog (guide Section 5.3).
@@ -258,7 +306,12 @@ export default function MeScreen() {
 
         <View style={styles.card}>
           <View style={styles.row}>
-            <View style={[styles.icon, { backgroundColor: isFull ? colors.safeSoft : demo.isDemo ? colors.interactiveSoft : colors.neutralBadge }]}>
+            <Avatar
+              size={56}
+              frame={wallet?.frame ?? null}
+              badge={wallet?.badge ?? null}
+              fill={isFull ? colors.safeSoft : demo.isDemo ? colors.interactiveSoft : colors.neutralBadge}
+            >
               {isFull ? (
                 <ShieldCheck size={28} color={colors.safeText} />
               ) : demo.isDemo ? (
@@ -266,7 +319,7 @@ export default function MeScreen() {
               ) : (
                 <UserRound size={28} color={colors.textMuted} />
               )}
-            </View>
+            </Avatar>
             <View style={styles.flex}>
               <AppText variant="heading" color={colors.text}>
                 {accountTitle}
@@ -313,12 +366,58 @@ export default function MeScreen() {
           <>
             <PointsCard
               wallet={wallet}
-              onTopUp={() => void topUp()}
-              onAd={() => snackbar.show({ text: t('points.soon') })}
-              onShop={() => snackbar.show({ text: t('points.soon') })}
+              onTopUp={() => void openTopUp()}
+              onAd={watchAd}
+              onShop={() => router.push('/shop')}
             />
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push('/plus')}
+              style={({ pressed }) => [styles.plusRow, pressed && styles.pressed]}
+            >
+              <Crown size={26} color="#7A5A00" />
+              <View style={styles.flex}>
+                <AppText variant="bodyStrong" color={colors.text}>
+                  {wallet.plusUntil ? t('plus.rowUntil', { date: shortDate(wallet.plusUntil) }) : t('plus.row')}
+                </AppText>
+                <AppText variant="caption" color={colors.textMuted}>
+                  {t('plus.rowBody')}
+                </AppText>
+              </View>
+              <ChevronRight size={22} color={colors.textMuted} />
+            </Pressable>
             <CheckinCard day={wallet.checkin.day} />
             <LedgerCard lines={wallet.lines} />
+            {vouchers.length > 0 && (
+              <>
+                <AppText variant="heading" color={colors.navy} accessibilityRole="header">
+                  {t('shop.myVouchers')}
+                </AppText>
+                <View style={styles.list}>
+                  {vouchers.map((v, i) => (
+                    <Pressable
+                      key={v.id}
+                      accessibilityRole="button"
+                      onPress={() => setVoucherOpen(v)}
+                      style={({ pressed }) => [styles.listMain, i < vouchers.length - 1 && styles.rowDivider, pressed && styles.pressed]}
+                    >
+                      <View style={styles.smallIcon}>
+                        <Ticket size={22} color={colors.navy} />
+                      </View>
+                      <View style={styles.flex}>
+                        <AppText variant="bodyStrong" color={colors.text}>
+                          {itemText(t, v.item, 'name')}
+                        </AppText>
+                        <AppText variant="caption" color={colors.textMuted}>
+                          {`${v.code} · ${shortDate(v.at)}`}
+                        </AppText>
+                      </View>
+                      <ChevronRight size={22} color={colors.textMuted} />
+                    </Pressable>
+                  ))}
+                </View>
+              </>
+            )}
             {demo.isDemo && (
               <Pressable
                 accessibilityRole="button"
@@ -393,6 +492,55 @@ export default function MeScreen() {
           })}
         </View>
 
+        <View style={styles.headRow}>
+          <AppText variant="heading" color={colors.navy} accessibilityRole="header" style={styles.flex}>
+            {t('starred.title')}
+          </AppText>
+          <AppText variant="label" color={colors.textMuted}>
+            {t('starred.count', { count: starred.length, max: plus ? MAX_STARRED_PLUS : MAX_STARRED_FREE })}
+          </AppText>
+        </View>
+        {starred.length === 0 ? (
+          <AppText variant="caption" color={colors.textMuted}>
+            {t('starred.empty')}
+          </AppText>
+        ) : (
+          <View style={styles.list}>
+            {starred.map((place, i) => (
+              <View key={`${place.name}:${i}`} style={[styles.listRow, i < starred.length - 1 && styles.rowDivider]}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityHint={t('starred.openHint')}
+                  onPress={() => openStarred(place)}
+                  style={({ pressed }) => [styles.listMain, pressed && styles.pressed]}
+                >
+                  <View style={styles.smallIcon}>
+                    <Star size={22} color={colors.hazardText} fill={colors.hazard} />
+                  </View>
+                  <View style={styles.flex}>
+                    <AppText variant="bodyStrong" color={colors.text} numberOfLines={2}>
+                      {place.name}
+                    </AppText>
+                    {place.area && (
+                      <AppText variant="caption" color={colors.textMuted}>
+                        {place.area}
+                      </AppText>
+                    )}
+                  </View>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('starred.remove', { name: place.name })}
+                  onPress={() => removeStar(place, i)}
+                  style={styles.clear}
+                >
+                  <X size={22} color={colors.textMuted} />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        )}
+
         <AppText variant="heading" color={colors.navy} accessibilityRole="header">
           {t('me.reportsTitle')}
         </AppText>
@@ -453,6 +601,12 @@ export default function MeScreen() {
         />
       )}
 
+      <ScrimSheet visible={voucherOpen !== null} onClose={() => setVoucherOpen(null)}>
+        {voucherOpen?.code && (
+          <VoucherBody item={voucherOpen.item} code={voucherOpen.code} at={voucherOpen.at} onClose={() => setVoucherOpen(null)} />
+        )}
+      </ScrimSheet>
+
       <Snackbar message={snackbar.message} onHide={snackbar.hide} bottom={spacing.md} />
     </View>
   );
@@ -473,6 +627,16 @@ function Stat({ value, label }: { value: number; label: string }) {
 
 const styles = StyleSheet.create({
   demoChip: { backgroundColor: colors.hazardSoft, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
+  plusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    minHeight: touchTarget + spacing.md,
+    backgroundColor: '#FBEFC8',
+    borderRadius: radius.card,
+    padding: spacing.md,
+  },
+  headRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   resetLink: { minHeight: touchTarget, alignItems: 'center', justifyContent: 'center' },
   underline: { textDecorationLine: 'underline' },
   root: { flex: 1, backgroundColor: colors.surface },

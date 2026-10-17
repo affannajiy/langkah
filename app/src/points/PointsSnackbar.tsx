@@ -14,7 +14,8 @@ export function PointsSnackbar() {
   const { message, show, hide } = useSnackbar();
 
   const onNotice = useCallback(
-    (n: PointsNotice) => show({ text: t('points.checkinEarned', { count: n.points, day: n.day }) }),
+    (n: PointsNotice) =>
+      show({ text: n.kind === 'checkin' ? t('points.checkinEarned', { count: n.points, day: n.day }) : n.text }),
     [show, t],
   );
   usePointsNotice(onNotice);

@@ -565,7 +565,6 @@
     "topUp": "Tambah nilai",
     "ad": "Iklan +20",
     "shop": "Kedai",
-    "soon": "Akan datang",
     "checkin": "Daftar masuk harian",
     "dayOf": "Hari {{day}} daripada 7",
     "chip": "Hari {{day}}, {{points}} mata",
@@ -590,6 +589,302 @@
     "topup": "Tambah nilai melalui {{via}}",
     "topupSub": "RM{{rm}} · Rujukan {{ref}}",
     "welcome": "Selamat datang ke Langkah",
-    "other": "Mata"
+    "other": "Mata",
+    "voucher": "Baucar kedai",
+    "cosmetic": "Bingkai atau lencana",
+    "plus": "Langkah Plus, 1 bulan",
+    "plusUntil": "Hingga {{date}}",
+    "adBrand": "Iklan oleh {{brand}}"
+  },
+  "topup": {
+    "demo": "DEMO · bukan wang sebenar",
+    "demoBank": "DEMO · bukan wang sebenar · bukan bank sebenar",
+    "demoWallet": "DEMO · bukan wang sebenar · bukan e-dompet sebenar",
+    "title": "Tambah nilai mata",
+    "youHave": "Anda ada",
+    "points": "{{value}} mata",
+    "bonus": "+{{value}} bonus",
+    "selected": "{{rm}} · Dipilih",
+    "orType": "Atau taip jumlah",
+    "customHint": "1 hingga 100",
+    "customBad": "Taip jumlah bulat dari RM1 hingga RM100.",
+    "overCap": "Tambah nilai dihadkan RM500 sebulan. Anda boleh tambah {{rm}} lagi bulan ini.",
+    "rate": "100 mata bagi setiap RM1. Bonus hanya untuk pek.",
+    "youPay": "Anda bayar",
+    "youGet": "Anda dapat",
+    "plusPoints": "+{{value}} mata",
+    "choosePay": "Pilih cara bayar",
+    "payWith": "Bayar {{rm}} dengan",
+    "bank": "Perbankan dalam talian",
+    "wallet": "E-dompet",
+    "bankList": "{{names}} dan {{count}} lagi",
+    "methodNote": "Ini demo. Tiada bank atau e-dompet dihubungi dan tiada wang bergerak.",
+    "chooseBank": "Pilih bank anda",
+    "chooseWallet": "Pilih e-dompet anda",
+    "online": "{{product}} dalam talian",
+    "ewallet": "Bayar dengan PIN anda",
+    "payTo": "Bayar kepada",
+    "langkahPoints": "Mata Langkah",
+    "userId": "ID pengguna",
+    "password": "Kata laluan",
+    "filledIn": "Sudah diisi untuk demo. Jangan sesekali taip kata laluan bank sebenar di sini.",
+    "logIn": "Log masuk",
+    "onlineBanking": "Perbankan dalam talian {{product}}",
+    "hidden": "tersembunyi",
+    "locked": "sudah diisi untuk demo",
+    "tacNotice": "Pemberitahuan demo daripada {{name}}: TAC {{tac}} untuk {{rm}}.",
+    "noticeFrom": "{{name}} (demo)",
+    "now": "kini",
+    "tacPrefix": "TAC",
+    "tacSuffix": "untuk {{rm}} kepada Mata Langkah. Demo sahaja.",
+    "from": "Dari",
+    "to": "Kepada",
+    "amount": "Jumlah",
+    "savings": "Simpanan ••• 0042",
+    "tacCode": "Kod TAC",
+    "tacFilled": "Diisi daripada pemberitahuan",
+    "approve": "Luluskan {{rm}}",
+    "cancel": "Batal tambah nilai",
+    "walletPay": "Bayar {{rm}} kepada Mata Langkah",
+    "pin": "Masukkan PIN 6 digit anda",
+    "pinProgress": "{{count}} daripada 6 digit diisi",
+    "pinFilling": "Diisi sendiri untuk demo",
+    "processing": "Sedang diproses",
+    "processingBody": "Menunggu {{name}} mengesahkan {{rm}}",
+    "done": "Tambah nilai berjaya",
+    "newBalance": "Baki baharu {{value}} mata",
+    "paidWith": "Dibayar dengan",
+    "pack": "Pek",
+    "packBonus": "{{base}} + {{bonus}} bonus",
+    "reference": "Rujukan",
+    "date": "Tarikh",
+    "noMoney": "Tambah nilai demo. Tiada wang diambil.",
+    "spend": "Belanja di kedai",
+    "doneButton": "Selesai",
+    "failed": "Tambah nilai tidak selesai",
+    "backToWallet": "Kembali ke dompet",
+    "cancelled": "Tambah nilai dibatalkan. Tiada mata ditambah, tiada wang diambil.",
+    "earned": "+{{value}} mata ditambah",
+    "error": {
+      "network": "Tiada wang diambil dan tiada mata ditambah. Semak sambungan anda dan cuba lagi.",
+      "month_cap": "Tambah nilai dihadkan RM500 sebulan. Tiada wang diambil.",
+      "sign_in_needed": "Log masuk dengan Google atau guna demo untuk tambah nilai. Tiada wang diambil.",
+      "bad_amount": "Jumlah itu tidak boleh ditambah. Tiada wang diambil.",
+      "bad_method": "Bank atau e-dompet itu tiada dalam demo. Tiada wang diambil."
+    }
+  },
+  "ads": {
+    "pill": "Iklan · {{clock}}",
+    "mock": "Iklan olok-olok, jenama rekaan",
+    "storyLine": "Iklan · {{clock}} · iklan olok-olok, jenama rekaan",
+    "close": "Tutup iklan",
+    "closeIn_one": "Tutup, boleh dalam {{count}} saat",
+    "closeIn_other": "Tutup, boleh dalam {{count}} saat",
+    "footer": "+20 Mata Langkah apabila iklan tamat",
+    "paid_one": "+{{count}} mata ditambah. Anda boleh tutup iklan.",
+    "paid_other": "+{{count}} mata ditambah. Anda boleh tutup iklan.",
+    "capped": "Tiada mata: anda sudah menonton 5 iklan hari ini. Anda boleh tutup iklan.",
+    "offline": "Tidak dapat menghubungi Langkah, jadi tiada mata kali ini. Anda boleh tutup iklan.",
+    "checking": "Menambah mata anda",
+    "earned_one": "+{{count}} mata daripada iklan",
+    "earned_other": "+{{count}} mata daripada iklan",
+    "early": "Iklan ditutup awal. Tiada mata kali ini.",
+    "none": "Tiada lagi iklan hari ini. Kembali esok untuk 5 lagi.",
+    "gfc": {
+      "tag": "Gurney Fried Chicken · sedap sampai menjilat jari",
+      "art": "Sebaldi ayam goreng",
+      "deal": "Baldi Zingy untuk 2",
+      "cta": "Pesan sekarang"
+    },
+    "mcg": {
+      "tag": "I'm lovin' Ipoh",
+      "title": "Leret menu Raya",
+      "rendang": "Big McG Rendang",
+      "rendangBody": "Dua daging, sos rendang, masa terhad",
+      "pie": "Pai Gula Melaka",
+      "pieBody": "Panas dan rangup, inti gula melaka",
+      "teh": "Teh Tarik Frappe",
+      "tehBody": "Teh tarik, berais dan dikisar",
+      "of": "{{n}} daripada 3",
+      "cta": "Dapatkan di McG Delivery"
+    },
+    "tealove": {
+      "new": "Baharu",
+      "teaser": "Ada rasa baharu sedang dibancuh",
+      "flavour": "Boba Pandan Gula Perang",
+      "offer": "Beli 1 Percuma 1 · minggu ini",
+      "cta": "Leret ke atas untuk cari kedai"
+    },
+    "zas": {
+      "tag": "Kopi untuk seluruh jalan",
+      "title": "Gores untuk lihat promo anda",
+      "yourCode": "Kod anda",
+      "tapHint": "Ketik kad untuk menggoresnya",
+      "offer": "50% diskaun mana-mana latte",
+      "keep": "Terus ketik. Sah di cawangan ZAS kopi Ipoh, tawaran rekaan.",
+      "valid": "Sah di cawangan ZAS kopi Ipoh hingga 31 Okt. Tawaran rekaan.",
+      "cta": "Simpan kod",
+      "saved": "Disimpan untuk demo"
+    },
+    "secret": {
+      "title": "Chocolate Indulgence",
+      "voucher": "Baucar",
+      "until": "Hingga 31 Okt",
+      "off": "Diskaun RM5",
+      "body": "mana-mana kek penuh, cawangan Ipoh Parade (tawaran rekaan)",
+      "cta": "Simpan baucar",
+      "saved": "Disimpan untuk demo"
+    },
+    "newtown": {
+      "since": "Kopitiam · sejak 1999 Ipoh",
+      "quiz": "Kuiz pantas, 1 soalan",
+      "question": "Kopi O atau Kopi C?",
+      "hint": "Pilih minuman biasa anda. Mana-mana jawapan membuka tawaran.",
+      "o": "Hitam, bergula",
+      "c": "Dengan susu cair",
+      "unlocks": "Membuka:",
+      "unlocked": "Dibuka:",
+      "deal": "roti bakar kaya percuma dengan mana-mana kopi"
+    }
+  },
+  "shop": {
+    "title": "Kedai mata",
+    "pts": "{{value}} mata",
+    "balanceA11y": "Anda ada {{value}} mata",
+    "tab": {
+      "vouchers": "Baucar",
+      "cosmetics": "Kosmetik"
+    },
+    "off": "diskaun",
+    "redeem": "Tebus",
+    "get": "Dapatkan",
+    "use": "Guna",
+    "inUse": "Sedang diguna",
+    "owned": "Dimiliki",
+    "withPlus": "Dengan Plus",
+    "madeUp": "Kedai rekaan untuk demo. Dalam Fasa 12, rakan kongsi sebenar di Ipoh mengisi senarai ini.",
+    "cosmeticsNote": "Bingkai dan lencana dipaparkan di tab Saya. Ia tidak sesekali mengubah laluan atau laporan.",
+    "loadFailed": "Tidak dapat memuatkan kedai.",
+    "confirmTitle": "Belanja mata untuk {{item}}?",
+    "confirmBody": "Ini menggunakan {{cost}} mata dan tidak boleh dibatalkan.",
+    "wearing": "{{item}} sedang dipakai. Lihat di tab Saya.",
+    "removed": "{{item}} ditanggalkan",
+    "voucherLine": "Diskaun RM{{rm}} · {{detail}}",
+    "code": "Kod baucar",
+    "showCashier": "Tunjukkan kod ini di kaunter.",
+    "redeemedOn": "Ditebus {{date}}. Baucar demo daripada kedai rekaan.",
+    "myVouchers": "Baucar saya",
+    "error": {
+      "network": "Tidak dapat diselesaikan. Tiada mata dibelanjakan.",
+      "not_enough": "Mata tidak mencukupi. Tiada apa-apa dibelanjakan.",
+      "owned": "Anda sudah memiliki ini.",
+      "no_item": "Item ini tiada lagi di kedai.",
+      "not_owned": "Dapatkan ini dahulu."
+    },
+    "item": {
+      "kopi_kinta": {
+        "name": "Kopi Kinta Corner",
+        "detail": "Mana-mana kopi atau teh, Old Town"
+      },
+      "roti_pak_mat": {
+        "name": "Roti Bakar Pak Mat",
+        "detail": "Set roti bakar kaya"
+      },
+      "tau_fu_fa": {
+        "name": "Lorong Tau Fu Fa",
+        "detail": "Mana-mana mangkuk, Concubine Lane"
+      },
+      "kinta_bookstop": {
+        "name": "Kinta Bookstop",
+        "detail": "Buku melebihi RM30"
+      },
+      "frame_teal": {
+        "name": "Cincin teal",
+        "detail": "Bingkai avatar warna hijau Langkah"
+      },
+      "frame_batik": {
+        "name": "Cincin batik",
+        "detail": "Bingkai avatar merah jambu bergaris putus"
+      },
+      "frame_limestone": {
+        "name": "Cincin batu kapur",
+        "detail": "Bingkai kelabu berganda, sempena bukit Ipoh"
+      },
+      "badge_early": {
+        "name": "Pejalan awal",
+        "detail": "Lencana dengan matahari terbit"
+      },
+      "badge_night": {
+        "name": "Burung hantu",
+        "detail": "Lencana dengan bulan"
+      },
+      "badge_kinta": {
+        "name": "Pejalan Kinta",
+        "detail": "Lencana dengan tapak kaki"
+      },
+      "plus_frame": {
+        "name": "Bingkai emas Plus",
+        "detail": "Percuma semasa Plus aktif"
+      },
+      "plus_badge": {
+        "name": "Lencana Plus",
+        "detail": "Percuma semasa Plus aktif"
+      }
+    }
+  },
+  "plus": {
+    "row": "Langkah Plus",
+    "rowOn": "Langkah Plus aktif",
+    "rowUntil": "Langkah Plus hingga {{date}}",
+    "rowBody": "Lebih banyak tempat berbintang, bingkai emas dan lencana",
+    "tagline": "Tambahan untuk pejalan tetap. Keselamatan kekal percuma untuk semua.",
+    "activeUntil": "Plus aktif hingga {{date}}. Tiada pembaharuan automatik.",
+    "perkShare": "Kongsi perjalanan secara langsung",
+    "perkShareBody": "Keluarga melihat perjalanan anda sehingga anda tiba",
+    "later": "Akan datang",
+    "perkPlaces": "Lebih banyak tempat berbintang",
+    "perkPlacesBody": "{{count}} tempat, bukan 3",
+    "perkBadge": "Lencana dan bingkai Plus",
+    "perkBadgeBody": "Bingkai emas pada profil anda",
+    "free": "Laluan, amaran bahaya dan laporan tidak sesekali disekat oleh Plus.",
+    "month": "1 bulan",
+    "get": "Dapatkan Plus dengan {{cost}} mata",
+    "extend": "Tambah 1 bulan dengan {{cost}} mata",
+    "youHave": "Anda ada {{value}} mata. Tiada pembaharuan automatik dalam demo.",
+    "confirmTitle": "Dapatkan Langkah Plus?",
+    "extendTitle": "Tambah 1 bulan lagi Plus?",
+    "confirmBody": "Ini menggunakan {{cost}} mata dan tidak boleh dibatalkan. Plus bertahan 30 hari.",
+    "confirm": "Dapatkan Plus",
+    "done": "Plus aktif hingga {{date}}",
+    "itemName": "Langkah Plus untuk 1 bulan"
+  },
+  "low": {
+    "title": "Anda perlukan {{value}} mata lagi",
+    "body": "{{item}} berharga {{cost}}. Anda ada {{have}}.",
+    "ad": "Tonton iklan pendek",
+    "adLeft_one": "{{count}} daripada 5 tinggal hari ini",
+    "adLeft_other": "{{count}} daripada 5 tinggal hari ini",
+    "adNone": "Tiada iklan lagi hari ini",
+    "walk": "Berjalan dengan Langkah",
+    "walkBody": "10 mata bagi setiap km",
+    "perKm": "+10/km",
+    "vote": "Undi bahaya berhampiran",
+    "voteBody": "Masih ada atau Sudah tiada",
+    "checkin": "Daftar masuk harian",
+    "checkinBody": "Hari {{day}} daripada 7, +50 pada hari ke-7",
+    "topUp": "Tambah nilai mata",
+    "notNow": "Bukan sekarang"
+  },
+  "starred": {
+    "title": "Tempat berbintang",
+    "add": "Bintangkan {{name}}",
+    "remove": "Buang bintang daripada {{name}}",
+    "added": "{{name}} dibintangkan",
+    "removed": "Bintang dibuang daripada {{name}}",
+    "full": "Tempat berbintang sudah penuh ({{count}}). Plus memberi anda 20.",
+    "getPlus": "Dapatkan Plus",
+    "count": "{{n}} daripada {{max}}",
+    "empty": "Bintangkan tempat pada helaian laluan supaya mudah dicari dalam Carian.",
+    "openHint": "Menunjukkan laluan ke tempat ini"
   }
 }
