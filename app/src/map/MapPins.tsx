@@ -1,15 +1,16 @@
-import { Marker } from '@maplibre/maplibre-react-native';
-import { Bus, Store, Umbrella } from 'lucide-react-native';
-import { memo } from 'react';
+import { GeoJSONSource, Layer, Marker } from '@maplibre/maplibre-react-native';
+import { Accessibility, Armchair, Bus, GlassWater, Grip, Store, Toilet, Umbrella, type LucideIcon } from 'lucide-react-native';
+import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 
-import { HAZARD_CATEGORIES, type HazardCategory, type MapView, type SponsoredPin } from '../api/types';
+import { HAZARD_CATEGORIES, type HazardCategory, type MapAmenityKind, type MapView, type SponsoredPin } from '../api/types';
 import { AppText } from '../components/AppText';
 import { offerText } from '../points/partners';
 import type { LayerToggles } from '../storage/settings';
 import { colors, mapZ, radius } from '../theme/theme';
+import { useScoringMode } from './useScoringMode';
 
 export type { LayerToggles };
 
@@ -44,21 +45,62 @@ export function CrossingMark() {
   );
 }
 
-function BusStopMark() {
+// The other amenities: a white icon on a rounded square. Each kind has its own
+// icon, so colour is never the only cue (CLAUDE.md, UX rules).
+const ICON_MARKS: Record<Exclude<MapAmenityKind, 'crossing'>, { Icon: LucideIcon; bg: string }> = {
+  bus_stop: { Icon: Bus, bg: colors.community },
+  shelter: { Icon: Umbrella, bg: colors.navy },
+  kerb_ramp: { Icon: Accessibility, bg: colors.interactiveText },
+  tactile: { Icon: Grip, bg: colors.interactiveText },
+  bench: { Icon: Armchair, bg: colors.safeText },
+  toilets: { Icon: Toilet, bg: colors.safeText },
+  drinking_water: { Icon: GlassWater, bg: colors.safeText },
+};
+
+export function AmenityMark({ kind }: { kind: MapAmenityKind }) {
+  if (kind === 'crossing') return <CrossingMark />;
+  const { Icon, bg } = ICON_MARKS[kind];
   return (
-    <View style={[styles.square, { backgroundColor: colors.community }]}>
-      <Bus size={16} color={colors.white} strokeWidth={2.5} />
+    <View style={[styles.square, { backgroundColor: bg }]}>
+      <Icon size={16} color={colors.white} strokeWidth={2.5} />
     </View>
   );
 }
 
-function ShelterMark() {
+// Covered walkway mark for the Layers sheet: the same two rails as on the map.
+export function CoveredMark() {
   return (
-    <View style={[styles.square, { backgroundColor: colors.navy }]}>
-      <Umbrella size={16} color={colors.white} strokeWidth={2.5} />
+    <View style={styles.coveredMark}>
+      <View style={styles.rail} />
+      <View style={styles.rail} />
     </View>
   );
 }
+
+// Which toggle shows each kind, and the zoom it starts at. Kerbs and rest stops
+// are small and many, so they wait until the map is close up.
+const KIND_LAYER: Record<MapAmenityKind, { toggle: keyof LayerToggles; minZoom: number }> = {
+  crossing: { toggle: 'crossings', minZoom: 0 },
+  bus_stop: { toggle: 'busStops', minZoom: 0 },
+  shelter: { toggle: 'shelters', minZoom: 0 },
+  kerb_ramp: { toggle: 'kerbs', minZoom: 17 },
+  tactile: { toggle: 'kerbs', minZoom: 17 },
+  bench: { toggle: 'rest', minZoom: 16 },
+  toilets: { toggle: 'rest', minZoom: 16 },
+  drinking_water: { toggle: 'rest', minZoom: 16 },
+};
+const COVERED_MIN_ZOOM = 15;
+
+const PIN_LABEL = {
+  crossing: 'pin.crossing',
+  bus_stop: 'pin.busStop',
+  shelter: 'pin.shelter',
+  kerb_ramp: 'pin.kerbRamp',
+  tactile: 'pin.tactile',
+  bench: 'pin.bench',
+  toilets: 'pin.toilets',
+  drinking_water: 'pin.water',
+} as const satisfies Record<MapAmenityKind, string>;
 
 // Sponsored shop: a white teardrop with a navy outline and a shop icon, and a
 // "Sponsored" tag under it, so it never reads as a hazard or an amenity (guide
@@ -122,25 +164,18 @@ export const MapPins = memo(function MapPins({ view, toggles, onSponsored }: Pro
   const { t } = useTranslation();
   if (!view) return null;
 
-  const amenities = mergeClose(view.amenities).filter(
-    (a) =>
-      (a.kind === 'crossing' && toggles.crossings) ||
-      (a.kind === 'bus_stop' && toggles.busStops) ||
-      (a.kind === 'shelter' && toggles.shelters),
-  );
+  const amenities = mergeClose(view.amenities).filter((a) => {
+    const layer = KIND_LAYER[a.kind];
+    return toggles[layer.toggle] && view.zoom >= layer.minZoom;
+  });
 
   return (
     <>
+      {toggles.covered && view.zoom >= COVERED_MIN_ZOOM && <CoveredLines lines={view.covered} />}
       {amenities.map((a) => (
         <Marker key={`${a.kind}:${a.lngLat[0]}:${a.lngLat[1]}`} lngLat={a.lngLat} anchor="center" style={{ zIndex: mapZ.amenity }}>
-          <View
-            accessible
-            accessibilityLabel={
-              a.kind === 'crossing' ? t('pin.crossing') : a.kind === 'bus_stop' ? t('pin.busStop') : t('pin.shelter')
-            }
-            style={styles.ring}
-          >
-            {a.kind === 'crossing' ? <CrossingMark /> : a.kind === 'bus_stop' ? <BusStopMark /> : <ShelterMark />}
+          <View accessible accessibilityLabel={t(PIN_LABEL[a.kind])} style={styles.ring}>
+            <AmenityMark kind={a.kind} />
           </View>
         </Marker>
       ))}
@@ -180,6 +215,28 @@ export const MapPins = memo(function MapPins({ view, toggles, onSponsored }: Pro
   );
 });
 
+// Covered walkways in view: two thin rails, like the walk screen, under the pins.
+function CoveredLines({ lines }: { lines: [number, number][][] }) {
+  const { mode } = useScoringMode();
+  const data = useMemo<GeoJSON.FeatureCollection>(
+    () => ({
+      type: 'FeatureCollection',
+      features: lines.map((pts, i) => ({ type: 'Feature', id: `cv${i}`, properties: {}, geometry: { type: 'LineString', coordinates: pts } })),
+    }),
+    [lines],
+  );
+  return (
+    <GeoJSONSource id="covered" data={data}>
+      <Layer
+        id="covered-rails"
+        type="line"
+        layout={{ 'line-cap': 'butt', 'line-join': 'round' }}
+        paint={{ 'line-color': mode === 'night' ? colors.onNavyAccent : colors.navy, 'line-width': 1.5, 'line-gap-width': 5 }}
+      />
+    </GeoJSONSource>
+  );
+}
+
 const styles = StyleSheet.create({
   // White ring so the icon reads on any map colour (Section 6.2, Icons).
   ring: { padding: 2, borderRadius: radius.card / 2 + 2, backgroundColor: colors.white },
@@ -195,4 +252,6 @@ const styles = StyleSheet.create({
   },
   tagText: { lineHeight: 18 },
   square: { width: 26, height: 26, borderRadius: radius.card / 2, alignItems: 'center', justifyContent: 'center' },
+  coveredMark: { width: 26, height: 26, justifyContent: 'center', gap: 6 },
+  rail: { height: 2, borderRadius: 1, backgroundColor: colors.navy },
 });

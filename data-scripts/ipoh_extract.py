@@ -17,7 +17,8 @@ Outputs in the out folder:
     area.json                    area name and box, read by load_to_supabase.py
     area.osm.pbf                 clipped raw OSM data (small)
     walk-network.geojson         walkable lines with sidewalk / lit / crossing tags
-    amenities.geojson            crossings, bus stops, shelters, street lamps, signals
+    amenities.geojson            crossings, bus stops, shelters, street lamps, signals,
+                                 kerb ramps, tactile paving, benches, toilets, drinking water
     coverage-report.md           how complete the data is
     preview.png                  map of sidewalk coverage
 Data: (c) OpenStreetMap contributors, ODbL 1.0.
@@ -45,7 +46,13 @@ ROAD_TYPES = {"trunk", "trunk_link", "primary", "primary_link", "secondary", "se
 MAIN_ROADS = {"trunk", "trunk_link", "primary", "primary_link", "secondary", "secondary_link"}
 FOOT_TYPES = {"footway", "pedestrian", "path", "steps", "corridor"}
 NET_TAGS = ["sidewalk", "sidewalk:both", "sidewalk:left", "sidewalk:right", "footway",
-            "lit", "crossing", "maxspeed", "lanes", "surface", "name"]
+            "lit", "crossing", "maxspeed", "lanes", "surface", "name", "covered"]
+# Point kinds in amenities.geojson. Keep in step with the amenities kind check (migration 17).
+POINT_KINDS = ("crossing", "traffic_signals", "bus_stop", "shelter", "street_lamp",
+               "kerb_ramp", "tactile", "bench", "toilets", "drinking_water")
+KERB_RAMP = {"lowered", "flush", "no"}
+# Rest stops mapped as small areas (a toilet block) become one point in the middle.
+REST_AMENITIES = {"bench", "toilets", "drinking_water"}
 
 
 def clip(src, dst, bbox):
@@ -78,6 +85,41 @@ def sidewalk_status(t):
     return "unknown"
 
 
+def is_covered(t):
+    """True for a walk line under a roof: five-foot ways (kaki lima), arcades, covered paths.
+    Shared with load_to_supabase.py."""
+    if t.get("covered") in ("yes", "arcade", "colonnade", "roof", "booth"):
+        return True
+    if t.get("highway") == "corridor" or t.get("tunnel") == "building_passage":
+        return True
+    keys = ("arcade:left", "arcade:right", "arcade:both",
+            "sidewalk:left:covered", "sidewalk:right:covered", "sidewalk:both:covered")
+    return any(t.get(k) in ("yes", "arcade") for k in keys)
+
+
+def point_kinds(t):
+    """Every amenity kind one OSM node stands for. A crossing node can also be a kerb ramp
+    and have tactile paving, so it may give more than one point."""
+    kinds = []
+    if t.get("highway") == "crossing" or t.get("crossing"):
+        kinds.append("crossing")
+    elif t.get("highway") == "bus_stop" or t.get("public_transport") == "platform":
+        kinds.append("bus_stop")
+    elif t.get("amenity") == "shelter":
+        kinds.append("shelter")
+    elif t.get("highway") == "street_lamp":
+        kinds.append("street_lamp")
+    elif t.get("highway") == "traffic_signals":
+        kinds.append("traffic_signals")
+    if t.get("kerb") in KERB_RAMP and (t.get("barrier") == "kerb" or "crossing" in kinds):
+        kinds.append("kerb_ramp")
+    if t.get("tactile_paving") in ("yes", "contrasted", "primitive"):
+        kinds.append("tactile")
+    if t.get("amenity") in REST_AMENITIES:
+        kinds.append(t.get("amenity"))
+    return kinds
+
+
 def is_walkable(t):
     """True for a way that belongs in the walk network. Shared with load_to_supabase.py."""
     hw = t.get("highway")
@@ -97,6 +139,8 @@ class Collector(osmium.SimpleHandler):
         self.geo = osmium.geom.GeoJSONFactory()
 
     def way(self, w):
+        if w.tags.get("amenity") in REST_AMENITIES and w.is_closed():
+            self._rest_area(w)
         if not is_walkable(w.tags):
             return
         hw = w.tags.get("highway")
@@ -108,29 +152,34 @@ class Collector(osmium.SimpleHandler):
         t["highway"] = hw
         t["osm_id"] = w.id
         t["sidewalk_status"] = sidewalk_status({**t})
+        if is_covered(w.tags):
+            t["covered"] = "yes"
+        else:
+            t.pop("covered", None)
         self.lines.append({"type": "Feature", "geometry": geom, "properties": t})
 
     def node(self, n):
-        t = n.tags
-        kind = None
-        if t.get("highway") == "crossing" or t.get("crossing"):
-            kind = "crossing"
-        elif t.get("highway") == "bus_stop" or t.get("public_transport") == "platform":
-            kind = "bus_stop"
-        elif t.get("amenity") == "shelter":
-            kind = "shelter"
-        elif t.get("highway") == "street_lamp":
-            kind = "street_lamp"
-        elif t.get("highway") == "traffic_signals":
-            kind = "traffic_signals"
-        if not kind:
+        for kind in point_kinds(n.tags):
+            self._point(kind, n.id, n.tags, n.location.lon, n.location.lat)
+
+    def _rest_area(self, w):
+        """A toilet block or water point drawn as an area: one point at its average corner."""
+        try:
+            xs = [n.location.lon for n in w.nodes]
+            ys = [n.location.lat for n in w.nodes]
+        except osmium.InvalidLocationError:
             return
-        props = {"kind": kind, "osm_id": n.id}
-        for k in ("name", "crossing", "shelter", "bench", "lit", "tactile_paving"):
+        if xs:
+            self._point(w.tags.get("amenity"), w.id, w.tags, sum(xs) / len(xs), sum(ys) / len(ys))
+
+    def _point(self, kind, osm_id, t, lon, lat):
+        props = {"kind": kind, "osm_id": osm_id}
+        for k in ("name", "crossing", "shelter", "bench", "lit", "tactile_paving", "kerb",
+                  "wheelchair", "fee", "opening_hours", "backrest"):
             if t.get(k):
                 props[k] = t.get(k)
         self.points.append({"type": "Feature", "properties": props,
-                            "geometry": {"type": "Point", "coordinates": [n.location.lon, n.location.lat]}})
+                            "geometry": {"type": "Point", "coordinates": [lon, lat]}})
 
 
 def round_coords(obj, nd=5):
@@ -174,6 +223,7 @@ def report(lines, points, sizes, title, bbox, path):
     main_known = L([f for f in main if f["properties"]["sidewalk_status"] != "unknown"])
     lit_known = L([f for f in road if "lit" in f["properties"]])
     sw_lines = L([f for f in foot if f["properties"].get("footway") == "sidewalk"])
+    covered = L([f for f in lines if f["properties"].get("covered") == "yes"])
     kinds = Counter(p["properties"]["kind"] for p in points)
     total_road = sum(by_status.values()) or 1
     pct = lambda x: f"{100 * x / total_road:.0f}%"
@@ -189,10 +239,11 @@ def report(lines, points, sizes, title, bbox, path):
         f"| Main roads with any sidewalk info | {main_known:.1f} of {L(main):.1f} km |",
         f"| Roads with lit tag | {lit_known:.1f} km ({pct(lit_known)}) |",
         f"| Separate footpaths (footway, path, pedestrian, steps) | {L(foot):.1f} km |",
-        f"| ...of which mapped as separate sidewalks | {sw_lines:.1f} km |", "",
+        f"| ...of which mapped as separate sidewalks | {sw_lines:.1f} km |",
+        f"| Covered walkways (five-foot ways, arcades, covered paths) | {covered:.2f} km |", "",
         "## Amenities and safety points", "",
         "| Kind | Count |", "|---|---|",
-        *[f"| {k} | {kinds.get(k, 0)} |" for k in ("crossing", "traffic_signals", "bus_stop", "shelter", "street_lamp")], "",
+        *[f"| {k} | {kinds.get(k, 0)} |" for k in POINT_KINDS], "",
         "## File sizes (what the app would download)", "",
         "| File | Raw | Gzipped |", "|---|---|---|",
         *[f"| {n} | {r / 1024:.0f} KB | {g / 1024:.0f} KB |" for n, (r, g) in sizes.items()], "",

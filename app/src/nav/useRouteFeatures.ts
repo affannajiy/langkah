@@ -35,13 +35,16 @@ function boxesAlong(points: LngLat[]): LngLatBounds[] {
   return boxes.map(([w, s, e, n]) => [w - PAD, s - PAD, e + PAD, n + PAD]);
 }
 
+// The walk map is close up; only hazards and crossings are read from these views.
+const WALK_ZOOM = 17;
+
 export function useRouteFeatures(track: Track) {
   const [hazards, setHazards] = useState<RouteHazard[]>([]);
   const [crossings, setCrossings] = useState<RouteCrossing[]>([]);
 
   useEffect(() => {
     const controller = new AbortController();
-    Promise.all(boxesAlong(track.points).map((b) => mapInView(b, controller.signal)))
+    Promise.all(boxesAlong(track.points).map((b) => mapInView(b, WALK_ZOOM, controller.signal)))
       .then((views) => {
         if (controller.signal.aborted) return;
         const seenH = new Set<string>();

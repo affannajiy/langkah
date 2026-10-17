@@ -242,6 +242,7 @@
     "chip": {
       "sidewalk": "{{pct}}% with sidewalk",
       "wellLit": "Well lit",
+      "covered": "{{pct}}% under cover",
       "marked_one": "{{count}} marked crossing",
       "marked_other": "{{count}} marked crossings",
       "noHazards": "No hazards reported",
@@ -255,6 +256,7 @@
     "row": {
       "sidewalk": "With sidewalk or path",
       "lit": "Lit at night",
+      "covered": "Under cover",
       "marked": "Marked crossings",
       "unmarked": "Unmarked main-road crossings",
       "hazards": "Hazards reported on route",
@@ -355,6 +357,9 @@
     "crossings": "Marked crossings",
     "busStops": "Bus stops",
     "shelters": "Shelters",
+    "covered": "Covered walkways",
+    "kerbs": "Kerb ramps and tactile paving",
+    "rest": "Benches, toilets and water",
     "note": "Hazards always show on the map.",
     "done": "Done"
   },
@@ -363,6 +368,11 @@
     "crossing": "Marked crossing",
     "busStop": "Bus stop",
     "shelter": "Shelter",
+    "kerbRamp": "Kerb ramp",
+    "tactile": "Tactile paving",
+    "bench": "Bench",
+    "toilets": "Toilets",
+    "water": "Drinking water",
     "start": "Start",
     "destination": "Destination",
     "you": "You are here",

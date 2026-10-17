@@ -35,7 +35,7 @@ export function useMapView() {
       inflight.current = controller;
       setState({ status: 'loading', last: last.current });
       try {
-        const view = await mapInView(bounds, controller.signal);
+        const view = await mapInView(bounds, zoom, controller.signal);
         if (controller.signal.aborted) return;
         last.current = view;
         setState({ status: 'ok', view });

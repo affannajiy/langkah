@@ -8,7 +8,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
 import i18n, { ENGLISH_ONLY, setLanguage } from '../i18n';
-import { updateSettings, useSettings, type Language, type LayerToggles } from '../storage/settings';
+import { layerRows } from '../features/map/LayersSheet';
+import { updateSettings, useSettings, type Language } from '../storage/settings';
 import { cappedContent } from '../theme/layout';
 import { colors, radius, spacing, touchTarget } from '../theme/theme';
 
@@ -24,11 +25,7 @@ export default function SettingsScreen() {
   const settings = useSettings();
   const language: Language = i18n.language === 'ms' ? 'ms' : 'en';
 
-  const layerRows: { key: keyof LayerToggles; label: string }[] = [
-    { key: 'crossings', label: t('layers.crossings') },
-    { key: 'busStops', label: t('layers.busStops') },
-    { key: 'shelters', label: t('layers.shelters') },
-  ];
+  const layers = layerRows(t);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -81,7 +78,7 @@ export default function SettingsScreen() {
         </Section>
 
         <Section title={t('layers.title')}>
-          {layerRows.map((r) => (
+          {layers.map((r) => (
             <SwitchRow
               key={r.key}
               label={r.label}

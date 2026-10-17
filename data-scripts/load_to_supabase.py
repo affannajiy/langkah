@@ -31,7 +31,7 @@ import osmium
 import psycopg
 from shapely.geometry import LineString, MultiLineString, Polygon
 
-from ipoh_extract import ROAD_TYPES, is_walkable, sidewalk_status
+from ipoh_extract import ROAD_TYPES, is_covered, is_walkable, sidewalk_status
 
 PLACE_KEYS = ("amenity", "shop", "tourism", "leisure", "historic", "office", "railway",
               "public_transport", "healthcare", "place", "building")
@@ -206,12 +206,13 @@ def load(conn, segments, amenities, places):
         cur.execute("delete from amenities where source = 'osm'")
         cur.execute("delete from places")
 
-        with cur.copy("copy road_segments (osm_id, geom, highway, name, sidewalk, footway, lit, crossing, maxspeed) "
-                      "from stdin") as cp:
+        with cur.copy("copy road_segments (osm_id, geom, highway, name, sidewalk, footway, lit, crossing, maxspeed, "
+                      "covered) from stdin") as cp:
             for osm_id, t, coords in segments:
                 cp.write_row((osm_id, ewkt_line(coords), t["highway"], t.get("name"), sidewalk_status(t),
                               t.get("footway") if t.get("footway") in ("sidewalk", "crossing") else None,
-                              parse_lit(t.get("lit")), t.get("crossing"), parse_maxspeed(t.get("maxspeed"))))
+                              parse_lit(t.get("lit")), t.get("crossing"), parse_maxspeed(t.get("maxspeed")),
+                              is_covered(t)))
 
         with cur.copy("copy amenities (osm_id, kind, geom, name, tags) from stdin") as cp:
             for f in amenities:
@@ -275,6 +276,10 @@ def main():
         amenities += area_amenities
         places += area_places
     places = dedupe_places(places)
+    kinds = Counter(f["properties"]["kind"] for f in amenities)
+    covered = sum(1 for _, t, _ in segments if is_covered(t))
+    print("    amenity kinds: " + ", ".join(f"{k} {v}" for k, v in sorted(kinds.items())))
+    print(f"    covered walkway segments: {covered}")
 
     print("2/3 Loading into Supabase and building the network...")
     with psycopg.connect(url, sslmode="require", connect_timeout=20) as conn:

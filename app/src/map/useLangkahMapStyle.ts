@@ -64,6 +64,62 @@ const NIGHT_PAINT: Paint = {
 // Every label at night: light text on a navy halo.
 const NIGHT_LABEL = { 'text-color': '#C9D6E6', 'text-halo-color': NIGHT_LAND };
 
+// Extra detail from the same OpenFreeMap tiles (no extra download): named places
+// from zoom 16 and house numbers from zoom 18. Positron leaves them out. Text and
+// icons are muted so routes, hazards and amenities still stand out (guide Section 5.4).
+// Bus stops are left out here: Langkah draws its own bus stop pins.
+type Layer = StyleSpecification['layers'][number];
+type TextField = NonNullable<Extract<Layer, { type: 'symbol' }>['layout']>['text-field'];
+const PLACE_NAME: TextField = ['coalesce', ['get', 'name_en'], ['get', 'name']];
+
+function detailLayers(mode: ScoringMode): Layer[] {
+  const night = mode === 'night';
+  const text = {
+    'text-color': night ? '#9FB3CB' : '#5B6472',
+    'text-halo-color': night ? NIGHT_LAND : '#FFFFFF',
+    'text-halo-width': 1.2,
+  };
+  const poi = (id: string, minzoom: number, ranks: [number, number]): Layer => ({
+    id,
+    type: 'symbol',
+    source: 'openmaptiles',
+    'source-layer': 'poi',
+    minzoom,
+    filter: [
+      'all',
+      ['match', ['geometry-type'], ['MultiPoint', 'Point'], true, false],
+      ['>=', ['get', 'rank'], ranks[0]],
+      ['<', ['get', 'rank'], ranks[1]],
+      ['!', ['match', ['get', 'class'], ['bus', 'airport'], true, false]],
+    ],
+    layout: {
+      'icon-image': ['match', ['get', 'subclass'], ['florist', 'furniture'], ['get', 'subclass'], ['get', 'class']],
+      'icon-size': 0.8,
+      'text-field': PLACE_NAME,
+      'text-font': ['Noto Sans Regular'],
+      'text-size': 12,
+      'text-max-width': 9,
+      'text-anchor': 'top',
+      'text-offset': [0, 0.6],
+      'text-optional': true,
+    },
+    paint: { ...text, 'icon-opacity': night ? 0.55 : 0.7 },
+  });
+  return [
+    poi('langkah_poi_main', 16, [1, 7]),
+    poi('langkah_poi_more', 17, [7, 1000]),
+    {
+      id: 'langkah_housenumber',
+      type: 'symbol',
+      source: 'openmaptiles',
+      'source-layer': 'housenumber',
+      minzoom: 18,
+      layout: { 'text-field': ['get', 'housenumber'], 'text-font': ['Noto Sans Regular'], 'text-size': 12 },
+      paint: text,
+    },
+  ];
+}
+
 // Shown behind the map while tiles load.
 export const MAP_LAND: Record<ScoringMode, string> = { day: '#E9ECF1', night: NIGHT_LAND };
 
@@ -71,9 +127,14 @@ const FETCH_TIMEOUT_MS = 8000;
 
 function recolour(style: StyleSpecification, mode: ScoringMode): StyleSpecification {
   const table = mode === 'night' ? NIGHT_PAINT : DAY_PAINT;
+  // Detail goes under the town and city names, after the street names, so street
+  // names win when labels collide.
+  const at = style.layers.findIndex((l) => l.id === 'airport');
+  const cut = at < 0 ? style.layers.length : at;
+  const layers = [...style.layers.slice(0, cut), ...detailLayers(mode), ...style.layers.slice(cut)];
   return {
     ...style,
-    layers: style.layers.map((layer) => {
+    layers: layers.map((layer) => {
       if (!('paint' in layer)) return layer;
       const label = mode === 'night' && layer.type === 'symbol' ? NIGHT_LABEL : null;
       const paint = table[layer.id] ?? label;

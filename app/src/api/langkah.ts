@@ -2,16 +2,17 @@ import type { LngLat, LngLatBounds } from '@maplibre/maplibre-react-native';
 
 import { decodePolyline } from '../map/polyline';
 import { supabase } from './supabase';
-import type {
-  MapAmenityKind,
-  MapView,
-  Place,
-  Route,
-  RouteError,
-  RoutePair,
-  RouteStats,
-  ScoringMode,
-  Step,
+import {
+  MAP_AMENITY_KINDS,
+  type MapAmenityKind,
+  type MapView,
+  type Place,
+  type Route,
+  type RouteError,
+  type RoutePair,
+  type RouteStats,
+  type ScoringMode,
+  type Step,
 } from './types';
 
 // The app's only door to the Langkah functions (search_places, route_safe, map_in_view).
@@ -90,7 +91,17 @@ const ROUTE_ERRORS = new Set(['bad_mode', 'bad_point', 'too_far', 'too_close', '
 
 function parseStats(v: unknown): RouteStats {
   if (!isObj(v)) throw new ApiError('bad_response', 'stats');
-  return { sw: num(v.sw), lit: num(v.lit), unk: num(v.unk), nosw: num(v.nosw), mx: num(v.mx), ux: num(v.ux), hz: num(v.hz) };
+  return {
+    sw: num(v.sw),
+    lit: num(v.lit),
+    unk: num(v.unk),
+    nosw: num(v.nosw),
+    mx: num(v.mx),
+    ux: num(v.ux),
+    hz: num(v.hz),
+    // Older servers send no cov: read as 0.
+    cov: v.cov == null ? 0 : num(v.cov),
+  };
 }
 
 function parseStep(v: unknown): Step | null {
@@ -123,7 +134,17 @@ function parseRoute(v: unknown): Route {
     stats: parseStats(v.stats),
     steps: Array.isArray(v.steps) ? v.steps.map(parseStep).filter((s): s is Step => s !== null) : [],
     unchecked,
+    covered: polylines(v.cv),
   };
+}
+
+// A list of encoded polylines; anything broken is skipped.
+function polylines(v: unknown): LngLat[][] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((p): p is string => typeof p === 'string')
+    .map((p) => decodePolyline(p))
+    .filter((pts) => pts.length >= 2);
 }
 
 export async function routeSafe(from: LngLat, to: LngLat, mode: ScoringMode, signal?: AbortSignal): Promise<RoutePair> {
@@ -152,9 +173,9 @@ export async function routeSafe(from: LngLat, to: LngLat, mode: ScoringMode, sig
 
 // --- map view -----------------------------------------------------------
 
-const AMENITY_KINDS = new Set(['crossing', 'bus_stop', 'shelter']);
+const AMENITY_KINDS = new Set<string>(MAP_AMENITY_KINDS);
 
-export async function mapInView(bounds: LngLatBounds, signal?: AbortSignal): Promise<MapView> {
+export async function mapInView(bounds: LngLatBounds, zoom: number, signal?: AbortSignal): Promise<MapView> {
   const [west, south, east, north] = bounds;
   const data = await rpc(
     'map_in_view',
@@ -171,6 +192,8 @@ export async function mapInView(bounds: LngLatBounds, signal?: AbortSignal): Pro
     amenities: rows(data.am)
       .filter((r) => AMENITY_KINDS.has(r[0] as string))
       .map((r) => ({ kind: r[0] as MapAmenityKind, lngLat: [num(r[1]), num(r[2])] as LngLat })),
+    covered: polylines(data.cv),
+    zoom,
     sponsored: rows(data.sp)
       .slice(0, 3)
       .map((r) => ({

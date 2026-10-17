@@ -242,6 +242,7 @@
     "chip": {
       "sidewalk": "{{pct}}% ada kaki lima",
       "wellLit": "Cukup terang",
+      "covered": "{{pct}}% berbumbung",
       "marked_one": "{{count}} lintasan bertanda",
       "marked_other": "{{count}} lintasan bertanda",
       "noHazards": "Tiada bahaya dilaporkan",
@@ -255,6 +256,7 @@
     "row": {
       "sidewalk": "Ada kaki lima atau laluan pejalan kaki",
       "lit": "Diterangi pada waktu malam",
+      "covered": "Berbumbung",
       "marked": "Lintasan bertanda",
       "unmarked": "Lintasan jalan utama tidak bertanda",
       "hazards": "Bahaya dilaporkan di laluan",
@@ -355,6 +357,9 @@
     "crossings": "Lintasan bertanda",
     "busStops": "Perhentian bas",
     "shelters": "Tempat berteduh",
+    "covered": "Laluan berbumbung (kaki lima)",
+    "kerbs": "Tebing landai dan laluan taktil",
+    "rest": "Bangku, tandas dan air minuman",
     "note": "Bahaya sentiasa dipaparkan pada peta.",
     "done": "Selesai"
   },
@@ -363,6 +368,11 @@
     "crossing": "Lintasan bertanda",
     "busStop": "Perhentian bas",
     "shelter": "Tempat berteduh",
+    "kerbRamp": "Tebing jalan landai",
+    "tactile": "Laluan taktil",
+    "bench": "Bangku",
+    "toilets": "Tandas",
+    "water": "Air minuman",
     "start": "Mula",
     "destination": "Destinasi",
     "you": "Anda di sini",

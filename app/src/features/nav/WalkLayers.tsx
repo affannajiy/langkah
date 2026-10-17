@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { CrossingMark, HazardMark, hazardKey } from '../../map/MapPins';
 import { DestinationPin, type RouteKind } from '../../map/RouteLayers';
+import { useScoringMode } from '../../map/useScoringMode';
 import { slice, type Track } from '../../nav/geo';
 import type { RouteCrossing, RouteHazard } from '../../nav/useRouteFeatures';
 import { colors, mapZ, radius } from '../../theme/theme';
@@ -16,6 +17,7 @@ type Props = {
   along: number;
   hazards: RouteHazard[];
   crossings: RouteCrossing[];
+  covered: LngLat[][]; // covered walkways on this route
   end: LngLat;
 };
 
@@ -24,8 +26,9 @@ const REDRAW_M = 10;
 
 // Only the active route, with the walked part greyed out, plus hazards and marked
 // crossings on that route (guide Section 6.3, screen 4). The line keeps its pattern:
-// safest solid teal, fastest dashed grey.
-export const WalkLayers = memo(function WalkLayers({ track, kind, along, hazards, crossings, end }: Props) {
+// safest solid teal, fastest dashed grey. Covered stretches get thin rails on both
+// sides of the line, so shade and rain cover show without a new pin.
+export const WalkLayers = memo(function WalkLayers({ track, kind, along, hazards, crossings, covered, end }: Props) {
   const { t } = useTranslation();
   const step = Math.floor(along / REDRAW_M) * REDRAW_M;
 
@@ -40,10 +43,32 @@ export const WalkLayers = memo(function WalkLayers({ track, kind, along, hazards
     [track, step],
   );
 
+  const coveredLines = useMemo<GeoJSON.FeatureCollection>(
+    () => ({
+      type: 'FeatureCollection',
+      features: covered.map((pts, i) => ({
+        type: 'Feature',
+        id: `cv${i}`,
+        properties: {},
+        geometry: { type: 'LineString', coordinates: pts },
+      })),
+    }),
+    [covered],
+  );
+
   const safest = kind === 'safest';
+  const { mode } = useScoringMode();
 
   return (
     <>
+      <GeoJSONSource id="walk-covered" data={coveredLines}>
+        <Layer
+          id="walk-covered-rails"
+          type="line"
+          layout={{ 'line-cap': 'butt', 'line-join': 'round' }}
+          paint={{ 'line-color': mode === 'night' ? colors.onNavyAccent : colors.navy, 'line-width': 2, 'line-gap-width': 13 }}
+        />
+      </GeoJSONSource>
       <GeoJSONSource id="walk" data={lines}>
         <Layer
           id="walk-walked"

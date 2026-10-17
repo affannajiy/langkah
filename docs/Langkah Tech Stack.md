@@ -17,12 +17,12 @@ The scope follows the proposal approved by Dr. Vijay Lahri. The MVP is a working
 | **Safe-route navigation**          | Generates a walking route scored on sidewalk continuity, crossings and lighting, with separate day and night scores. Shows the safest route next to the fastest one. | Objective 1        |
 | **Live hazard alerts**             | While navigating, the app warns the user of upcoming turns and reported hazards within about 50 m, using vibration and an in-app banner.                             | Objective 2        |
 | **Hazard and improvement reports** | Users pin a hazard (temporary) or an improvement request (permanent) with an optional photo. Other users confirm hazards and upvote improvements.                    | Objectives 2 and 3 |
-| **Amenity layer**                  | Shows zebra crossings, shelters and bus stops on the map.                                                                                                            | Solution section   |
+| **Amenity layer**                  | Shows zebra crossings, shelters and bus stops on the map, plus covered walkways (five-foot ways), kerb ramps and tactile paving, and rest stops (benches, toilets, drinking water).                                                                                                            | Solution section   |
 | **Council dataset**                | An in-app ranking of the most upvoted improvements, exportable as CSV or GeoJSON for local councils.                                                                 | Objective 3        |
 
 *Table 1 shows the MVP features and the proposal item each one answers.*
 
-**Out of scope for the MVP:** SOS and live location sharing, an iOS release, the OKU accessibility layer and AI classification of report photos. These are listed under future work in Section 14.
+**Out of scope for the MVP:** SOS and live location sharing, an iOS release, OKU (wheelchair) routing and AI classification of report photos. Kerb ramps and tactile paving are shown as a map layer only (added 2026-10-17); routing does not use them yet. These are listed under future work in Section 14.
 
 ## 3. Tech Stack
 
@@ -86,7 +86,7 @@ The app uses a **bottom tab bar** with three tabs, **Map**, **Community** and **
 | 4      | Map (home)                    | Light muted map, search bar, Layers button, Report button, recentre button.                                                                                                                         | Revise       | P1                       |
 | 5      | Search                        | Places with distance and area, recent searches and saved places. No safety score here, since no route exists yet.                                                                                   | Revise       | P1                       |
 | 6      | Route compare (sheet)         | Both routes on the map with two cards: **Safest** (time, distance, score) and **Fastest** (time, distance, what it lacks, e.g. 400 m without sidewalk). Tap a card or a line to choose, then Start. | Revise       | P1                       |
-| 7      | Route detail (sheet expanded) | Score breakdown: % with sidewalk, % lit, marked crossings, hazards on route, amenities on route.                                                                                                    | New          | P2                       |
+| 7      | Route detail (sheet expanded) | Score breakdown: % with sidewalk, % lit, % under cover, marked crossings, hazards on route, amenities on route.                                                                                                    | New          | P2                       |
 | 8      | Navigation                    | Turn banner, route line, small hazard and amenity icons on the route only, bottom bar with time and distance left, **End** button and **Quick report** button.                                      | Revise       | P1                       |
 | 9      | Hazard alert (banner)         | Non-blocking banner under the turn banner with vibration, auto-hides after about 6 s, with **Still there** and **Gone** buttons. Replaces the centred modal.                                        | Revise       | P1                       |
 | 10     | Quick report (sheet)          | Six large hazard icons. One tap pins the hazard at the current GPS spot. Photo and note can be added after arrival.                                                                                 | New          | P1                       |
@@ -98,7 +98,7 @@ The app uses a **bottom tab bar** with three tabs, **Map**, **Community** and **
 | 16     | Arrival                       | Journey complete with distance, hazards avoided, star rating and "Spot anything new?" that opens the report flow.                                                                                   | Revise       | P1                       |
 | 17     | Me                            | My reports with status, saved places (home, campus, work) and contribution stats.                                                                                                                   | New          | P1 (stats and badges P2) |
 | 18     | Settings                      | Language, automatic day and night scoring, alert vibration, privacy notice.                                                                                                                         | New          | P2                       |
-| 19     | Layers (sheet)                | Toggles for zebra crossings, shelters and bus stops.                                                                                                                                                | New          | P1                       |
+| 19     | Layers (sheet)                | Toggles for zebra crossings, shelters, bus stops, covered walkways, kerb ramps and tactile paving, and rest stops. Each row shows its map mark. The last two start off and show from zoom 17 and 16.                                                                                                                                                | New          | P1                       |
 | 20     | Empty and error states        | No GPS, no internet, no route found, no reports nearby.                                                                                                                                             | New          | P1                       |
 
 *Table 3 lists every screen. P1 is needed for the Week 9 prototype, and P2 is built if time allows.*
@@ -118,7 +118,7 @@ Each type of pop-up has one job, so the app behaves the same way everywhere. The
 
 ### 5.4 Visual rules
 
-- **One light, muted map style** on every screen, as set in the colour scheme document, so the route, hazards and amenities stand out. Navy (#0F2A47) is for the app bars and sheets.
+- **One light, muted map style** on every screen, as set in the colour scheme document, so the route, hazards and amenities stand out. Named places (shops, food, schools, places of worship) show from zoom 16 and house numbers from zoom 18, in muted grey, from the same OpenFreeMap tiles. Navy (#0F2A47) is for the app bars and sheets.
 
 - **One font, Atkinson Hyperlegible Next,** across all screens (Section 6.2). The draft mixes a serif font on the Community and Journey screens.
 
@@ -168,7 +168,7 @@ The first Figma draft is a good wireframe, but it looks basic. This section desc
 | **Map style**         | A MapLibre style based on OpenFreeMap Positron: light grey land, white roads, fewer shop and business icons, but bus stops and crossings kept. A separate dark navy night style switches on automatically after dark. The OpenStreetMap credit always stays visible above the sheets.                                                                                                                   |
 | **Typography**        | One family, Atkinson Hyperlegible Next, made by the Braille Institute for maximum legibility, which suits glancing at a phone while walking. It replaces Inter, the default that most AI-generated designs use. Navigation instruction 30 sp bold, screen titles 20 to 26 sp, body 16 sp, labels at least 13 sp.                                                                                        |
 | **Shape and spacing** | 8 dp spacing grid. Sheets have 16 dp top corners, cards 12 dp, chips are fully rounded. Soft shadows only on sheets and floating buttons.                                                                                                                                                                                                                                                               |
-| **Icons**             | Simple rounded line icons in the app chrome. Hazard pins on the map are orange diamonds with a dark outline and an exclamation mark, the shape of Malaysian road warning signs. Six custom hazard icons (broken sidewalk, blocked path, no light, unsafe crossing, flooding, other) and three amenity icons (crossing, shelter, bus stop), each on a small white circle so they read on any map colour. |
+| **Icons**             | Simple rounded line icons in the app chrome. Hazard pins on the map are orange diamonds with a dark outline and an exclamation mark, the shape of Malaysian road warning signs. Six custom hazard icons (broken sidewalk, blocked path, no light, unsafe crossing, flooding, other) and amenity icons (crossing, shelter, bus stop, kerb ramp, tactile paving, bench, toilets, drinking water), each on a small white circle so they read on any map colour. Covered walkways are two thin navy rails along the street, and on the walk screen along the route line. |
 | **Haptics**           | One short pulse for a turn, two pulses for a hazard ahead and one long pulse on arrival, so the user can tell them apart without looking.                                                                                                                                                                                                                                                               |
 | **Motion**            | Sheets slide up with a gentle spring, banners slide down in about 200 ms. No decorative animation during navigation.                                                                                                                                                                                                                                                                                    |
 
@@ -319,7 +319,7 @@ The real pedestrian layout of Ipoh comes from OpenStreetMap, downloaded once fro
 
 3.  **Run the extractor.** python ipoh_extract.py raw/malaysia-singapore-brunei-latest.osm.pbf out. It takes a few minutes. The default area is central Ipoh (longitude 101.068 to 101.100, latitude 4.583 to 4.612), and --bbox changes it.
 
-4.  **Check the outputs** in out/: ipoh-central.osm.pbf (the clipped raw data), walk-network.geojson (walkable lines with sidewalk, lit and crossing tags), amenities.geojson (crossings, bus stops, shelters, street lamps, traffic signals), coverage-report.md and preview.png.
+4.  **Check the outputs** in out/: ipoh-central.osm.pbf (the clipped raw data), walk-network.geojson (walkable lines with sidewalk, lit and crossing tags), amenities.geojson (crossings, bus stops, shelters, street lamps, traffic signals, kerb ramps, tactile paving, benches, toilets, drinking water), coverage-report.md and preview.png.
 
 5.  **Read the coverage report.** It shows how many km of Ipoh streets have sidewalk and lighting information. The "unknown" streets on our pilot corridors become the to-do list for the Mapillary virtual audit.
 
@@ -362,10 +362,10 @@ Langkah looks at the city from the walker's point of view, whereby the pedestria
 
 | **Table**     | **Main columns**                                                                                                         | **Notes**                                                                                        |
 |---------------|--------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| road_segments | geometry, source and target node, length, road type, sidewalk, lit, crossing, speed, score_day, score_night, data_source | Built by the Python pipeline. Used by pgRouting.                                                 |
+| road_segments | geometry, source and target node, length, road type, sidewalk, lit, crossing, speed, covered, score_day, score_night, data_source | Built by the Python pipeline. Used by pgRouting.                                                 |
 | reports       | kind (hazard or improvement), category, geometry, note, photo, status, created_at, expires_at, user                      | Status is pending, active or expired.                                                            |
 | report_votes  | report, user, created_at                                                                                                 | One confirmation or upvote per user per report.                                                  |
-| amenities     | type (crossing, shelter, bus stop), geometry, name, source                                                               | Imported from OSM and the corridor audit.                                                        |
+| amenities     | type (crossing, shelter, bus stop, street lamp, traffic signals, kerb ramp, tactile paving, bench, toilets, drinking water), geometry, name, source                                                               | Imported from OSM and the corridor audit.                                                        |
 | places        | name, alternative names, category, geometry                                                                              | Ipoh place names from OSM for search. Searched with the pg_trgm extension (fuzzy text matching). |
 
 *Table 12 shows the five core tables.*
@@ -497,7 +497,7 @@ There are two kinds of APK. The **development build** connects to a teammate's l
 
 ## 14. Future Work
 
-Firstly, SOS and live location sharing with trusted contacts, which came up during planning but is outside the approved scope. Secondly, the OKU accessibility layer and AI classification of report photos from the original idea. Thirdly, staff sign-in and status updates for the council dashboard (Section 15.7), a self-hosted GraphHopper routing server once Langkah grows past a single city, and AI-generated sidewalk networks from aerial imagery with Tile2Net (Hosseini et al., 2023) to go beyond the hand-drawn pilot corridors. Lastly, an iOS release and a Penang expansion covering the Bukit Jambul to FIZ walk that inspired the project.
+Firstly, SOS and live location sharing with trusted contacts, which came up during planning but is outside the approved scope. Secondly, OKU (wheelchair) routing on top of the kerb ramp and tactile paving layer, and AI classification of report photos, from the original idea. Thirdly, staff sign-in and status updates for the council dashboard (Section 15.7), a self-hosted GraphHopper routing server once Langkah grows past a single city, and AI-generated sidewalk networks from aerial imagery with Tile2Net (Hosseini et al., 2023) to go beyond the hand-drawn pilot corridors. Lastly, an iOS release and a Penang expansion covering the Bukit Jambul to FIZ walk that inspired the project.
 
 ## 15. Langkah Points
 

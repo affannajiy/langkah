@@ -12,6 +12,7 @@ const MAX_CHIPS = { safest: 3, fastest: 2 } as const;
 const SIDEWALK_GOOD_PCT = 50;
 const LIT_GOOD_PCT = 70;
 const UNCHECKED_WARN_PCT = 50;
+const COVERED_GOOD_PCT = 30;
 
 // Plain reasons for a route card (guide Sections 5.2 and 6.3, screen 3).
 // Safest leads with what it has; fastest leads with what it lacks.
@@ -21,6 +22,7 @@ export function routeReasons(stats: RouteStats, kind: 'safest' | 'fastest', t: T
 
   if (stats.sw >= SIDEWALK_GOOD_PCT) good.push({ tone: 'good', label: t('route.chip.sidewalk', { pct: stats.sw }) });
   if (stats.lit >= LIT_GOOD_PCT) good.push({ tone: 'good', label: t('route.chip.wellLit') });
+  if (stats.cov >= COVERED_GOOD_PCT) good.push({ tone: 'good', label: t('route.chip.covered', { pct: stats.cov }) });
   if (stats.mx > 0) good.push({ tone: 'good', label: t('route.chip.marked', { count: stats.mx }) });
   if (stats.hz === 0) good.push({ tone: 'good', label: t('route.chip.noHazards') });
 

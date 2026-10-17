@@ -57,7 +57,7 @@ function WalkScreen({ walk }: { walk: Walk }) {
   const { servicesOn, turnOnServices } = useLocationPermission();
   const mapRef = useRef<MapRef>(null);
   const cameraRef = useRef<CameraRef>(null);
-  const { track, hazards, crossings, view, fix, banner, dismissBanner, remainingS, summary } = useWalk(walk);
+  const { route, track, hazards, crossings, view, fix, banner, dismissBanner, remainingS, summary } = useWalk(walk);
 
   const [following, setFollowing] = useState(true);
   const [cardBottom, setCardBottom] = useState(insets.top + 140);
@@ -218,6 +218,7 @@ function WalkScreen({ walk }: { walk: Walk }) {
               along={view.along}
               hazards={hazards}
               crossings={crossings}
+              covered={route.covered}
               end={walk.to.lngLat}
             />
             {view.at && <WalkerDot at={view.at} />}

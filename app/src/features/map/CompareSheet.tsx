@@ -207,6 +207,7 @@ function Details({ route }: { route: Route }) {
   const rows: [string, string][] = [
     [t('route.row.sidewalk'), t('route.row.percent', { pct: s.sw })],
     [t('route.row.lit'), t('route.row.percent', { pct: s.lit })],
+    [t('route.row.covered'), t('route.row.percent', { pct: s.cov })],
     [t('route.row.marked'), String(s.mx)],
     [t('route.row.unmarked'), String(s.ux)],
     [t('route.row.hazards'), String(s.hz)],

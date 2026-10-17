@@ -1,10 +1,12 @@
+import type { TFunction } from 'i18next';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Switch, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
 import { Sheet } from '../../components/Sheet';
-import type { LayerToggles } from '../../map/MapPins';
+import { AmenityMark, CoveredMark, type LayerToggles } from '../../map/MapPins';
 import { colors, spacing, touchTarget } from '../../theme/theme';
 
 type Props = {
@@ -14,15 +16,24 @@ type Props = {
   onClose: () => void;
 };
 
+// Every map layer the user can switch, in sheet order. Shared with Settings.
+export function layerRows(t: TFunction): { key: keyof LayerToggles; label: string; mark: ReactNode }[] {
+  return [
+    { key: 'crossings', label: t('layers.crossings'), mark: <AmenityMark kind="crossing" /> },
+    { key: 'busStops', label: t('layers.busStops'), mark: <AmenityMark kind="bus_stop" /> },
+    { key: 'shelters', label: t('layers.shelters'), mark: <AmenityMark kind="shelter" /> },
+    { key: 'covered', label: t('layers.covered'), mark: <CoveredMark /> },
+    { key: 'kerbs', label: t('layers.kerbs'), mark: <AmenityMark kind="kerb_ramp" /> },
+    { key: 'rest', label: t('layers.rest'), mark: <AmenityMark kind="bench" /> },
+  ];
+}
+
 // Layers sheet: which amenities show on the map (guide Section 5.2, screen 19).
-// The choice is saved on the phone and also shows in Settings.
+// Each row shows its map mark next to the name. The choice is saved on the phone
+// and also shows in Settings.
 export function LayersSheet({ visible, toggles, onChange, onClose }: Props) {
   const { t } = useTranslation();
-  const rows: { key: keyof LayerToggles; label: string }[] = [
-    { key: 'crossings', label: t('layers.crossings') },
-    { key: 'busStops', label: t('layers.busStops') },
-    { key: 'shelters', label: t('layers.shelters') },
-  ];
+  const rows = layerRows(t);
 
   return (
     <Sheet visible={visible}>
@@ -32,6 +43,7 @@ export function LayersSheet({ visible, toggles, onChange, onClose }: Props) {
       <View>
         {rows.map((r) => (
           <View key={r.key} style={styles.row}>
+            <View importantForAccessibility="no-hide-descendants">{r.mark}</View>
             <AppText color={colors.text} style={styles.label}>
               {r.label}
             </AppText>

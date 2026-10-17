@@ -40,6 +40,7 @@ export type RouteStats = {
   mx: number; // marked crossings
   ux: number; // unmarked main-road crossings
   hz: number; // active hazards within 15 m
+  cov: number; // % under cover (five-foot ways, arcades); display only
 };
 
 export type Route = {
@@ -51,6 +52,8 @@ export type Route = {
   steps: Step[];
   // [from, to] point index ranges on streets that are not yet checked.
   unchecked: [number, number][];
+  // Covered walkways along the route, one line each.
+  covered: LngLat[][];
 };
 
 export type RoutePair = {
@@ -102,7 +105,19 @@ export type ImprovementCategory = (typeof IMPROVEMENT_CATEGORIES)[number];
 
 export type ReportKind = 'hazard' | 'improvement';
 
-export type MapAmenityKind = 'crossing' | 'bus_stop' | 'shelter';
+// Kerb ramps and tactile paving show from zoom 17, rest stops from zoom 16
+// (migration 17); crossings, bus stops and shelters whenever pins show.
+export const MAP_AMENITY_KINDS = [
+  'crossing',
+  'bus_stop',
+  'shelter',
+  'kerb_ramp',
+  'tactile',
+  'bench',
+  'toilets',
+  'drinking_water',
+] as const;
+export type MapAmenityKind = (typeof MAP_AMENITY_KINDS)[number];
 
 // A partner shop on the map and its voucher (guide Section 15.6). Names are proper
 // nouns; the offer comes in both languages from the server.
@@ -120,6 +135,9 @@ export type SponsoredPin = {
 export type MapView = {
   hazards: { id: string; lngLat: LngLat; category: string }[];
   amenities: { kind: MapAmenityKind; lngLat: LngLat }[];
+  // Covered walkways in view (five-foot ways, arcades), one line each.
+  covered: LngLat[][];
+  zoom: number; // map zoom when this view was asked for
   sponsored: SponsoredPin[]; // at most 3, closest to the middle of the view
   counts: { hazards: number; improvements: number };
 };

@@ -7,7 +7,14 @@ import { useSyncExternalStore } from 'react';
 
 export type Language = 'en' | 'ms';
 
-export type LayerToggles = { crossings: boolean; busStops: boolean; shelters: boolean };
+export type LayerToggles = {
+  crossings: boolean;
+  busStops: boolean;
+  shelters: boolean;
+  covered: boolean; // covered walkways (five-foot ways, arcades)
+  kerbs: boolean; // kerb ramps and tactile paving
+  rest: boolean; // benches, toilets, drinking water
+};
 
 export type Settings = {
   language: Language | null; // null: follow the phone until the user picks one
@@ -25,7 +32,8 @@ export const DEFAULT_SETTINGS: Settings = {
   language: null,
   autoNight: true,
   vibration: true,
-  layers: { crossings: true, busStops: true, shelters: true },
+  // The map stays calm: the newer, busier layers start off.
+  layers: { crossings: true, busStops: true, shelters: true, covered: true, kerbs: false, rest: false },
   onboarded: false,
   locationAsked: false,
   batteryTipSeen: false,
@@ -50,6 +58,9 @@ function parse(raw: unknown): Settings {
       crossings: bool(l.crossings, d.layers.crossings),
       busStops: bool(l.busStops, d.layers.busStops),
       shelters: bool(l.shelters, d.layers.shelters),
+      covered: bool(l.covered, d.layers.covered),
+      kerbs: bool(l.kerbs, d.layers.kerbs),
+      rest: bool(l.rest, d.layers.rest),
     },
     onboarded: bool(r.onboarded, d.onboarded),
     locationAsked: bool(r.locationAsked, d.locationAsked),
