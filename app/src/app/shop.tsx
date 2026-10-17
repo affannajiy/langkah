@@ -173,7 +173,7 @@ export default function ShopScreen() {
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xxl }]}>
         {tab === 'cosmetics' && (
           <Pressable accessibilityRole="button" onPress={() => router.push('/plus')} style={({ pressed }) => [styles.plusRow, pressed && styles.pressed]}>
-            <Crown size={26} color="#7A5A00" />
+            <Crown size={26} color={colors.plusText} />
             <View style={styles.flex}>
               <AppText variant="bodyStrong" color={colors.text}>
                 {wallet?.plusUntil ? t('plus.rowOn') : t('plus.row')}
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     minHeight: touchTarget + spacing.md,
-    backgroundColor: '#FBEFC8',
+    backgroundColor: colors.plusSoft,
     borderRadius: radius.card,
     padding: spacing.md,
   },

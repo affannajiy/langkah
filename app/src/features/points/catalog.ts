@@ -33,12 +33,12 @@ export function voucherLook(id: string): VoucherLook {
   return { rm: partnerOf(id)?.rm ?? 0, ...VOUCHER_TINTS[h % VOUCHER_TINTS.length]! };
 }
 
-export const PLUS_GOLD = '#C99A1E';
+export const PLUS_GOLD = colors.plusGold;
 
 export const FRAMES: Record<string, FrameLook> = {
   frame_teal: { ring: colors.safe, width: 4 },
   frame_batik: { ring: colors.community, width: 4, dashed: true },
-  frame_limestone: { ring: '#7C8794', width: 3, double: true },
+  frame_limestone: { ring: colors.limestone, width: 3, double: true },
   plus_frame: { ring: PLUS_GOLD, width: 5 },
 };
 
@@ -46,5 +46,5 @@ export const BADGES: Record<string, BadgeLook> = {
   badge_early: { icon: Sunrise, fill: colors.hazardSoft, color: colors.hazardText },
   badge_night: { icon: Moon, fill: colors.interactiveSoft, color: colors.navy },
   badge_kinta: { icon: Footprints, fill: colors.safeSoft, color: colors.safeText },
-  plus_badge: { icon: Crown, fill: '#FBEFC8', color: '#7A5A00' },
+  plus_badge: { icon: Crown, fill: colors.plusSoft, color: colors.plusText },
 };

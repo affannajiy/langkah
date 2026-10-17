@@ -9,6 +9,7 @@ import { adFinish, pointsErrorCode } from '../api/points';
 import { AD_SECONDS, AdFrame } from '../features/ads/AdFrame';
 import { ADS, TealoveHeader } from '../features/ads/brands';
 import { notifyPoints } from '../points/notice';
+import { colors } from '../theme/theme';
 
 const NEXT_KEY = 'langkah.adNext.v1';
 const TICK_MS = 250;
@@ -77,7 +78,7 @@ export default function AdScreen() {
     }, [leave]),
   );
 
-  if (!ad) return <View style={{ flex: 1, backgroundColor: '#000000' }} />;
+  if (!ad) return <View style={{ flex: 1, backgroundColor: colors.black }} />;
 
   const left = AD_SECONDS - elapsed;
   const done = elapsed >= AD_SECONDS;

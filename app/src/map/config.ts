@@ -26,3 +26,7 @@ export function nearestPilotArea([lng, lat]: LngLat): LngLatBounds {
   const dist = ([w, s, e, n]: LngLatBounds) => Math.hypot((w + e) / 2 - lng, (s + n) / 2 - lat);
   return PILOT_AREAS.reduce((best, box) => (dist(box) < dist(best) ? box : best));
 }
+
+// Map tiles kept on the phone after viewing (MapLibre's default is 50 MB).
+// The pilot areas are small, so 20 MB holds them with room to spare.
+export const TILE_CACHE_BYTES = 20 * 1024 * 1024;

@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   titles: { gap: spacing.xs },
   place: { fontSize: 30, lineHeight: 36 },
   center: { textAlign: 'center' },
-  card: { backgroundColor: colors.white, borderRadius: radius.sheet, borderWidth: 1, borderColor: colors.border },
+  card: { backgroundColor: colors.white, borderRadius: radius.card, borderWidth: 1, borderColor: colors.border },
   stats: { flexDirection: 'row', paddingVertical: spacing.md },
   stat: { flex: 1, alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.xs },
   statValue: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

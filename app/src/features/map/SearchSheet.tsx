@@ -325,6 +325,8 @@ function PlaceRow({ place, onPress, icon }: { place: Place; onPress: () => void;
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
       <View style={styles.rowIcon}>
+        {/* placeIcon returns a fixed icon component, so nothing remounts. */}
+        {/* eslint-disable-next-line react-hooks/static-components */}
         <Icon size={22} color={colors.navy} />
       </View>
       <View style={styles.rowText}>

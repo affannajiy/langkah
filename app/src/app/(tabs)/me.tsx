@@ -375,7 +375,7 @@ export default function MeScreen() {
               onPress={() => router.push('/plus')}
               style={({ pressed }) => [styles.plusRow, pressed && styles.pressed]}
             >
-              <Crown size={26} color="#7A5A00" />
+              <Crown size={26} color={colors.plusText} />
               <View style={styles.flex}>
                 <AppText variant="bodyStrong" color={colors.text}>
                   {wallet.plusUntil ? t('plus.rowUntil', { date: shortDate(wallet.plusUntil) }) : t('plus.row')}
@@ -632,7 +632,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     minHeight: touchTarget + spacing.md,
-    backgroundColor: '#FBEFC8',
+    backgroundColor: colors.plusSoft,
     borderRadius: radius.card,
     padding: spacing.md,
   },
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
   },
   content: {
     ...cappedContent, padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xxl },
-  card: { backgroundColor: colors.white, borderRadius: radius.sheet, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md },
+  card: { backgroundColor: colors.white, borderRadius: radius.card, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   icon: { width: 56, height: 56, borderRadius: radius.card, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1, gap: 2 },

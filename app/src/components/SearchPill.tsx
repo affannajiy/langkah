@@ -1,14 +1,28 @@
+import { useFocusEffect } from 'expo-router';
 import { Search } from 'lucide-react-native';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet } from 'react-native';
 
 import { colors, radius, shadow, spacing } from '../theme/theme';
 import { AppText } from './AppText';
 
-// "Where are you walking to?" pill on the map (guide Section 6.3, screen 1; Section 6.5).
+const LINES = ['searchLine0', 'searchLine1', 'searchLine2', 'searchLine3', 'searchLine4', 'searchLine5'] as const;
+
+// A different line each time, never the same one twice in a row.
+function nextLine(current: number): number {
+  const step = 1 + Math.floor(Math.random() * (LINES.length - 1));
+  return (current + step) % LINES.length;
+}
+
+// Search pill on the map (guide Section 6.3, screen 1; Section 6.5).
 // It is a button, not a field: tapping it opens the search sheet.
+// The line changes when the map tab comes into view, never while it is on screen.
 export function SearchPill({ onPress }: { onPress: () => void }) {
   const { t } = useTranslation();
+  const [line, setLine] = useState(() => Math.floor(Math.random() * LINES.length));
+  useFocusEffect(useCallback(() => () => setLine(nextLine), []));
+
   return (
     <Pressable
       accessibilityRole="search"
@@ -19,7 +33,7 @@ export function SearchPill({ onPress }: { onPress: () => void }) {
     >
       <Search size={24} color={colors.navy} />
       <AppText color={colors.textMuted} numberOfLines={1} style={styles.text}>
-        {t('home.searchPlaceholder')}
+        {t(`home.${LINES[line] ?? LINES[0]}`)}
       </AppText>
     </Pressable>
   );

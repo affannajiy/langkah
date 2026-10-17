@@ -195,11 +195,6 @@ export async function castVote(reportId: string, vote: Vote | null): Promise<voi
   await rpc('report_vote', { p_id: reportId, p_vote: vote });
 }
 
-export async function sendExport(): Promise<unknown[]> {
-  const data = await rpc('community_export', {});
-  return Array.isArray(data) ? data.filter(isObj) : [];
-}
-
 // --- photos ---------------------------------------------------------------
 
 // Random v4-style id for the file name. It only needs to be unique and say nothing

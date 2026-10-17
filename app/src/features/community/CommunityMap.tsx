@@ -103,7 +103,7 @@ export function CommunityMap({ kind, here, reloadKey, onOpen }: Props) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, borderRadius: radius.sheet, overflow: 'hidden' },
+  root: { flex: 1, borderRadius: radius.card, overflow: 'hidden' },
   flex: { flex: 1 },
   hint: {
     position: 'absolute',

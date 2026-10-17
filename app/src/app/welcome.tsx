@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   center: { textAlign: 'center' },
   language: {
     backgroundColor: colors.white,
-    borderRadius: radius.sheet,
+    borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.lg,
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     minHeight: touchTarget * 2,
     justifyContent: 'center',
   },
-  card: { backgroundColor: colors.white, borderRadius: radius.sheet, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md },
+  card: { backgroundColor: colors.white, borderRadius: radius.card, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md },
   reason: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   reasonIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.interactiveSoft, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },

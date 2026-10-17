@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, Animated, PanResponder, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { useSideInset } from '../theme/layout';
-import { colors, radius, shadow, spacing } from '../theme/theme';
+import { colors, radius, shadow } from '../theme/theme';
 
 type Props = {
   // Visible heights in dp, smallest first. The sheet rests on one of them.

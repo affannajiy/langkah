@@ -38,6 +38,8 @@ export function Thumb({ r }: { r: CommunityReport }) {
   }
   return (
     <View style={[styles.thumb, styles.thumbIcon, { backgroundColor: r.kind === 'hazard' ? colors.hazardSoft : colors.communitySoft }]}>
+      {/* categoryIcon returns a fixed icon component, so nothing remounts. */}
+      {/* eslint-disable-next-line react-hooks/static-components */}
       <Icon size={30} color={colors.navy} />
     </View>
   );
@@ -108,8 +110,8 @@ export function FeaturedCard({ report: r, busy, onOpen, onVote }: Omit<Props, 'f
 
 const styles = StyleSheet.create({
   row: { backgroundColor: colors.white, paddingHorizontal: spacing.md, borderColor: colors.border, borderLeftWidth: 1, borderRightWidth: 1 },
-  first: { borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, borderTopWidth: 1, paddingTop: spacing.xs },
-  last: { borderBottomLeftRadius: radius.sheet, borderBottomRightRadius: radius.sheet, borderBottomWidth: 1, paddingBottom: spacing.xs },
+  first: { borderTopLeftRadius: radius.card, borderTopRightRadius: radius.card, borderTopWidth: 1, paddingTop: spacing.xs },
+  last: { borderBottomLeftRadius: radius.card, borderBottomRightRadius: radius.card, borderBottomWidth: 1, paddingBottom: spacing.xs },
   divider: { borderBottomWidth: StyleSheet.hairlineWidth },
   main: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md },
   flex: { flex: 1, gap: spacing.xs },
@@ -119,7 +121,7 @@ const styles = StyleSheet.create({
   answers: { paddingBottom: spacing.md },
   featured: {
     backgroundColor: colors.white,
-    borderRadius: radius.sheet,
+    borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',

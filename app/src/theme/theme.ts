@@ -43,6 +43,20 @@ export const colors = {
   userDot: '#1F6FB2',
   userHalo: 'rgba(86, 180, 233, 0.3)',
 
+  // Langkah Plus: gold badge, its dark text-safe icon colour, and its soft fill
+  plusGold: '#C99A1E',
+  plusText: '#7A5A00',
+  plusSoft: '#FBEFC8',
+
+  // Limestone avatar frame (shop item)
+  limestone: '#7C8794',
+
+  // Secondary button on a navy card
+  navyAction: '#1F3D60',
+
+  // Behind a full-screen ad while it loads
+  black: '#000000',
+
   border: '#D9DEE5',
   handle: '#C9D0D9',
   scrim: 'rgba(15, 42, 71, 0.45)',

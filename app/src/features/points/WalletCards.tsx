@@ -237,7 +237,7 @@ function describe(l: LedgerLine, t: T): { title: string; sub: string | null } {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  points: { backgroundColor: colors.navy, borderRadius: radius.sheet, padding: spacing.lg, gap: spacing.md },
+  points: { backgroundColor: colors.navy, borderRadius: radius.card, padding: spacing.lg, gap: spacing.md },
   pointsTop: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
   balance: { fontSize: 48, lineHeight: 56 },
   actions: { flexDirection: 'row', gap: spacing.sm },
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   actionPrimary: { backgroundColor: colors.white },
-  actionDark: { backgroundColor: '#1F3D60' },
+  actionDark: { backgroundColor: colors.navyAction },
   actionMuted: { opacity: 0.6 },
   card: { backgroundColor: colors.white, borderRadius: radius.card, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

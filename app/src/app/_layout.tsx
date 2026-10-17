@@ -2,6 +2,7 @@ import '../i18n';
 // Registers the walk location task before Android can deliver a fix to it.
 import '../nav/walkLocation';
 
+import { OfflineManager } from '@maplibre/maplibre-react-native';
 import Stack from 'expo-router/stack';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -11,6 +12,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '../auth/AuthProvider';
 import { LoadingScreen } from '../components/LoadingScreen';
+import { TILE_CACHE_BYTES } from '../map/config';
 import { PointsSnackbar } from '../points/PointsSnackbar';
 import { colors } from '../theme/theme';
 
@@ -18,6 +20,11 @@ import { colors } from '../theme/theme';
 // so the hand-off has no blank frame.
 SplashScreen.preventAutoHideAsync();
 SplashScreen.setOptions({ fade: true, duration: 150 });
+
+// Cap the map tile cache so the app's storage stays small.
+OfflineManager.setMaximumAmbientCacheSize(TILE_CACHE_BYTES).catch((error: unknown) =>
+  console.warn('Could not cap the map cache', error),
+);
 
 export default function RootLayout() {
   const [loading, setLoading] = useState(true);

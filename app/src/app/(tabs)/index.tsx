@@ -632,7 +632,11 @@ export default function MapScreen() {
           <>
             <HomeTopControls
               mode={mode}
-              onToggleMode={toggleMode}
+              onToggleMode={() => {
+                // The button shows only an icon, so say the new mode in words.
+                snackbar.show({ text: mode === 'night' ? t('home.dayOn') : t('home.nightOn') });
+                toggleMode();
+              }}
               onSearch={() => setScreen({ kind: 'search', purpose: { kind: 'to' }, back: 'home' })}
               saved={saved}
               onSavedPress={onSavedPress}

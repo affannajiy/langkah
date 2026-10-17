@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   halo: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.safeSoft, alignItems: 'center', justifyContent: 'center' },
   tick: { width: 88, height: 88, borderRadius: 44, backgroundColor: colors.safe, alignItems: 'center', justifyContent: 'center' },
   big: { fontSize: 48, lineHeight: 58, textAlign: 'center' },
-  card: { alignSelf: 'stretch', backgroundColor: colors.white, borderRadius: radius.sheet, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.lg },
+  card: { alignSelf: 'stretch', backgroundColor: colors.white, borderRadius: radius.card, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.lg },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md, minHeight: touchTarget + spacing.md, paddingVertical: spacing.sm },
   divider: { borderBottomWidth: 1, borderBottomColor: colors.border },
   paid: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

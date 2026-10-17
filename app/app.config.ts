@@ -49,8 +49,8 @@ const config: ExpoConfig = {
         isAndroidForegroundServiceEnabled: true,
       },
     ],
-    // Photos only: no microphone. The Google sign-in and expo-sharing plugins are
-    // iOS-only (or Firebase-only), so they are not listed here.
+    // Photos only: no microphone. The Google sign-in plugin is iOS-only
+    // (or Firebase-only), so it is not listed here.
     ['expo-image-picker', { microphonePermission: false }],
     [
       'expo-splash-screen',
@@ -81,6 +81,19 @@ const config: ExpoConfig = {
     ],
     // HTTP/2 pings, so requests recover after the phone changes network.
     './plugins/withNetworkPing',
+    [
+      // Smaller APK. R8 strips unused Java code and resources in release builds.
+      // Native code ships for real phones (arm64, older 32-bit arm) and the x86_64
+      // emulator; 32-bit x86 is dropped, since no current phone or emulator needs it.
+      'expo-build-properties',
+      {
+        android: {
+          enableMinifyInReleaseBuilds: true,
+          enableShrinkResourcesInReleaseBuilds: true,
+          buildArchs: ['arm64-v8a', 'armeabi-v7a', 'x86_64'],
+        },
+      },
+    ],
   ],
   experiments: {
     typedRoutes: true,

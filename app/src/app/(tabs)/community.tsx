@@ -1,4 +1,4 @@
-import { ArrowUp, CloudOff, Download, List, Map as MapIcon, RefreshCw } from 'lucide-react-native';
+import { ArrowUp, CloudOff, List, Map as MapIcon, RefreshCw } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
@@ -7,12 +7,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CommunityReport, CommunitySort, Vote } from '../../api/reports';
 import type { ReportKind } from '../../api/types';
 import { AppText, TextScaleCap } from '../../components/AppText';
-import { Button } from '../../components/Button';
-import { Sheet } from '../../components/Sheet';
 import { Snackbar, useSnackbar } from '../../components/Snackbar';
 import { StatusBanner } from '../../components/StatusBanner';
 import { CommunityMap } from '../../features/community/CommunityMap';
-import { shareExport, type ExportFormat } from '../../features/community/exportFiles';
 import { ReportDetailSheet } from '../../features/community/ReportDetailSheet';
 import { FeaturedCard, ReportRow } from '../../features/community/ReportRow';
 import { useCommunityList, useVoting } from '../../features/community/useCommunity';
@@ -38,8 +35,6 @@ export default function CommunityScreen() {
   const [sort, setSort] = useState<CommunitySort>('top');
   const [mode, setMode] = useState<'list' | 'map'>('list');
   const [open, setOpen] = useState<CommunityReport | null>(null);
-  const [exporting, setExporting] = useState<ExportFormat | null>(null);
-  const [exportOpen, setExportOpen] = useState(false);
   const [mapReload, setMapReload] = useState(0);
 
   const list = useCommunityList(kind, sort, here);
@@ -69,20 +64,6 @@ export default function CommunityScreen() {
       }
     }
     setSort(next);
-  }
-
-  async function runExport(format: ExportFormat) {
-    setExporting(format);
-    try {
-      const n = await shareExport(format, t('community.exportTitle'));
-      setExportOpen(false);
-      if (n === 0) snackbar.show({ text: t('community.exportEmpty') });
-    } catch (error) {
-      console.warn('Export failed', error);
-      snackbar.show({ text: t('community.exportFailed') });
-    } finally {
-      setExporting(null);
-    }
   }
 
   const featured = kind === 'improvement' && sort === 'top' && list.items[0]?.photoUrl ? list.items[0] : null;
@@ -127,14 +108,12 @@ export default function CommunityScreen() {
                 <Pressable
                   key={m}
                   accessibilityRole="tab"
+                  accessibilityLabel={t(`community.${m}`)}
                   accessibilityState={{ selected: on }}
                   onPress={() => setMode(m)}
                   style={[styles.segmentItem, on && styles.segmentOn]}
                 >
-                  <Icon size={20} color={colors.navy} strokeWidth={on ? 2.5 : 2} />
-                  <AppText variant={on ? 'bodyStrong' : 'body'} color={colors.navy}>
-                    {t(`community.${m}`)}
-                  </AppText>
+                  <Icon size={24} color={on ? colors.navy : colors.textMuted} strokeWidth={on ? 2.5 : 2} />
                 </Pressable>
               );
             })}
@@ -143,35 +122,34 @@ export default function CommunityScreen() {
 
         {!online && <StatusBanner icon={CloudOff} text={t('offline.banner')} style={styles.offline} />}
 
-        <View style={styles.kinds} accessibilityRole="tablist">
-          {(['hazard', 'improvement'] as const).map((k) => {
-            const on = kind === k;
-            return (
-              <Pressable
-                key={k}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: on }}
-                onPress={() => setKind(k)}
-                style={[styles.kind, on && styles.kindOn]}
-              >
-                {k === 'hazard' ? (
-                  <HazardMark size={20} />
-                ) : (
-                  <ArrowUp size={20} color={on ? colors.community : colors.communityText} strokeWidth={2.75} />
-                )}
-                <AppText
-                  variant="bodyStrong"
-                  color={on ? colors.white : colors.navy}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.7}
-                  style={styles.kindText}
+        <View style={styles.kindsWrap}>
+          <View style={styles.kinds} accessibilityRole="tablist">
+            {(['hazard', 'improvement'] as const).map((k) => {
+              const on = kind === k;
+              return (
+                <Pressable
+                  key={k}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: on }}
+                  onPress={() => setKind(k)}
+                  style={[styles.kind, on && styles.kindOn]}
                 >
-                  {t(`community.kind.${k}`)}
-                </AppText>
-              </Pressable>
-            );
-          })}
+                  {k === 'hazard' ? (
+                    <HazardMark size={20} />
+                  ) : (
+                    <ArrowUp size={20} color={on ? colors.community : colors.communityText} strokeWidth={2.75} />
+                  )}
+                  <AppText
+                    variant="bodyStrong"
+                    color={on ? colors.white : colors.navy}
+                    style={styles.kindText}
+                  >
+                    {t(`community.kind.${k}`)}
+                  </AppText>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
       </TextScaleCap.Provider>
 
@@ -195,20 +173,6 @@ export default function CommunityScreen() {
                   </Pressable>
                 );
               })}
-              <View style={styles.flex} />
-              {kind === 'improvement' && (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityHint={t('community.exportHint')}
-                  onPress={() => setExportOpen(true)}
-                  style={styles.export}
-                >
-                  <Download size={20} color={colors.navy} />
-                  <AppText variant="bodyStrong" color={colors.navy} style={styles.underline}>
-                    {t('community.export')}
-                  </AppText>
-                </Pressable>
-              )}
             </View>
           </TextScaleCap.Provider>
 
@@ -277,26 +241,6 @@ export default function CommunityScreen() {
         />
       )}
 
-      {exportOpen && (
-        <Pressable style={styles.scrim} accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={() => setExportOpen(false)} />
-      )}
-      <Sheet visible={exportOpen}>
-        <AppText variant="heading" color={colors.navy} accessibilityRole="header">
-          {t('community.exportTitle')}
-        </AppText>
-        <AppText variant="body" color={colors.textMuted}>
-          {t('community.exportBody')}
-        </AppText>
-        {exporting ? (
-          <ActivityIndicator color={colors.navy} style={styles.more} />
-        ) : (
-          <>
-            <Button label={t('community.exportCsv')} onPress={() => runExport('csv')} />
-            <Button kind="secondary" label={t('community.exportGeojson')} onPress={() => runExport('geojson')} />
-          </>
-        )}
-      </Sheet>
-
       <Snackbar message={snackbar.message} onHide={snackbar.hide} bottom={spacing.md} />
     </View>
   );
@@ -306,29 +250,27 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   flex: { flex: 1 },
   center: { textAlign: 'center' },
-  // Wraps on narrow phones: the List / Map toggle drops under the title.
-  top: {
-    ...cappedContent, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md },
-  titleBlock: { flexGrow: 1, flexShrink: 1, minWidth: 180 },
+  // Title left, icon-only List / Map toggle right, on one row.
+  top: { ...cappedContent, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md },
+  titleBlock: { flex: 1 },
   bigTitle: { fontSize: 32, lineHeight: 40 },
-  segment: { flexDirection: 'row', backgroundColor: colors.neutralBadge, borderRadius: radius.sheet, padding: spacing.xs },
+  segment: { flexDirection: 'row', gap: spacing.xs, backgroundColor: colors.neutralBadge, borderRadius: radius.card, padding: spacing.xs },
   segmentItem: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    minHeight: touchTarget,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.card,
+    justifyContent: 'center',
+    width: touchTarget,
+    height: touchTarget,
+    borderRadius: radius.card - spacing.xs,
   },
   segmentOn: { backgroundColor: colors.white },
+  // Inset with padding on a capped row, not margins: margins on a 100% width
+  // pushed the bar past the screen edge.
+  kindsWrap: { ...cappedContent, paddingHorizontal: spacing.md, paddingTop: spacing.md },
   kinds: {
-    ...cappedContent,
     flexDirection: 'row',
-    margin: spacing.md,
-    marginBottom: 0,
     padding: spacing.xs,
     backgroundColor: colors.white,
-    borderRadius: radius.sheet,
+    borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -339,10 +281,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     minHeight: touchTarget + spacing.sm,
-    borderRadius: radius.card,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.card - spacing.xs,
   },
   kindOn: { backgroundColor: colors.navy },
-  kindText: { flexShrink: 1 },
+  kindText: { flexShrink: 1, textAlign: 'center' },
   sorts: {
     ...cappedContent,
     flexDirection: 'row',
@@ -362,8 +305,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sortOn: { backgroundColor: colors.text, borderColor: colors.text },
-  export: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: touchTarget, paddingLeft: spacing.sm },
-  underline: { textDecorationLine: 'underline' },
   listHeader: { gap: spacing.md, paddingBottom: spacing.md },
   listContent: {
     ...cappedContent, padding: spacing.md, paddingBottom: spacing.xxl },
@@ -374,5 +315,4 @@ const styles = StyleSheet.create({
   emptyText: { textAlign: 'center', padding: spacing.lg },
   retry: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: touchTarget, paddingHorizontal: spacing.lg },
   mapWrap: { flex: 1, margin: spacing.md },
-  scrim: { ...StyleSheet.absoluteFill, backgroundColor: colors.scrim },
 });
