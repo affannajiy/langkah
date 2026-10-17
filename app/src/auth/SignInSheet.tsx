@@ -1,4 +1,4 @@
-import { ShieldCheck, X } from 'lucide-react-native';
+import { Shield } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, BackHandler, Pressable, StyleSheet, View } from 'react-native';
@@ -6,16 +6,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { AppText } from '../components/AppText';
-import { Button } from '../components/Button';
 import { Sheet } from '../components/Sheet';
 import { colors, radius, spacing, touchTarget } from '../theme/theme';
 import type { SignInResult } from './AuthProvider';
 
-export type SignInReason = 'report' | 'vote' | 'queue' | 'me';
+export type SignInReason = 'report' | 'vote' | 'queue' | 'me' | 'topup';
 
 type Props = {
   reason: SignInReason | null;
+  showDemo: boolean; // the server's demo switch is on and this is a plain guest
   onSignIn: () => Promise<SignInResult>;
+  onDemo: () => Promise<boolean>;
   onClose: () => void;
 };
 
@@ -31,13 +32,15 @@ function GoogleG() {
   );
 }
 
-// "Sign in so others can trust your report" (guide Section 5.2, screen 12). A sheet,
-// never a dialog, and only when the user tries to write.
-export function SignInSheet({ reason, onSignIn, onClose }: Props) {
+// "Sign in so others can trust your report" (guide Section 5.2, screen 12;
+// docs/screens/SignInSheet.png). A sheet, never a dialog, and only when the user tries
+// to write or top up. Three choices: Google, the demo account (while the server's
+// demo switch is on) and Not now.
+export function SignInSheet({ reason, showDemo, onSignIn, onDemo, onClose }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<Exclude<SignInResult, 'ok' | 'cancelled'> | null>(null);
+  const [error, setError] = useState<Exclude<SignInResult, 'ok' | 'cancelled'> | 'demo' | null>(null);
   const visible = reason !== null;
 
   useEffect(() => {
@@ -61,6 +64,16 @@ export function SignInSheet({ reason, onSignIn, onClose }: Props) {
     if (result !== 'ok' && result !== 'cancelled') setError(result);
   }
 
+  async function demo() {
+    setBusy(true);
+    setError(null);
+    const ok = await onDemo();
+    setBusy(false);
+    if (!ok) setError('demo');
+  }
+
+  const title = reason === 'vote' ? t('signIn.titleVote') : reason === 'topup' ? t('signIn.titleTopup') : t('signIn.title');
+
   return (
     <>
       {visible && (
@@ -73,22 +86,11 @@ export function SignInSheet({ reason, onSignIn, onClose }: Props) {
       )}
       <Sheet visible={visible}>
         <View style={[styles.body, { paddingBottom: insets.bottom }]}>
-          <View style={styles.header}>
-            <View style={styles.icon}>
-              <ShieldCheck size={28} color={colors.safeText} />
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('signIn.notNow')}
-              onPress={onClose}
-              disabled={busy}
-              style={styles.close}
-            >
-              <X size={24} color={colors.navy} />
-            </Pressable>
+          <View style={styles.icon}>
+            <Shield size={30} color={colors.interactiveText} />
           </View>
           <AppText variant="title" color={colors.navy} accessibilityRole="header">
-            {reason === 'vote' ? t('signIn.titleVote') : t('signIn.title')}
+            {title}
           </AppText>
           <AppText variant="body" color={colors.textMuted}>
             {t(`signIn.body.${reason ?? 'report'}`)}
@@ -104,11 +106,31 @@ export function SignInSheet({ reason, onSignIn, onClose }: Props) {
             onPress={signIn}
             style={({ pressed }) => [styles.google, pressed && styles.pressed]}
           >
-            {busy ? <ActivityIndicator color={colors.navy} /> : <GoogleG />}
-            <AppText variant="bodyStrong" color={colors.text}>
+            {busy ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              <View style={styles.gBadge}>
+                <GoogleG />
+              </View>
+            )}
+            <AppText variant="bodyStrong" color={colors.white}>
               {t('signIn.google')}
             </AppText>
           </Pressable>
+
+          {showDemo && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ busy, disabled: busy }}
+              disabled={busy}
+              onPress={demo}
+              style={({ pressed }) => [styles.demo, pressed && styles.pressed]}
+            >
+              <AppText variant="bodyStrong" color={colors.navy}>
+                {t('signIn.demo')}
+              </AppText>
+            </Pressable>
+          )}
 
           {error && (
             <AppText variant="label" color={colors.hazardText} accessibilityLiveRegion="polite">
@@ -116,7 +138,11 @@ export function SignInSheet({ reason, onSignIn, onClose }: Props) {
             </AppText>
           )}
 
-          <Button kind="secondary" label={t('signIn.notNow')} onPress={onClose} />
+          <Pressable accessibilityRole="button" onPress={onClose} disabled={busy} style={styles.notNow}>
+            <AppText variant="bodyStrong" color={colors.interactiveText}>
+              {t('signIn.notNow')}
+            </AppText>
+          </Pressable>
         </View>
       </Sheet>
     </>
@@ -126,20 +152,11 @@ export function SignInSheet({ reason, onSignIn, onClose }: Props) {
 const styles = StyleSheet.create({
   scrim: { ...StyleSheet.absoluteFill, backgroundColor: colors.scrim },
   body: { gap: spacing.md },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   icon: {
     width: 56,
     height: 56,
-    borderRadius: radius.card,
-    backgroundColor: colors.safeSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  close: {
-    width: touchTarget,
-    height: touchTarget,
-    borderRadius: touchTarget / 2,
-    backgroundColor: colors.surface,
+    borderRadius: 28,
+    backgroundColor: colors.interactiveSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -150,9 +167,18 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     minHeight: touchTarget + spacing.sm,
     borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.navy,
+  },
+  gBadge: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
+  demo: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: touchTarget + spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 2,
+    borderColor: colors.navy,
     backgroundColor: colors.white,
   },
+  notNow: { minHeight: touchTarget, alignItems: 'center', justifyContent: 'center' },
   pressed: { opacity: 0.85 },
 });

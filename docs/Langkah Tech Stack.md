@@ -497,6 +497,45 @@ There are two kinds of APK. The **development build** connects to a teammate's l
 
 Firstly, SOS and live location sharing with trusted contacts, which came up during planning but is outside the approved scope. Secondly, the OKU accessibility layer and AI classification of report photos from the original idea. Thirdly, a separate council dashboard with heatmaps, a self-hosted GraphHopper routing server once Langkah grows past a single city, and AI-generated sidewalk networks from aerial imagery with Tile2Net (Hosseini et al., 2023) to go beyond the hand-drawn pilot corridors. Lastly, an iOS release and a Penang expansion covering the Bukit Jambul to FIZ walk that inspired the project.
 
+## 15. Langkah Points
+
+Walking, reporting, hazard votes and upvotes stay free. Langkah earns from a council dashboard, Ipoh shops (vouchers and sponsored pins), rewarded ads and points top-ups. The full plan and its reasons are in `docs/revenue-plan.md`; this section holds the rules the code must follow.
+
+### 15.1 One coin
+
+Langkah Points work like Grab points. 100 points is about RM1. Points are closed-loop: spent only inside Langkah, never cashed out, never sent to another user, and they do not expire in the MVP. **Points never touch safety data or the council ranking.** An upvote earns nothing, so nobody can buy or farm their way up the council list.
+
+### 15.2 Earn and spend
+
+| Earn | Points | Cap |
+|---|---|---|
+| Welcome, the first time an account signs in with Google | +1000 | once |
+| Walk finished in the app, GPS-checked | +10 per km | 50 a day |
+| Hazard report confirmed by another user (Still there) | +20 | once per report |
+| Improvement report with a photo | +10 | 5 a day |
+| Hazard vote, Still there or Gone | +2 | once per report, 20 a day |
+| Rate a walk | +5 | once per walk |
+| Daily check-in (first open each Malaysian day) | +5, +50 on day 7 | daily; a missed day starts again at day 1 |
+| Watch a 30 s ad (mock, Phase 11) | +20 | 5 a day |
+| Top up (mock, Phase 11) | packs from RM5 = 500 | Google or demo account only, RM500 a month |
+
+Spending (Phase 11): shop vouchers (300), cosmetics (200 to 800) and Langkah Plus (690 a month). Reports and votes are never paid for.
+
+### 15.3 How points move
+
+- A `point_ledger` table holds every change, and `point_balances` holds one balance per user. RLS is on; users read only their own rows; the app cannot insert or update either table.
+- Points move only through `security definer` functions. Caps are enforced in SQL by the Malaysian day (Asia/Kuala_Lumpur). A `ref` on each line stops the same earn being paid twice.
+- Walk distance is measured on the phone from the GPS fixes. Fixes worse than 30 m and jumps faster than 4 m/s are dropped. Only metres and seconds are sent; the server rejects an average faster than 3 m/s. The track never leaves the phone.
+- Guests earn points, but guest points live only on that phone's account. If a guest signs in with a Google account that already has Langkah, the guest's points stay behind.
+
+### 15.4 Accounts and the demo
+
+The first launch offers Sign in with Google, Continue as guest, and Try the demo (only while the server's demo switch is on). The sign-in sheet offers the same choices. "Try the demo" makes a fresh guest that the server fills as Demo Walker (`LGK-DEMO-01`, 1,500 points, a history, 3 reports). Afrina (demo), a server-only account from the seed script, confirms the demo user's new hazards at once, so points can be shown arriving on one phone. Reset demo on the Me tab (a dialog, since it cannot be undone) puts the demo back to the start and keeps the language.
+
+### 15.5 Money rules
+
+Every mock top-up screen shows "DEMO · no real money". Nothing is typed, saved or sent to a bank, and there is no card option. Before any real sale: check the Bank Negara e-money policy document (bought points that pay for other shops' vouchers may count as e-money), and use Google Play Billing for top-ups on Android (15% fee).
+
 ## References
 
 **Academic research**

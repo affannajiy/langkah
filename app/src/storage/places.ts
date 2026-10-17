@@ -102,6 +102,24 @@ export function takeChooseSaved(): SavedKey | null {
   return key;
 }
 
+// Reset demo: the Map tab flies back to Ipoh Railway Station on its next focus. Taken once.
+let mapHomeNext = false;
+export function requestMapHome() {
+  mapHomeNext = true;
+}
+export function takeMapHome(): boolean {
+  const next = mapHomeNext;
+  mapHomeNext = false;
+  return next;
+}
+
+// Reset demo also forgets recent searches, on screen at once.
+const recentListeners = new Set<() => void>();
+export async function clearRecentPlaces(): Promise<void> {
+  await writeJson(RECENT_STORE, []);
+  recentListeners.forEach((l) => l());
+}
+
 export function useSavedPlaces() {
   const current = useSyncExternalStore(subscribeSaved, () => saved);
   useEffect(() => {
@@ -119,8 +137,11 @@ export function useRecentPlaces() {
       if (!alive || !Array.isArray(raw)) return;
       setRecent(raw.map(toPlace).filter((p): p is StoredPlace => p !== null).slice(0, MAX_RECENT));
     });
+    const clear = () => setRecent([]);
+    recentListeners.add(clear);
     return () => {
       alive = false;
+      recentListeners.delete(clear);
     };
   }, []);
 

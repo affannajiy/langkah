@@ -111,7 +111,7 @@
     "waiting_one": "1 report or vote waiting to send",
     "waiting_other": "{{count}} reports or votes waiting to send",
     "demoGuest": "Demo guest",
-    "demoBody": "Demo mode: you can report and vote without signing in. Reports post anonymously.",
+    "demoBody": "Demo account: made-up data. You can report and vote while the demo is on.",
     "stats": {
       "reports_one": "report posted",
       "reports_other": "reports posted",
@@ -138,7 +138,13 @@
     "deleteTitle": "Delete this report?",
     "deleteBody": "It is removed for everyone, with its votes and photo. This cannot be undone.",
     "deleted": "Report deleted.",
-    "deleteFailed": "Could not delete. Check your internet connection and try again."
+    "deleteFailed": "Could not delete. Check your internet connection and try again.",
+    "demoChip": "Demo",
+    "reset": "Reset demo",
+    "resetTitle": "Reset the demo?",
+    "resetBody": "Points, history, reports, votes and ratings go back to the start, and so do Afrina's actions. Recent searches are cleared. Your language stays.",
+    "resetDone": "Demo reset",
+    "resetFailed": "Could not reset the demo. Try again."
   },
   "units": {
     "m": "{{value}} m",
@@ -381,7 +387,8 @@
       "report": "Reports from signed-in walkers help keep fake reports off the map.",
       "vote": "One vote per person keeps the counts honest, so voting needs a sign-in.",
       "queue": "Your reports from the walk are saved on this phone. Sign in to send them.",
-      "me": "Sign in to report hazards, confirm them and upvote improvements."
+      "me": "Sign in to report hazards, confirm them and upvote improvements.",
+      "topup": "Guest points live only on this phone. Sign in before you top up, so your points stay with you if you change phones."
     },
     "privacy": "Reports are anonymous unless you choose to show your first name. We never show your email.",
     "google": "Continue with Google",
@@ -389,8 +396,11 @@
     "error": {
       "no_play_services": "Google Play services is missing or out of date on this phone.",
       "not_configured": "Google sign-in is not set up in this build yet.",
-      "failed": "Could not sign in. Check your internet connection and try again."
-    }
+      "failed": "Could not sign in. Check your internet connection and try again.",
+      "demo": "Could not start the demo. Check your internet connection and try again."
+    },
+    "titleTopup": "Sign in to keep your points safe",
+    "demo": "Try the demo account"
   },
   "report": {
     "back": "Back",
@@ -512,12 +522,6 @@
     "autoNightBody": "From 7:30 pm to 7 am, routes favour lit streets and the map turns dark.",
     "vibration": "Vibration alerts",
     "vibrationBody": "One pulse for a turn, two for a hazard ahead, one long pulse on arrival.",
-    "demo": "Demo mode",
-    "demoSwitch": "Report without signing in",
-    "demoBody": "For the class demo. Guests can report and vote while the Langkah server allows it.",
-    "newGuest": "Start as a new guest",
-    "newGuestBusy": "Starting…",
-    "newGuestDone": "You are now a different guest, so you can confirm your own earlier report.",
     "privacy": "Privacy",
     "privacyLocation": "Location is used on the phone to show where you are and to guide a walk. Langkah never keeps a history of where you walked.",
     "privacyReports": "Reports are anonymous unless you turn that off. Then only your first name from Google is shown. Your email is never shown.",
@@ -547,5 +551,45 @@
     "steps": "In Settings, open Battery (or App launch) for Langkah and allow it to run in the background.",
     "openSettings": "Open Settings",
     "start": "Start walk"
+  },
+  "account": {
+    "headline": "Walk Ipoh safer, and earn points while you do",
+    "body": "Guests can walk, rate walks and earn points. Sign in to report, vote and top up.",
+    "guest": "Continue as guest",
+    "demo": "Try the demo",
+    "demoNote": "Demo uses made-up data. Reset it anytime from Me."
+  },
+  "points": {
+    "title": "Langkah Points",
+    "worth": "About RM{{rm}} in vouchers",
+    "topUp": "Top up",
+    "ad": "Ad +20",
+    "shop": "Shop",
+    "soon": "Coming soon",
+    "checkin": "Daily check-in",
+    "dayOf": "Day {{day}} of 7",
+    "chip": "Day {{day}}, {{points}} points",
+    "empty": "No points yet. Finish a walk or come back tomorrow for your check-in.",
+    "walkEarned_one": "+1 Langkah Point for this walk",
+    "walkEarned_other": "+{{count}} Langkah Points for this walk",
+    "rateBonus": "Rating earns +5 points.",
+    "checkinEarned_one": "+{{count}} point · Daily check-in, day {{day}} of 7",
+    "checkinEarned_other": "+{{count}} points · Daily check-in, day {{day}} of 7"
+  },
+  "ledger": {
+    "walk": "Walk, {{km}} km",
+    "walkTo": "To {{to}}",
+    "confirmedBy": "{{name}} confirmed your report",
+    "confirmed": "Someone confirmed your report",
+    "improvementPhoto": "Improvement report with a photo",
+    "vote": "Hazard vote",
+    "rating": "Rated a walk",
+    "checkin": "Daily check-in, day {{day}}",
+    "ad_one": "Watched an ad",
+    "ad_other": "Watched {{count}} ads",
+    "topup": "Top up via {{via}}",
+    "topupSub": "RM{{rm}} · Ref {{ref}}",
+    "welcome": "Welcome to Langkah",
+    "other": "Points"
   }
 }

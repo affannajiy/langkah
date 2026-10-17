@@ -30,6 +30,7 @@ import {
   type CommunityReport,
   type MyStats,
 } from '../../api/reports';
+import { myWallet, type Wallet } from '../../api/points';
 import { useAuth } from '../../auth/AuthProvider';
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
@@ -39,9 +40,11 @@ import { ReportDetailSheet } from '../../features/community/ReportDetailSheet';
 import { Thumb } from '../../features/community/ReportRow';
 import { StatusChip } from '../../features/community/StatusChip';
 import { categoryKey } from '../../features/report/categoryIcons';
+import { CheckinCard, LedgerCard, PointsCard } from '../../features/points/WalletCards';
 import { pickPhoto } from '../../features/report/pickPhoto';
 import { timeAgo } from '../../i18n/format';
 import { useOnline } from '../../net/useOnline';
+import { usePointsNotice } from '../../points/notice';
 import { requestChooseSaved, SAVED_KEYS, useSavedPlaces, type SavedKey } from '../../storage/places';
 import { queuedCount, subscribeQueue } from '../../storage/reportQueue';
 import { cappedContent } from '../../theme/layout';
@@ -51,15 +54,18 @@ const SAVED_ICONS: Record<SavedKey, LucideIcon> = { home: House, utp: Graduation
 
 type Mine = { status: 'loading' | 'ok' | 'error'; items: CommunityReport[]; more: boolean };
 
-// Me (guide Section 5.2, screen 17): account, contribution stats, saved places and
-// the user's own reports with their status. Settings opens from the top right.
+// Me (guide Section 5.2, screen 17; Section 15 and docs/screens/Wallet.png for the
+// wallet): account, Langkah Points, contribution stats, saved places and the user's
+// own reports with their status. Settings opens from the top right.
 export default function MeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const online = useOnline();
   const snackbar = useSnackbar();
-  const { ready, hasSession, isFull, canWrite, name, demo, requireSignIn, signOut } = useAuth();
+  const { ready, hasSession, isFull, canWrite, name, demo, requireSignIn, signOut, resetDemo } = useAuth();
+  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [resetting, setResetting] = useState(false);
   const { saved, setPlace } = useSavedPlaces();
   const [waiting, setWaiting] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -82,9 +88,14 @@ export default function MeScreen() {
     // No session at all (guest sign-in failed): nothing of yours to load, which is not a network error.
     if (!hasSession) {
       setStats(null);
+      setWallet(null);
       setMine({ status: 'ok', items: [], more: false });
       return;
     }
+    // The wallet loads on its own, so a slow report list never hides the points.
+    myWallet()
+      .then(setWallet)
+      .catch((error: unknown) => console.warn('Could not load the wallet', error));
     try {
       const [s, items] = await Promise.all([myStats(), myReports(0)]);
       setStats(s);
@@ -99,8 +110,40 @@ export default function MeScreen() {
   useFocusEffect(
     useCallback(() => {
       void load();
-    }, [load, canWrite, isFull]),
+    }, [load, canWrite, isFull, demo.isDemo]),
   );
+
+  // Points that arrive on their own (daily check-in) show at once.
+  const reloadWallet = useCallback(() => {
+    myWallet()
+      .then(setWallet)
+      .catch(() => undefined);
+  }, []);
+  usePointsNotice(reloadWallet);
+
+  // Top up, ads and the shop arrive in Phase 11. A guest is asked to sign in first.
+  async function topUp() {
+    if (!isFull && !demo.isDemo && !(await requireSignIn('topup'))) return;
+    snackbar.show({ text: t('points.soon') });
+  }
+
+  // Cannot be undone, so a dialog (guide Section 5.3).
+  function confirmReset() {
+    Alert.alert(t('me.resetTitle'), t('me.resetBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('me.reset'),
+        style: 'destructive',
+        onPress: async () => {
+          setResetting(true);
+          const ok = await resetDemo();
+          setResetting(false);
+          snackbar.show({ text: ok ? t('me.resetDone') : t('me.resetFailed') });
+          if (ok) await load();
+        },
+      },
+    ]);
+  }
 
   async function loadMore() {
     const m = mineRef.current;
@@ -187,8 +230,9 @@ export default function MeScreen() {
     ]);
   }
 
-  const accountTitle = isFull ? (name ? t('me.signedInAs', { name }) : t('me.signedIn')) : demo.on ? t('me.demoGuest') : t('me.guest');
-  const accountBody = isFull ? t('me.signedInBody') : demo.on ? t('me.demoBody') : t('me.guestBody');
+  const demoName = demo.isDemo ? (wallet?.name ?? t('me.demoGuest')) : null;
+  const accountTitle = isFull ? (name ? t('me.signedInAs', { name }) : t('me.signedIn')) : demoName ?? t('me.guest');
+  const accountBody = isFull ? t('me.signedInBody') : demo.isDemo ? (wallet?.code ?? t('me.demoBody')) : t('me.guestBody');
 
   return (
     <View style={[styles.root, { paddingTop: insets.top + spacing.md }]}>
@@ -214,10 +258,10 @@ export default function MeScreen() {
 
         <View style={styles.card}>
           <View style={styles.row}>
-            <View style={[styles.icon, { backgroundColor: isFull ? colors.safeSoft : demo.on ? colors.interactiveSoft : colors.neutralBadge }]}>
+            <View style={[styles.icon, { backgroundColor: isFull ? colors.safeSoft : demo.isDemo ? colors.interactiveSoft : colors.neutralBadge }]}>
               {isFull ? (
                 <ShieldCheck size={28} color={colors.safeText} />
-              ) : demo.on ? (
+              ) : demo.isDemo ? (
                 <FlaskConical size={28} color={colors.interactiveText} />
               ) : (
                 <UserRound size={28} color={colors.textMuted} />
@@ -231,6 +275,13 @@ export default function MeScreen() {
                 {accountBody}
               </AppText>
             </View>
+            {demo.isDemo && (
+              <View style={styles.demoChip}>
+                <AppText variant="label" color={colors.hazardText}>
+                  {t('me.demoChip')}
+                </AppText>
+              </View>
+            )}
           </View>
 
           {waiting > 0 && (
@@ -254,9 +305,38 @@ export default function MeScreen() {
               }}
             />
           ) : (
-            !demo.on && <Button label={t('me.signIn')} onPress={() => void requireSignIn('me')} />
+            <Button label={t('me.signIn')} onPress={() => void requireSignIn('me')} />
           )}
         </View>
+
+        {wallet && (
+          <>
+            <PointsCard
+              wallet={wallet}
+              onTopUp={() => void topUp()}
+              onAd={() => snackbar.show({ text: t('points.soon') })}
+              onShop={() => snackbar.show({ text: t('points.soon') })}
+            />
+            <CheckinCard day={wallet.checkin.day} />
+            <LedgerCard lines={wallet.lines} />
+            {demo.isDemo && (
+              <Pressable
+                accessibilityRole="button"
+                disabled={resetting}
+                onPress={confirmReset}
+                style={({ pressed }) => [styles.resetLink, pressed && styles.pressed]}
+              >
+                {resetting ? (
+                  <ActivityIndicator color={colors.interactiveText} />
+                ) : (
+                  <AppText variant="bodyStrong" color={colors.interactiveText} style={styles.underline}>
+                    {t('me.reset')}
+                  </AppText>
+                )}
+              </Pressable>
+            )}
+          </>
+        )}
 
         {stats && (canWrite || stats.reports + stats.votes > 0) && (
           <View style={[styles.card, styles.stats]}>
@@ -392,6 +472,9 @@ function Stat({ value, label }: { value: number; label: string }) {
 }
 
 const styles = StyleSheet.create({
+  demoChip: { backgroundColor: colors.hazardSoft, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
+  resetLink: { minHeight: touchTarget, alignItems: 'center', justifyContent: 'center' },
+  underline: { textDecorationLine: 'underline' },
   root: { flex: 1, backgroundColor: colors.surface },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.md },
   bigTitle: { fontSize: 32, lineHeight: 40 },

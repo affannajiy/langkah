@@ -3,6 +3,7 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
 import { colors } from '../theme/theme';
+import { metres } from './geo';
 
 // Location during an active walk only (guide Section 5.2, screen 8).
 // A foreground service with a visible notification keeps fixes coming when the
@@ -32,8 +33,38 @@ function toFix(l: Location.LocationObject): Fix {
   };
 }
 
+// GPS distance for walk points (guide Section 15): the sum of steps between fixes.
+// Fixes worse than 30 m and jumps faster than running (4 m/s) are left out.
+// Only the total leaves the phone, never the track.
+const MAX_ACCURACY_M = 30;
+const MAX_SPEED_MS = 4;
+let gpsM = 0;
+let lastGood: Fix | null = null;
+
+function measure(fix: Fix) {
+  if (fix.accuracy !== null && fix.accuracy > MAX_ACCURACY_M) return;
+  if (lastGood) {
+    const dt = (fix.time - lastGood.time) / 1000;
+    if (dt <= 0) return;
+    const step = metres(lastGood.lngLat, fix.lngLat);
+    if (step / dt > MAX_SPEED_MS) return; // a jump: keep the old point
+    gpsM += step;
+  }
+  lastGood = fix;
+}
+
+export function resetGpsDistance() {
+  gpsM = 0;
+  lastGood = null;
+}
+
+export function gpsDistance(): number {
+  return gpsM;
+}
+
 function emit(l: Location.LocationObject) {
   const fix = toFix(l);
+  measure(fix);
   listeners.forEach((fn) => fn(fix));
 }
 

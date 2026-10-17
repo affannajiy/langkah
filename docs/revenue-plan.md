@@ -1,6 +1,6 @@
 # Revenue plan and Phases 10 to 13
 
-Planned, not built yet. Decided on 2026-10-17 and revised the same day (one coin, mock top-up, demo account, parody ads). Before Phase 10 code starts, this plan needs a section in `Langkah Tech Stack.md`, because the guide does not cover money yet.
+Decided on 2026-10-17 and revised the same day (one coin, mock top-up, demo account, parody ads). The rules the code follows are in Section 15 of `Langkah Tech Stack.md`. Phase 10 is built; Phases 11 to 13 are planned.
 
 ## Why not a monthly fee
 

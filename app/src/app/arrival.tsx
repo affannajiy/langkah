@@ -1,11 +1,12 @@
 import { Redirect, useRouter } from 'expo-router';
-import { Check } from 'lucide-react-native';
+import { Check, CircleParking } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import { walkFinish } from '../api/points';
 import { rateWalk } from '../api/reports';
 import { AppText } from '../components/AppText';
 import { formatDistance, minutes } from '../i18n/format';
@@ -73,7 +74,22 @@ function ArrivalView({ arrival: a }: { arrival: Arrival }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [rating, setRating] = useState<Rating | null>(null);
+  const [points, setPoints] = useState<number | null>(null);
   const left = useRef(false);
+  // Walk points (guide Section 15): sent once, as soon as the screen opens.
+  const finished = useRef<Promise<string | null> | null>(null);
+  useEffect(() => {
+    if (finished.current) return;
+    finished.current = walkFinish(a.gpsM, a.durationS, a.to.name)
+      .then((r) => {
+        setPoints(r.points);
+        return r.walk;
+      })
+      .catch((error: unknown) => {
+        console.warn('Could not send the finished walk', error);
+        return null;
+      });
+  }, [a]);
 
   // The rating is sent once, when the user leaves this screen. Optional, so a
   // failure (offline) is only logged.
@@ -82,9 +98,9 @@ function ArrivalView({ arrival: a }: { arrival: Arrival }) {
       if (left.current) return;
       left.current = true;
       if (rating) {
-        rateWalk({ rating, mode: a.mode, kind: a.kind, score: a.score, distanceM: a.walkedM }).catch((error: unknown) =>
-          console.warn('Could not send the walk rating', error),
-        );
+        void finished.current
+          ?.then((walk) => rateWalk({ rating, mode: a.mode, kind: a.kind, score: a.score, distanceM: a.walkedM, walk }))
+          .catch((error: unknown) => console.warn('Could not send the walk rating', error));
       }
       if (then === 'report') setReportAfterWalk({ at: a.to.lngLat, trail: a.trail });
       setArrival(null);
@@ -139,6 +155,15 @@ function ArrivalView({ arrival: a }: { arrival: Arrival }) {
           />
         </View>
 
+        {points !== null && points > 0 && (
+          <View style={[styles.card, styles.points]} accessibilityLiveRegion="polite">
+            <CircleParking size={26} color={colors.interactiveText} />
+            <AppText variant="bodyStrong" color={colors.text} style={styles.flex}>
+              {t('points.walkEarned', { count: points })}
+            </AppText>
+          </View>
+        )}
+
         <View style={[styles.card, styles.rate]}>
           <AppText variant="heading" color={colors.navy} style={styles.center} accessibilityRole="header">
             {t('arrival.rateTitle')}
@@ -164,7 +189,7 @@ function ArrivalView({ arrival: a }: { arrival: Arrival }) {
             })}
           </View>
           <AppText variant="caption" color={colors.textMuted} style={styles.center}>
-            {t('arrival.rateNote')}
+            {t('arrival.rateNote')} {t('points.rateBonus')}
           </AppText>
         </View>
       </ScrollView>
@@ -217,6 +242,8 @@ const styles = StyleSheet.create({
   statValue: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   divider: { width: 1, backgroundColor: colors.border, marginVertical: spacing.xs },
   rate: { padding: spacing.md, gap: spacing.md },
+  points: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md },
+  flex: { flex: 1 },
   faces: { flexDirection: 'row', justifyContent: 'space-between' },
   face: {
     flex: 1,

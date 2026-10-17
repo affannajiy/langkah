@@ -277,12 +277,15 @@ export async function rateWalk(r: {
   kind: 'safest' | 'fastest';
   score: number;
   distanceM: number;
-}): Promise<void> {
-  await rpc('rate_walk', {
+  walk: string | null; // from walk_finish; +5 points once per walk
+}): Promise<number> {
+  const points = await rpc('rate_walk', {
     p_rating: r.rating,
     p_mode: r.mode,
     p_kind: r.kind,
     p_score: Math.round(Math.min(100, Math.max(0, r.score))),
     p_distance: Math.round(Math.min(50000, Math.max(0, r.distanceM))),
+    p_walk: r.walk,
   });
+  return n0(points);
 }

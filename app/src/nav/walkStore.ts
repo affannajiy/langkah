@@ -2,6 +2,7 @@ import type { LngLat } from '@maplibre/maplibre-react-native';
 
 import type { Route, ScoringMode } from '../api/types';
 import type { RouteKind } from '../map/RouteLayers';
+import { resetGpsDistance } from './walkLocation';
 
 // The walk the user just started, handed from route compare to the walking screen,
 // and its result, handed on to the Arrival screen. Routes are too big for URL
@@ -20,6 +21,7 @@ export type Walk = {
 export type Arrival = {
   to: { name: string; lngLat: LngLat };
   walkedM: number;
+  gpsM: number; // measured from GPS fixes, sent for walk points
   durationS: number;
   // Hazards on the fastest route that the chosen route left out. Null when there was
   // nothing to compare with; the screen then shows the hazards it warned about.
@@ -35,6 +37,8 @@ let current: Walk | null = null;
 let arrival: Arrival | null = null;
 
 export function setWalk(walk: Walk | null) {
+  // A new walk measures its GPS distance from zero (walk points).
+  if (walk) resetGpsDistance();
   current = walk;
 }
 

@@ -11,6 +11,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '../auth/AuthProvider';
 import { LoadingScreen } from '../components/LoadingScreen';
+import { PointsSnackbar } from '../points/PointsSnackbar';
 import { colors } from '../theme/theme';
 
 // Keep the native splash (mark on navy) until our JS loading screen is drawn,
@@ -30,6 +31,7 @@ export default function RootLayout() {
         <AuthProvider>
           {/* Tabs, plus the walking screen on top of them without the tab bar. */}
           <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />
+          <PointsSnackbar />
         </AuthProvider>
         {loading && <LoadingScreen onLayout={hideNativeSplash} onDone={finishLoading} />}
       </View>

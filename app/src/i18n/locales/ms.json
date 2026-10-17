@@ -111,7 +111,7 @@
     "waiting_one": "{{count}} laporan atau undian menunggu untuk dihantar",
     "waiting_other": "{{count}} laporan atau undian menunggu untuk dihantar",
     "demoGuest": "Tetamu demo",
-    "demoBody": "Mod demo: anda boleh melapor dan mengundi tanpa log masuk. Laporan dihantar tanpa nama.",
+    "demoBody": "Akaun demo: data rekaan. Anda boleh melapor dan mengundi selagi demo dihidupkan.",
     "stats": {
       "reports_one": "laporan dihantar",
       "reports_other": "laporan dihantar",
@@ -138,7 +138,13 @@
     "deleteTitle": "Padam laporan ini?",
     "deleteBody": "Laporan ini dibuang untuk semua orang, bersama undian dan fotonya. Tindakan ini tidak boleh dibuat asal.",
     "deleted": "Laporan dipadam.",
-    "deleteFailed": "Tidak dapat dipadam. Semak sambungan internet anda dan cuba lagi."
+    "deleteFailed": "Tidak dapat dipadam. Semak sambungan internet anda dan cuba lagi.",
+    "demoChip": "Demo",
+    "reset": "Set semula demo",
+    "resetTitle": "Set semula demo?",
+    "resetBody": "Mata, sejarah, laporan, undian dan penilaian kembali ke permulaan, begitu juga tindakan Afrina. Carian terkini dipadam. Bahasa anda kekal.",
+    "resetDone": "Demo telah diset semula",
+    "resetFailed": "Tidak dapat set semula demo. Cuba lagi."
   },
   "units": {
     "m": "{{value}} m",
@@ -381,7 +387,8 @@
       "report": "Laporan daripada pejalan yang log masuk membantu menjauhkan laporan palsu dari peta.",
       "vote": "Satu undian bagi setiap orang memastikan kiraan jujur, jadi mengundi perlu log masuk.",
       "queue": "Laporan anda semasa berjalan disimpan dalam telefon ini. Log masuk untuk menghantarnya.",
-      "me": "Log masuk untuk melaporkan bahaya, mengesahkannya dan menyokong cadangan penambahbaikan."
+      "me": "Log masuk untuk melaporkan bahaya, mengesahkannya dan menyokong cadangan penambahbaikan.",
+      "topup": "Mata tetamu hanya disimpan dalam telefon ini. Log masuk sebelum tambah nilai, supaya mata anda kekal jika anda menukar telefon."
     },
     "privacy": "Laporan adalah tanpa nama melainkan anda memilih untuk menunjukkan nama pertama anda. E-mel anda tidak pernah ditunjukkan.",
     "google": "Teruskan dengan Google",
@@ -389,8 +396,11 @@
     "error": {
       "no_play_services": "Perkhidmatan Google Play tiada atau perlu dikemas kini pada telefon ini.",
       "not_configured": "Log masuk Google belum disediakan dalam binaan ini.",
-      "failed": "Tidak dapat log masuk. Semak sambungan internet anda dan cuba lagi."
-    }
+      "failed": "Tidak dapat log masuk. Semak sambungan internet anda dan cuba lagi.",
+      "demo": "Tidak dapat memulakan demo. Semak sambungan internet anda dan cuba lagi."
+    },
+    "titleTopup": "Log masuk supaya mata anda selamat",
+    "demo": "Cuba akaun demo"
   },
   "report": {
     "back": "Kembali",
@@ -512,12 +522,6 @@
     "autoNightBody": "Dari 7:30 malam hingga 7 pagi, laluan mengutamakan jalan yang terang dan peta bertukar gelap.",
     "vibration": "Getaran amaran",
     "vibrationBody": "Satu getaran untuk belokan, dua untuk bahaya di hadapan, satu getaran panjang apabila tiba.",
-    "demo": "Mod demo",
-    "demoSwitch": "Lapor tanpa log masuk",
-    "demoBody": "Untuk demo kelas. Tetamu boleh melapor dan mengundi selagi pelayan Langkah membenarkannya.",
-    "newGuest": "Mula sebagai tetamu baharu",
-    "newGuestBusy": "Sedang bermula…",
-    "newGuestDone": "Anda kini tetamu lain, jadi anda boleh mengesahkan laporan anda yang tadi.",
     "privacy": "Privasi",
     "privacyLocation": "Lokasi digunakan dalam telefon untuk menunjukkan kedudukan anda dan memandu perjalanan. Langkah tidak pernah menyimpan sejarah tempat anda berjalan.",
     "privacyReports": "Laporan adalah tanpa nama melainkan anda mematikannya. Jika begitu, hanya nama pertama anda daripada Google ditunjukkan. E-mel anda tidak pernah ditunjukkan.",
@@ -547,5 +551,45 @@
     "steps": "Dalam Tetapan, buka Bateri (atau Pelancaran aplikasi) untuk Langkah dan benarkan ia berjalan di latar belakang.",
     "openSettings": "Buka Tetapan",
     "start": "Mula berjalan"
+  },
+  "account": {
+    "headline": "Berjalan di Ipoh dengan lebih selamat, dan kumpul mata sambil berjalan",
+    "body": "Tetamu boleh berjalan, menilai perjalanan dan mengumpul mata. Log masuk untuk melapor, mengundi dan tambah nilai.",
+    "guest": "Teruskan sebagai tetamu",
+    "demo": "Cuba demo",
+    "demoNote": "Demo menggunakan data rekaan. Set semula bila-bila masa dari Saya."
+  },
+  "points": {
+    "title": "Mata Langkah",
+    "worth": "Kira-kira RM{{rm}} dalam baucar",
+    "topUp": "Tambah nilai",
+    "ad": "Iklan +20",
+    "shop": "Kedai",
+    "soon": "Akan datang",
+    "checkin": "Daftar masuk harian",
+    "dayOf": "Hari {{day}} daripada 7",
+    "chip": "Hari {{day}}, {{points}} mata",
+    "empty": "Belum ada mata. Habiskan satu perjalanan atau kembali esok untuk daftar masuk.",
+    "walkEarned_one": "+1 Mata Langkah untuk perjalanan ini",
+    "walkEarned_other": "+{{count}} Mata Langkah untuk perjalanan ini",
+    "rateBonus": "Penilaian memberi +5 mata.",
+    "checkinEarned_one": "+{{count}} mata · Daftar masuk harian, hari {{day}} daripada 7",
+    "checkinEarned_other": "+{{count}} mata · Daftar masuk harian, hari {{day}} daripada 7"
+  },
+  "ledger": {
+    "walk": "Berjalan, {{km}} km",
+    "walkTo": "Ke {{to}}",
+    "confirmedBy": "{{name}} mengesahkan laporan anda",
+    "confirmed": "Seseorang mengesahkan laporan anda",
+    "improvementPhoto": "Laporan penambahbaikan dengan foto",
+    "vote": "Undian bahaya",
+    "rating": "Menilai perjalanan",
+    "checkin": "Daftar masuk harian, hari {{day}}",
+    "ad_one": "Menonton iklan",
+    "ad_other": "Menonton {{count}} iklan",
+    "topup": "Tambah nilai melalui {{via}}",
+    "topupSub": "RM{{rm}} · Rujukan {{ref}}",
+    "welcome": "Selamat datang ke Langkah",
+    "other": "Mata"
   }
 }

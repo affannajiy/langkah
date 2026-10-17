@@ -2,7 +2,8 @@
 Langkah - demo reports for testing navigation and Community
 ===========================================================
 
-Adds, owned by one demo account:
+Adds Afrina (demo), who confirms hazards posted by "Try the demo" accounts
+(Phase 10), and, owned by one demo account:
 - three active hazards on the demo walk from Ipoh Railway Station to Concubine
   Lane (Phase 4: hazard banners, routing around hazards),
 - one pending hazard and three improvement requests with upvotes from three demo
@@ -40,6 +41,9 @@ DEMO_USER = "6c616e67-6b61-4864-8065-6d6f00000001"
 DEMO_EMAIL = "demo@langkah.invalid"
 # Three demo voters, so improvements have upvotes from someone other than the reporter.
 DEMO_VOTERS = [f"6c616e67-6b61-4864-8065-6d6f0000000{i}" for i in (2, 3, 4)]
+# Afrina (demo): confirms the demo account's hazards, so points arrive on one phone
+# (Phase 10). The id is fixed in migration 12 (demo_afrina()).
+AFRINA = "6c616e67-6b61-4864-8065-6d6f00000005"
 
 # The demo walk (both ends are search results, so testers can pick them in the app).
 WALK_FROM = (101.07344, 4.59737)  # Ipoh Railway Station
@@ -185,7 +189,7 @@ def upload_photos(storage):
 
 def clear(conn, storage):
     # Deleting the accounts removes their reports and votes too (on delete cascade).
-    n = conn.execute("delete from auth.users where id = any(%s)", ([DEMO_USER, *DEMO_VOTERS],)).rowcount
+    n = conn.execute("delete from auth.users where id = any(%s)", ([DEMO_USER, *DEMO_VOTERS, AFRINA],)).rowcount
     print(f"Removed {n} demo accounts and everything they posted.")
     if storage:
         storage.remove([PHOTO_PREFIX + f for f in all_photos()])
@@ -223,6 +227,14 @@ def seed(conn, photos):
     add_account(conn, DEMO_USER, DEMO_EMAIL, "Langkah demo")
     for i, voter in enumerate(DEMO_VOTERS, start=1):
         add_account(conn, voter, f"voter{i}@langkah.invalid", f"Demo voter {i}")
+    add_account(conn, AFRINA, "afrina@langkah.invalid", "Afrina (demo)")
+    conn.execute(
+        """
+        insert into public.profiles (id, display_name) values (%s, 'Afrina')
+        on conflict (id) do update set display_name = excluded.display_name
+        """,
+        (AFRINA,),
+    )
     # Votes by the demo voters on other reports go too, so a rerun starts clean.
     conn.execute("delete from public.report_votes where user_id = any(%s)", (DEMO_VOTERS,))
     conn.execute("delete from public.reports where user_id = %s", (DEMO_USER,))

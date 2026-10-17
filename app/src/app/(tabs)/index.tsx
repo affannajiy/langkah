@@ -37,13 +37,15 @@ import { useScoringMode } from '../../map/useScoringMode';
 import { tabBarStyles, useTabBarStyle } from '../../navigation/tabBar';
 import { useOnline } from '../../net/useOnline';
 import { useRoutes } from '../../route/useRoutes';
-import { takeChooseSaved, useRecentPlaces, useSavedPlaces, type SavedKey, type StoredPlace } from '../../storage/places';
+import { takeChooseSaved, takeMapHome, useRecentPlaces, useSavedPlaces, type SavedKey, type StoredPlace } from '../../storage/places';
 import { flushQueue, queuedCount } from '../../storage/reportQueue';
 import { updateSettings, useSettings } from '../../storage/settings';
 import { useSideInset } from '../../theme/layout';
 import { chromeTextScale, colors, radius, shadow, spacing } from '../../theme/theme';
 
 const RECENTRE_ZOOM = 16;
+// Reset demo puts the map back here (the demo walk starts at the station).
+const IPOH_STATION: [number, number] = [101.07344, 4.59737];
 const PIN_ZOOM = 18;
 const PIN_FRAME_DELAY_MS = 250;
 const PIN_SIZE = 44;
@@ -441,6 +443,13 @@ export default function MapScreen() {
       if (after) {
         setTrip(null);
         openReport(after.at, after.trail);
+        return;
+      }
+      if (takeMapHome()) {
+        setTrip(null);
+        setLayersOpen(false);
+        setScreen({ kind: 'home' });
+        cameraRef.current?.flyTo({ center: IPOH_STATION, zoom: RECENTRE_ZOOM, padding: NO_PADDING, duration: 800 });
         return;
       }
       const key = takeChooseSaved();

@@ -1,15 +1,12 @@
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAuth } from '../auth/AuthProvider';
 import { AppText } from '../components/AppText';
-import { Button } from '../components/Button';
-import { Snackbar, useSnackbar } from '../components/Snackbar';
 import i18n, { setLanguage } from '../i18n';
 import { updateSettings, useSettings, type Language, type LayerToggles } from '../storage/settings';
 import { cappedContent } from '../theme/layout';
@@ -18,15 +15,13 @@ import { colors, radius, spacing, touchTarget } from '../theme/theme';
 const OSM_COPYRIGHT = 'https://www.openstreetmap.org/copyright';
 
 // Settings (guide Section 5.2, screen 18): language, automatic day and night, alert
-// vibration, map layers, demo mode, privacy notice and credits.
+// vibration, map layers, privacy notice and credits. The demo now lives in the
+// welcome screen and the Me tab (Phase 10).
 export default function SettingsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const settings = useSettings();
-  const { demo, setDemo, newGuest } = useAuth();
-  const snackbar = useSnackbar();
-  const [switching, setSwitching] = useState(false);
   const language: Language = i18n.language === 'ms' ? 'ms' : 'en';
 
   const layerRows: { key: keyof LayerToggles; label: string }[] = [
@@ -97,25 +92,6 @@ export default function SettingsScreen() {
           </AppText>
         </Section>
 
-        {demo.available && (
-          <Section title={t('settings.demo')}>
-            <SwitchRow label={t('settings.demoSwitch')} body={t('settings.demoBody')} value={settings.demoMode} onChange={setDemo} />
-            {demo.on && (
-              <Button
-                kind="secondary"
-                label={switching ? t('settings.newGuestBusy') : t('settings.newGuest')}
-                onPress={async () => {
-                  if (switching) return;
-                  setSwitching(true);
-                  await newGuest();
-                  setSwitching(false);
-                  snackbar.show({ text: t('settings.newGuestDone') });
-                }}
-              />
-            )}
-          </Section>
-        )}
-
         <Section title={t('settings.privacy')}>
           <AppText color={colors.text}>{t('settings.privacyLocation')}</AppText>
           <AppText color={colors.text}>{t('settings.privacyReports')}</AppText>
@@ -135,7 +111,6 @@ export default function SettingsScreen() {
         </Section>
       </ScrollView>
 
-      <Snackbar message={snackbar.message} onHide={snackbar.hide} bottom={insets.bottom + spacing.md} />
     </View>
   );
 }

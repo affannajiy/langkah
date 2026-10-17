@@ -25,6 +25,7 @@ import { useOnline } from '../net/useOnline';
 import { bearingAt, makeTrack } from '../nav/geo';
 import { useWalk } from '../nav/useWalk';
 import { getWalk, setArrival, setWalk, type Walk } from '../nav/walkStore';
+import { gpsDistance } from '../nav/walkLocation';
 import { queueReport, queueVote } from '../storage/reportQueue';
 import { useSideInset } from '../theme/layout';
 import { chromeTextScale, colors, shadow, spacing, touchTarget } from '../theme/theme';
@@ -88,6 +89,7 @@ function WalkScreen({ walk }: { walk: Walk }) {
     setArrival({
       to: walk.to,
       walkedM: summary.walkedM,
+      gpsM: gpsDistance(),
       durationS: Math.max(60, (Date.now() - walk.startedAt) / 1000),
       avoided: walk.fastestHazards === null ? null : Math.max(0, walk.fastestHazards - walked.stats.hz),
       warned: summary.warned,

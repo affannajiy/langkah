@@ -14,7 +14,6 @@ export type Settings = {
   autoNight: boolean; // night scoring and the dark map after 19:30
   vibration: boolean; // turn, hazard and arrival pulses
   layers: LayerToggles;
-  demoMode: boolean; // only has an effect while the server allows demo writes
   onboarded: boolean;
   locationAsked: boolean; // the map asks for location by itself only once
   batteryTipSeen: boolean; // the keep-running tip before a first walk, on some brands
@@ -27,7 +26,6 @@ export const DEFAULT_SETTINGS: Settings = {
   autoNight: true,
   vibration: true,
   layers: { crossings: true, busStops: true, shelters: true },
-  demoMode: false,
   onboarded: false,
   locationAsked: false,
   batteryTipSeen: false,
@@ -53,7 +51,6 @@ function parse(raw: unknown): Settings {
       busStops: bool(l.busStops, d.layers.busStops),
       shelters: bool(l.shelters, d.layers.shelters),
     },
-    demoMode: bool(r.demoMode, d.demoMode),
     onboarded: bool(r.onboarded, d.onboarded),
     locationAsked: bool(r.locationAsked, d.locationAsked),
     batteryTipSeen: bool(r.batteryTipSeen, d.batteryTipSeen),
