@@ -7,7 +7,7 @@ import { Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
-import i18n, { setLanguage } from '../i18n';
+import i18n, { ENGLISH_ONLY, setLanguage } from '../i18n';
 import { updateSettings, useSettings, type Language, type LayerToggles } from '../storage/settings';
 import { cappedContent } from '../theme/layout';
 import { colors, radius, spacing, touchTarget } from '../theme/theme';
@@ -42,26 +42,28 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xxl }]}>
-        <Section title={t('settings.language')}>
-          <View style={styles.choices} accessibilityRole="radiogroup">
-            {(['en', 'ms'] as const).map((code) => {
-              const on = language === code;
-              return (
-                <Pressable
-                  key={code}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: on }}
-                  onPress={() => setLanguage(code)}
-                  style={[styles.choice, on && styles.choiceOn]}
-                >
-                  <AppText variant="bodyStrong" color={on ? colors.navy : colors.text}>
-                    {t('settings.langName', { lng: code })}
-                  </AppText>
-                </Pressable>
-              );
-            })}
-          </View>
-        </Section>
+        {!ENGLISH_ONLY && (
+          <Section title={t('settings.language')}>
+            <View style={styles.choices} accessibilityRole="radiogroup">
+              {(['en', 'ms'] as const).map((code) => {
+                const on = language === code;
+                return (
+                  <Pressable
+                    key={code}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: on }}
+                    onPress={() => setLanguage(code)}
+                    style={[styles.choice, on && styles.choiceOn]}
+                  >
+                    <AppText variant="bodyStrong" color={on ? colors.navy : colors.text}>
+                      {t('settings.langName', { lng: code })}
+                    </AppText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Section>
+        )}
 
         <Section title={t('settings.walking')}>
           <SwitchRow

@@ -180,7 +180,7 @@ Built as planned, with these choices: each voucher in the shop links 1:1 to a `p
   - ranked improvement requests, with photos, CSV and GeoJSON download
   - a hazard heatmap for 30, 90 or 365 days, expired hazards included
   - 12-week trends and the most common report types
-  - Bahasa Melayu first, with an English switch
+  - English only for the prototype (the Bahasa Melayu strings stay in `strings.js`)
 - No names or user ids, the same as the app export.
 - **Hosting:** a static page on GitHub Pages (RM0), deployed by `.github/workflows/council-pages.yml`. It calls one function, `council_data` (migration 15). Setup steps are in the README.
 - **Sample data:** `seed_demo.py --council-stats` adds about 150 backdated reports so the trends are not empty for the pitch.

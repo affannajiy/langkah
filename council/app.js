@@ -18,7 +18,9 @@
     set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* private window */ } },
   };
 
-  let lang = store.get('langkah.council.lang') === 'en' ? 'en' : 'ms';
+  // English only for the prototype (owner's call, 2026-10-17); strings.js keeps ms.
+  const ENGLISH_ONLY = true;
+  let lang = ENGLISH_ONLY || store.get('langkah.council.lang') === 'en' ? 'en' : 'ms';
   let days = [30, 90, 365].includes(Number(store.get('langkah.council.days'))) ? Number(store.get('langkah.council.days')) : 90;
   let data = null;
   let shown = PAGE;
@@ -89,6 +91,7 @@
     document.title = t('title');
     document.querySelectorAll('[data-t]').forEach((n) => { n.textContent = t(n.dataset.t); });
     const lb = $('lang');
+    lb.hidden = ENGLISH_ONLY;
     lb.textContent = t('lang');
     lb.setAttribute('aria-label', t('langLabel'));
     lb.lang = lang === 'ms' ? 'en' : 'ms';

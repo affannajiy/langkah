@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth, type SignInResult } from '../auth/AuthProvider';
 import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
-import { setLanguage } from '../i18n';
+import { ENGLISH_ONLY, setLanguage } from '../i18n';
 import { updateSettings, type Language } from '../storage/settings';
 import { cappedContent } from '../theme/layout';
 import { colors, radius, spacing, touchTarget } from '../theme/theme';
@@ -25,19 +25,21 @@ export default function WelcomeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  // English only: skip the language step and start at how to start.
+  const firstStep = ENGLISH_ONLY ? 2 : 1;
+  const [step, setStep] = useState<1 | 2 | 3>(firstStep);
   const [asking, setAsking] = useState(false);
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (step > 1) {
+      if (step > firstStep) {
         setStep(step === 3 ? 2 : 1);
         return true;
       }
       return false; // leave the app, as on any first screen
     });
     return () => sub.remove();
-  }, [step]);
+  }, [step, firstStep]);
 
   function pick(language: Language) {
     setLanguage(language);
@@ -79,8 +81,8 @@ export default function WelcomeScreen() {
         ) : (
           <View style={styles.back} />
         )}
-        <View style={styles.dots} accessible accessibilityLabel={t('welcome.stepOf', { step })}>
-          <View style={[styles.dot, styles.dotOn]} />
+        <View style={styles.dots} accessible accessibilityLabel={t('welcome.stepOf', { step: step - firstStep + 1 })}>
+          {!ENGLISH_ONLY && <View style={[styles.dot, styles.dotOn]} />}
           <View style={[styles.dot, step >= 2 && styles.dotOn]} />
           <View style={[styles.dot, step === 3 && styles.dotOn]} />
         </View>
