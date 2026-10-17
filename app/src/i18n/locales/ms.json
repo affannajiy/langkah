@@ -376,6 +376,7 @@
   },
   "signIn": {
     "title": "Log masuk supaya orang lain boleh percaya laporan anda",
+    "titleVote": "Log masuk supaya undian anda dikira",
     "body": {
       "report": "Laporan daripada pejalan yang log masuk membantu menjauhkan laporan palsu dari peta.",
       "vote": "Satu undian bagi setiap orang memastikan kiraan jujur, jadi mengundi perlu log masuk.",

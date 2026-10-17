@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Animated,
   FlatList,
+  Keyboard,
   PanResponder,
   Pressable,
   StyleSheet,
@@ -63,6 +64,9 @@ export function SearchSheet({ purpose, near, saved, recent, onPick, onPickSaved,
   const [results, setResults] = useState<Results>({ status: 'idle' });
   const [attempt, setAttempt] = useState(0);
   const dragY = useRef(new Animated.Value(0)).current;
+
+  // Android keeps the keyboard up when the focused field unmounts, covering the route cards.
+  useEffect(() => () => Keyboard.dismiss(), []);
 
   // Debounced search; a newer query cancels the older request.
   const nearKey = near ? `${near[0].toFixed(4)},${near[1].toFixed(4)}` : '';

@@ -27,7 +27,8 @@ export const CommunityPins = memo(function CommunityPins({ items, onPress }: Pro
   return (
     <>
       {items.map((r) => (
-        <Marker key={r.id} lngLat={r.lngLat} anchor="center">
+        // On Android a tap reaches the Marker, not the Pressable inside it; the Pressable stays for TalkBack.
+        <Marker key={r.id} lngLat={r.lngLat} anchor="center" onPress={() => onPress(r)}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`${t(categoryKey(r.kind, r.category))}, ${t(`community.status.${r.status}`)}`}

@@ -45,6 +45,7 @@ import { chromeTextScale, colors, radius, shadow, spacing } from '../../theme/th
 
 const RECENTRE_ZOOM = 16;
 const PIN_ZOOM = 18;
+const PIN_FRAME_DELAY_MS = 250;
 const PIN_SIZE = 44;
 const STREET_DELAY_MS = 400;
 const OUTSIDE_BANNER_MS = 6000;
@@ -378,16 +379,20 @@ export default function MapScreen() {
       return;
     }
     if (framedPin.current || reportH === 0) return;
-    framedPin.current = true;
-    const padding = { top: 0, right: 0, bottom: reportH, left: 0 };
-    const start = pin ?? here;
-    if (start) {
-      cameraRef.current?.easeTo({ center: start, zoom: PIN_ZOOM, padding, duration: 600 });
-    } else {
-      mapRef.current
-        ?.getCenter()
-        .then((center) => cameraRef.current?.easeTo({ center, zoom: PIN_ZOOM, padding, duration: 600 }));
-    }
+    // reportH first still holds the taller step 2 sheet; wait until it settles.
+    const timer = setTimeout(() => {
+      framedPin.current = true;
+      const padding = { top: 0, right: 0, bottom: reportH, left: 0 };
+      const start = pin ?? here;
+      if (start) {
+        cameraRef.current?.easeTo({ center: start, zoom: PIN_ZOOM, padding, duration: 600 });
+      } else {
+        mapRef.current
+          ?.getCenter()
+          .then((center) => cameraRef.current?.easeTo({ center, zoom: PIN_ZOOM, padding, duration: 600 }));
+      }
+    }, PIN_FRAME_DELAY_MS);
+    return () => clearTimeout(timer);
   }, [placing, reportH, here, pin]);
 
   // The point under the pin, and its street, after each map move.

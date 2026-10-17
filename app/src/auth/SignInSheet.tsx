@@ -88,7 +88,7 @@ export function SignInSheet({ reason, onSignIn, onClose }: Props) {
             </Pressable>
           </View>
           <AppText variant="title" color={colors.navy} accessibilityRole="header">
-            {t('signIn.title')}
+            {reason === 'vote' ? t('signIn.titleVote') : t('signIn.title')}
           </AppText>
           <AppText variant="body" color={colors.textMuted}>
             {t(`signIn.body.${reason ?? 'report'}`)}

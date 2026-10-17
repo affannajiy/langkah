@@ -79,6 +79,8 @@ const config: ExpoConfig = {
         },
       },
     ],
+    // HTTP/2 pings, so requests recover after the phone changes network.
+    './plugins/withNetworkPing',
   ],
   experiments: {
     typedRoutes: true,

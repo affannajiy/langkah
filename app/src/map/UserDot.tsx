@@ -2,7 +2,7 @@ import { Marker, type LngLat } from '@maplibre/maplibre-react-native';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
-import { colors } from '../theme/theme';
+import { colors, mapZ } from '../theme/theme';
 
 // The user's blue dot, drawn from the same position the app routes from (useHere).
 // MapLibre's own UserLocation waits for its own location updates and could stay
@@ -10,7 +10,7 @@ import { colors } from '../theme/theme';
 export function UserDot({ at }: { at: LngLat }) {
   const { t } = useTranslation();
   return (
-    <Marker lngLat={at} anchor="center">
+    <Marker lngLat={at} anchor="center" style={{ zIndex: mapZ.you }}>
       <View accessible accessibilityLabel={t('pin.you')} style={styles.halo}>
         <View style={styles.dot} />
       </View>

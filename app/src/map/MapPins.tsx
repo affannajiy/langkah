@@ -7,7 +7,7 @@ import Svg, { Path, Rect } from 'react-native-svg';
 
 import { HAZARD_CATEGORIES, type HazardCategory, type MapView } from '../api/types';
 import type { LayerToggles } from '../storage/settings';
-import { colors, radius } from '../theme/theme';
+import { colors, mapZ, radius } from '../theme/theme';
 
 export type { LayerToggles };
 
@@ -94,7 +94,7 @@ export const MapPins = memo(function MapPins({ view, toggles }: Props) {
   return (
     <>
       {amenities.map((a) => (
-        <Marker key={`${a.kind}:${a.lngLat[0]}:${a.lngLat[1]}`} lngLat={a.lngLat} anchor="center">
+        <Marker key={`${a.kind}:${a.lngLat[0]}:${a.lngLat[1]}`} lngLat={a.lngLat} anchor="center" style={{ zIndex: mapZ.amenity }}>
           <View
             accessible
             accessibilityLabel={
@@ -107,7 +107,7 @@ export const MapPins = memo(function MapPins({ view, toggles }: Props) {
         </Marker>
       ))}
       {view.hazards.map((h) => (
-        <Marker key={h.id} lngLat={h.lngLat} anchor="center">
+        <Marker key={h.id} lngLat={h.lngLat} anchor="center" style={{ zIndex: mapZ.hazard }}>
           <View
             accessible
             accessibilityLabel={t('pin.hazard', {

@@ -376,6 +376,7 @@
   },
   "signIn": {
     "title": "Sign in so others can trust your report",
+    "titleVote": "Sign in so your vote counts",
     "body": {
       "report": "Reports from signed-in walkers help keep fake reports off the map.",
       "vote": "One vote per person keeps the counts honest, so voting needs a sign-in.",

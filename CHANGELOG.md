@@ -1,5 +1,36 @@
 # Changelog
 
+## Final test fixes (2026-10-17)
+
+From the first pass of `docs/final-test.md` on the preview APK (Pixel 8 emulator). JS fixes plus one native plugin, so they need a new build.
+
+### Fixed
+- **Search left the keyboard open** over the route cards after picking a place. The search sheet now closes the keyboard when it goes away.
+- **Pins covered the route tags.** Pins that load later drew over "Fastest · 6 min". Markers now stack in a fixed order (`mapZ` in the theme): amenities, hazards, route tags, destination, you.
+- **The Fastest line was invisible on the night map**, and hidden under Safest where the two share streets. It now has a white casing, as on the walk screen, and the selected route draws on top.
+- **Tapping a pin on the Community map, or a route tag, did nothing.** On Android, MapLibre passes a marker tap to the Marker's `onPress`, not to a `Pressable` inside it. Both now use the Marker's `onPress` (the `Pressable` stays for TalkBack).
+- **The report pin did not start on you.** Step 3 framed the map with the taller step 2 sheet's height. It now waits for the sheet to settle.
+- **Requests hung after the network dropped and came back** (Wi-Fi to mobile data), until the app restarted. New config plugin `app/plugins/withNetworkPing.js` sets HTTP/2 pings on React Native's OkHttp client, so a dead connection is found and replaced. No new dependency.
+- **Me said "Check your internet connection"** when there was no session at all. It now shows the empty list.
+- The sign-in sheet title for a vote now says "Sign in so your vote counts".
+- `supabase/config.toml`: anonymous sign-ins and manual linking on, as the README already says (local config only).
+
+### Found, not code
+- **Anonymous sign-ins were off in the Supabase project**, so guests had no session: ratings, votes and the Me list failed with "permission denied". Turn on **Allow anonymous sign-ins** and **Allow manual linking** in the dashboard (README section 3, step 1).
+- On the emulator, Balanced location gets no fix from `adb emu geo fix`. Mock the `gps` and `network` test providers instead (`adb shell cmd location providers ...`).
+
+## Phase 9: Loose ends (2026-10-17)
+
+### Added
+- **`data-scripts/clean_photos.py`**: lists report photos that no report uses (older than 1 day, so a report being posted is safe) and deletes them only with `--apply`, through the Storage API (Supabase does not allow deleting files with SQL). Run by hand, laptop only. No new dependency (reuses the `Storage` helper from `seed_demo.py`). First run: 5 photos in the bucket, all used, 0 orphans.
+- **`docs/final-test.md`**: one 31-row checklist for the final full test on the preview APK, each row marked emulator, phone or both.
+
+### Changed
+- Old notes in this file brought up to date: migration 11 applied and checked, the rating report runs, the vibration toggle came in Phase 6, and the Map tab's improvement count matches Community by design.
+
+### Not done
+- ESLint stays off (it needs new dev dependencies). `npm run typecheck` passes.
+
 ## Phase 8: Test and tune (2026-10-18)
 
 ### Added
@@ -10,9 +41,9 @@
 - **`data-scripts/rating_report.py`** (read-only): shows how safe walks felt next to the route score, by day or night and safest or fastest, with the correlation and the walks where the two disagree. It also prints the weights in use. No new dependency (uses `psycopg`, like the loader).
 - **`docs/user-test-plan.md`**: the group run-through for the 4 weeks before the final prototype, how to tune one weight at a time, and a log.
 
-### Not done
-- The migration is not applied yet: you run `npx supabase db push`. It was checked by reading only, since there is no local Postgres on this laptop.
-- `rating_report.py` compiles but was not run: the `langkah` Python environment was not found on this laptop.
+### Checked
+- Migration 11 is applied (`npx supabase db push`). A rescore inside a rolled-back transaction gave exactly the old scores (10,368 segments, same day and night sums, same unknown and unsafe-junction counts), and `route_safe` still returns both routes for Ipoh and UTP, day and night.
+- `rating_report.py` runs in the `data-scripts/.venv` venv: it prints the 7 weights and 0 ratings so far.
 
 ## Phase 7: Demo readiness (2026-10-11)
 
@@ -228,7 +259,7 @@ Tested on the emulator at 411 dp and 320 dp wide, text at 1.0x, 1.3x and 2.0x, w
 - If the report fails after its photo uploaded (for example the connection drops), the photo stays in storage with no report. A clean-up job can come later.
 - Reports cannot be edited or deleted from the app yet (the Me tab's "My reports" is Phase 6). RLS already allows it.
 - The detail sheet's mini map does not move; tap Map in Community to explore around a report.
-- The Map tab's count of improvement requests includes pending ones.
+- The Map tab's count of improvement requests includes pending ones. (By design: the Community list and the export also count every request that has not expired, so the numbers match.)
 
 ## Phase 4: Walking navigation (2026-10-11)
 
@@ -274,7 +305,7 @@ Tested on the emulator at 411 dp and 320 dp wide, text at 1.0x, 1.3x and 2.0x, w
 
 ### Known issues
 - The emulator has no vibration motor, so haptics only show in `adb shell dumpsys vibrator_manager`. Test pulses on a real phone.
-- The Settings toggle for alert vibration (Section 5.2 screen 18) is P2 and not built.
+- The Settings toggle for alert vibration (Section 5.2 screen 18) is P2 and not built. (Built in Phase 6.)
 - After a reroute on Safest, the GPX keeps walking the fastest line, so it reroutes again every 15 s. Real walkers follow the new line.
 - Demo hazards expire in 7 days by the trigger's date (the nightly job came in Phase 5). Run `seed_demo.py --clear` before a real launch.
 

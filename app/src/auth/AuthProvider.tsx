@@ -24,6 +24,7 @@ export type SignInResult = 'ok' | 'cancelled' | 'no_play_services' | 'not_config
 
 type AuthState = {
   ready: boolean;
+  hasSession: boolean; // any session, guest included; none when guest sign-in failed
   isFull: boolean; // signed in with Google
   canWrite: boolean; // signed in with Google, or a guest in demo mode
   name: string | null;
@@ -187,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthState>(
     () => ({
       ready,
+      hasSession: !!session,
       isFull,
       canWrite,
       name,
@@ -196,7 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       requireSignIn,
       signOut,
     }),
-    [ready, isFull, canWrite, name, demoServer, demoOn, setDemo, newGuest, requireSignIn, signOut],
+    [ready, session, isFull, canWrite, name, demoServer, demoOn, setDemo, newGuest, requireSignIn, signOut],
   );
 
   return (

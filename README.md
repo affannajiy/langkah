@@ -328,7 +328,13 @@ python check_payload.py
 python rating_report.py
 ```
 
-The group test and tuning steps are in [docs/user-test-plan.md](docs/user-test-plan.md).
+The group test and tuning steps are in [docs/user-test-plan.md](docs/user-test-plan.md). The final full test on the preview APK is [docs/final-test.md](docs/final-test.md).
+
+**Orphaned photos** (an upload whose report was never posted). Inside `data-scripts/`, lists them; add `--apply` to delete them:
+
+```bash
+python clean_photos.py
+```
 
 ## 7. Demo script (oral presentation, 5 minutes)
 

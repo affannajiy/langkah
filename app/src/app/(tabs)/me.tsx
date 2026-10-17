@@ -59,7 +59,7 @@ export default function MeScreen() {
   const insets = useSafeAreaInsets();
   const online = useOnline();
   const snackbar = useSnackbar();
-  const { isFull, canWrite, name, demo, requireSignIn, signOut } = useAuth();
+  const { ready, hasSession, isFull, canWrite, name, demo, requireSignIn, signOut } = useAuth();
   const { saved, setPlace } = useSavedPlaces();
   const [waiting, setWaiting] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -78,6 +78,13 @@ export default function MeScreen() {
   }, []);
 
   const load = useCallback(async () => {
+    if (!ready) return;
+    // No session at all (guest sign-in failed): nothing of yours to load, which is not a network error.
+    if (!hasSession) {
+      setStats(null);
+      setMine({ status: 'ok', items: [], more: false });
+      return;
+    }
     try {
       const [s, items] = await Promise.all([myStats(), myReports(0)]);
       setStats(s);
@@ -86,7 +93,7 @@ export default function MeScreen() {
       console.warn('Could not load my reports', error);
       setMine((m) => ({ ...m, status: m.items.length ? 'ok' : 'error' }));
     }
-  }, []);
+  }, [ready, hasSession]);
 
   // Fresh numbers each time the tab opens, and after signing in or out.
   useFocusEffect(

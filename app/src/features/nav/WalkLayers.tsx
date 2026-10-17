@@ -8,7 +8,7 @@ import { CrossingMark, HazardMark, hazardKey } from '../../map/MapPins';
 import { DestinationPin, type RouteKind } from '../../map/RouteLayers';
 import { slice, type Track } from '../../nav/geo';
 import type { RouteCrossing, RouteHazard } from '../../nav/useRouteFeatures';
-import { colors, radius } from '../../theme/theme';
+import { colors, mapZ, radius } from '../../theme/theme';
 
 type Props = {
   track: Track;
@@ -73,14 +73,14 @@ export const WalkLayers = memo(function WalkLayers({ track, kind, along, hazards
       </GeoJSONSource>
 
       {crossings.map((x) => (
-        <Marker key={`x:${x.lngLat[0]}:${x.lngLat[1]}`} lngLat={x.lngLat} anchor="center">
+        <Marker key={`x:${x.lngLat[0]}:${x.lngLat[1]}`} lngLat={x.lngLat} anchor="center" style={{ zIndex: mapZ.amenity }}>
           <View accessible accessibilityLabel={t('pin.crossing')} style={styles.ring}>
             <CrossingMark />
           </View>
         </Marker>
       ))}
       {hazards.map((h) => (
-        <Marker key={h.id} lngLat={h.lngLat} anchor="center">
+        <Marker key={h.id} lngLat={h.lngLat} anchor="center" style={{ zIndex: mapZ.hazard }}>
           <View accessible accessibilityLabel={t('pin.hazard', { category: t(`hazard.${hazardKey(h.category)}`) })}>
             <HazardMark />
           </View>
@@ -96,7 +96,7 @@ export const WalkLayers = memo(function WalkLayers({ track, kind, along, hazards
 export function WalkerDot({ at }: { at: LngLat }) {
   const { t } = useTranslation();
   return (
-    <Marker lngLat={at} anchor="center">
+    <Marker lngLat={at} anchor="center" style={{ zIndex: mapZ.you }}>
       <View accessible accessibilityLabel={t('pin.you')} style={styles.halo}>
         <View style={styles.dot}>
           <Navigation2 size={18} color={colors.white} fill={colors.white} />

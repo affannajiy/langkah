@@ -8,7 +8,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import type { Route, RoutePair } from '../api/types';
 import { AppText } from '../components/AppText';
 import { minutes } from '../i18n/format';
-import { colors, radius, shadow, spacing } from '../theme/theme';
+import { colors, mapZ, radius, shadow, spacing } from '../theme/theme';
 
 export type RouteKind = 'safest' | 'fastest';
 
@@ -104,7 +104,7 @@ function tagPoints(pair: RoutePair): { safest: LngLat; fastest: LngLat | null } 
 }
 
 // Both route lines (guide Section 6.2): safest solid teal with a white outline,
-// fastest dashed grey, and white dots over streets that are not yet checked.
+// fastest dashed grey on a white casing, and white dots over streets that are not yet checked.
 // The lines also differ by label text, so colour is never the only cue.
 export function RouteLayers({ pair, selected, onSelect, start, end }: Props) {
   const { t } = useTranslation();
@@ -137,9 +137,54 @@ export function RouteLayers({ pair, selected, onSelect, start, end }: Props) {
   const tags = useMemo(() => tagPoints(pair), [pair]);
   const dim = (kind: RouteKind) => (selected === kind ? 1 : 0.55);
 
+  // White casing so the grey dashes also read on the night map, as on the walk screen.
+  const fastestLines = [
+    <Layer
+      key="route-fastest-outline"
+      id="route-fastest-outline"
+      type="line"
+      filter={['==', ['get', 'kind'], 'fastest']}
+      layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+      paint={{ 'line-color': colors.routeOutline, 'line-width': selected === 'fastest' ? 9 : 8, 'line-opacity': dim('fastest') }}
+    />,
+    <Layer
+      key="route-fastest"
+      id="route-fastest"
+      type="line"
+      filter={['==', ['get', 'kind'], 'fastest']}
+      layout={{ 'line-cap': 'butt', 'line-join': 'round' }}
+      paint={{
+        'line-color': colors.routeFastest,
+        'line-width': selected === 'fastest' ? 5 : 4,
+        'line-dasharray': [1.6, 1.2],
+        'line-opacity': dim('fastest'),
+      }}
+    />,
+  ];
+  const safestLines = [
+    <Layer
+      key="route-safest-outline"
+      id="route-safest-outline"
+      type="line"
+      filter={['==', ['get', 'kind'], 'safest']}
+      layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+      paint={{ 'line-color': colors.routeOutline, 'line-width': 10, 'line-opacity': dim('safest') }}
+    />,
+    <Layer
+      key="route-safest"
+      id="route-safest"
+      type="line"
+      filter={['==', ['get', 'kind'], 'safest']}
+      layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+      paint={{ 'line-color': colors.safe, 'line-width': 6, 'line-opacity': dim('safest') }}
+    />,
+  ];
+
   return (
     <>
+      {/* The selected route draws on top; the key re-adds both sources in that order. */}
       <GeoJSONSource
+        key={`routes-${selected}`}
         id="routes"
         data={routes}
         onPress={(e) => {
@@ -147,34 +192,9 @@ export function RouteLayers({ pair, selected, onSelect, start, end }: Props) {
           if (kind === 'safest' || kind === 'fastest') onSelect(kind);
         }}
       >
-        <Layer
-          id="route-fastest"
-          type="line"
-          filter={['==', ['get', 'kind'], 'fastest']}
-          layout={{ 'line-cap': 'butt', 'line-join': 'round' }}
-          paint={{
-            'line-color': colors.routeFastest,
-            'line-width': selected === 'fastest' ? 5 : 4,
-            'line-dasharray': [1.6, 1.2],
-            'line-opacity': dim('fastest'),
-          }}
-        />
-        <Layer
-          id="route-safest-outline"
-          type="line"
-          filter={['==', ['get', 'kind'], 'safest']}
-          layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-          paint={{ 'line-color': colors.routeOutline, 'line-width': 10, 'line-opacity': dim('safest') }}
-        />
-        <Layer
-          id="route-safest"
-          type="line"
-          filter={['==', ['get', 'kind'], 'safest']}
-          layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-          paint={{ 'line-color': colors.safe, 'line-width': 6, 'line-opacity': dim('safest') }}
-        />
+        {selected === 'fastest' ? [safestLines, fastestLines] : [fastestLines, safestLines]}
       </GeoJSONSource>
-      <GeoJSONSource id="routes-unchecked" data={unchecked}>
+      <GeoJSONSource key={`unchecked-${selected}`} id="routes-unchecked" data={unchecked}>
         <Layer
           id="route-unchecked-dots"
           type="line"
@@ -199,7 +219,7 @@ export function RouteLayers({ pair, selected, onSelect, start, end }: Props) {
       />
 
       {start && (
-        <Marker lngLat={start} anchor="center">
+        <Marker lngLat={start} anchor="center" style={{ zIndex: mapZ.destination }}>
           <View accessible accessibilityLabel={t('pin.start')} style={styles.startDot} />
         </Marker>
       )}
@@ -212,7 +232,7 @@ export function RouteLayers({ pair, selected, onSelect, start, end }: Props) {
 export function DestinationPin({ at }: { at: LngLat }) {
   const { t } = useTranslation();
   return (
-    <Marker lngLat={at} anchor="bottom">
+    <Marker lngLat={at} anchor="bottom" style={{ zIndex: mapZ.destination }}>
       <View accessible accessibilityLabel={t('pin.destination')}>
         <Svg width={40} height={50} viewBox="0 0 40 50">
           <Path
@@ -231,7 +251,8 @@ export function DestinationPin({ at }: { at: LngLat }) {
 function RouteTag({ kind, lngLat, label, onPress }: { kind: RouteKind; lngLat: LngLat; label: string; onPress: () => void }) {
   const safest = kind === 'safest';
   return (
-    <Marker lngLat={lngLat} anchor="center">
+    // On Android a tap reaches the Marker, not the Pressable inside it; the Pressable stays for TalkBack.
+    <Marker lngLat={lngLat} anchor="center" style={{ zIndex: mapZ.routeTag }} onPress={onPress}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
