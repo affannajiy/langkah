@@ -1,6 +1,6 @@
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronRight, Crown, UserRound } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,23 +22,26 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { ScrimSheet } from '../components/ScrimSheet';
 import { Snackbar, useSnackbar } from '../components/Snackbar';
 import { Avatar } from '../features/points/Avatar';
-import { BADGES, itemText, PLUS_GOLD, VOUCHERS } from '../features/points/catalog';
+import { BADGES, itemText, PLUS_GOLD, voucherLook } from '../features/points/catalog';
 import { LowPointsBody, type LowPoints } from '../features/points/LowPointsSheet';
 import { useOpenTopUp } from '../features/points/useOpenTopUp';
 import { VoucherBody } from '../features/points/VoucherSheet';
 import { formatPoints } from '../i18n/format';
+import { partnerOf } from '../points/partners';
 import { cappedContent } from '../theme/layout';
 import { colors, radius, spacing, touchTarget } from '../theme/theme';
 
 type Tab = 'vouchers' | 'cosmetics';
 type Open = { kind: 'low'; need: LowPoints } | { kind: 'voucher'; item: string; code: string; at: string } | null;
 
-// Points shop (guide Section 15.2; docs/screens/Shop.png). Vouchers from made-up
-// Ipoh shops until Phase 12, and cosmetics (frames and badges). Everyone may spend
-// the points they earned. Spending cannot be undone, so it asks in a dialog first.
+// Points shop (guide Sections 15.2 and 15.6; docs/screens/Shop.png). Vouchers from
+// partner shops (the Sponsored pins on the map), and cosmetics (frames and badges).
+// Everyone may spend the points they earned. Spending cannot be undone, so it asks
+// in a dialog first. From a sponsored pin, ?buy=<voucher> opens that voucher's dialog.
 export default function ShopScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { buy: buyParam } = useLocalSearchParams<{ buy?: string }>();
   const insets = useSafeAreaInsets();
   const snackbar = useSnackbar();
   const openTopUp = useOpenTopUp();
@@ -103,6 +106,20 @@ export default function ShopScreen() {
       },
     ]);
   }
+
+  // From a sponsored pin: ask about that voucher once the shop and wallet are in.
+  const askedParam = useRef(false);
+  const askParam = useEffectEvent((list: ShopItem[]) => {
+    const item = list.find((i) => i.id === buyParam);
+    if (item) buy(item);
+    else snackbar.show({ text: t('shop.error.no_item') });
+  });
+  const ready = items !== null && wallet !== null;
+  useEffect(() => {
+    if (askedParam.current || !buyParam || !ready || !items) return;
+    askedParam.current = true;
+    askParam(items);
+  }, [buyParam, ready, items]);
 
   async function wear(item: ShopItem, on: boolean) {
     if (busy) return;
@@ -179,7 +196,7 @@ export default function ShopScreen() {
 
         {list.map((item) => {
           const isVoucher = item.kind === 'voucher';
-          const v = VOUCHERS[item.id];
+          const v = isVoucher ? voucherLook(item.id) : null;
           const has = ownedIds.has(item.id);
           const wearing = wallet?.frame === item.id || wallet?.badge === item.id;
           const label = isVoucher ? t('shop.redeem') : wearing ? t('shop.inUse') : has ? t('shop.use') : t('shop.get');
@@ -206,6 +223,11 @@ export default function ShopScreen() {
                   {name(item.id)}
                 </AppText>
                 <AppText color={colors.textMuted}>{itemText(t, item.id, 'detail')}</AppText>
+                {isVoucher && partnerOf(item.id) && (
+                  <AppText variant="caption" color={colors.textMuted}>
+                    {partnerOf(item.id)?.address}
+                  </AppText>
+                )}
                 <View style={styles.cardFoot}>
                   <AppText variant="heading" color={colors.safeText} style={styles.flex}>
                     {has && !isVoucher ? t('shop.owned') : t('shop.pts', { value: formatPoints(item.cost) })}

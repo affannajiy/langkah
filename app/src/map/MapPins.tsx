@@ -1,11 +1,13 @@
 import { Marker } from '@maplibre/maplibre-react-native';
-import { Bus, Umbrella } from 'lucide-react-native';
+import { Bus, Store, Umbrella } from 'lucide-react-native';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 
-import { HAZARD_CATEGORIES, type HazardCategory, type MapView } from '../api/types';
+import { HAZARD_CATEGORIES, type HazardCategory, type MapView, type SponsoredPin } from '../api/types';
+import { AppText } from '../components/AppText';
+import { offerText } from '../points/partners';
 import type { LayerToggles } from '../storage/settings';
 import { colors, mapZ, radius } from '../theme/theme';
 
@@ -58,7 +60,43 @@ function ShelterMark() {
   );
 }
 
-type Props = { view: MapView | null; toggles: LayerToggles };
+// Sponsored shop: a white teardrop with a navy outline and a shop icon, and a
+// "Sponsored" tag under it, so it never reads as a hazard or an amenity (guide
+// Section 15.6). The tip of the drop sits on the shop.
+const TAG_H = 26;
+
+export function SponsoredMark({ label }: { label: string }) {
+  return (
+    <View style={styles.sponsored}>
+      <View>
+        <Svg width={34} height={42} viewBox="0 0 34 42">
+          <Path
+            d="M17 40 C17 40 3 25.5 3 16 A14 14 0 0 1 31 16 C31 25.5 17 40 17 40 Z"
+            fill={colors.white}
+            stroke={colors.navy}
+            strokeWidth={2.5}
+            strokeLinejoin="round"
+          />
+        </Svg>
+        <View style={styles.storeIcon}>
+          <Store size={16} color={colors.navy} strokeWidth={2.5} />
+        </View>
+      </View>
+      <View style={styles.tag}>
+        <AppText variant="label" color={colors.white} style={styles.tagText}>
+          {label}
+        </AppText>
+      </View>
+    </View>
+  );
+}
+
+type Props = {
+  view: MapView | null;
+  toggles: LayerToggles;
+  // Browse map only: never while comparing routes or reporting (and never on the walk screen).
+  onSponsored?: (pin: SponsoredPin) => void;
+};
 
 // Pins of the same kind closer than this show as one, so a junction with
 // several mapped crossings does not draw a stack of icons.
@@ -80,7 +118,7 @@ function mergeClose<T extends { kind: string; lngLat: [number, number] }>(items:
 
 // Hazards and amenities for the visible area only (guide Section 7.4).
 // Hazards always show; amenity kinds follow the Layers sheet.
-export const MapPins = memo(function MapPins({ view, toggles }: Props) {
+export const MapPins = memo(function MapPins({ view, toggles, onSponsored }: Props) {
   const { t } = useTranslation();
   if (!view) return null;
 
@@ -106,6 +144,26 @@ export const MapPins = memo(function MapPins({ view, toggles }: Props) {
           </View>
         </Marker>
       ))}
+      {onSponsored &&
+        view.sponsored.map((s) => (
+          // On Android a tap reaches the Marker, not the Pressable inside it; the Pressable stays for TalkBack.
+          <Marker
+            key={`sp:${s.id}`}
+            lngLat={s.lngLat}
+            anchor="bottom"
+            offset={[0, TAG_H]}
+            onPress={() => onSponsored(s)}
+            style={{ zIndex: mapZ.sponsored }}
+          >
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('pin.sponsoredA11y', { name: s.name, rm: s.rm, offer: offerText(s.offer) })}
+              onPress={() => onSponsored(s)}
+            >
+              <SponsoredMark label={t('pin.sponsored')} />
+            </Pressable>
+          </Marker>
+        ))}
       {view.hazards.map((h) => (
         <Marker key={h.id} lngLat={h.lngLat} anchor="center" style={{ zIndex: mapZ.hazard }}>
           <View
@@ -125,5 +183,16 @@ export const MapPins = memo(function MapPins({ view, toggles }: Props) {
 const styles = StyleSheet.create({
   // White ring so the icon reads on any map colour (Section 6.2, Icons).
   ring: { padding: 2, borderRadius: radius.card / 2 + 2, backgroundColor: colors.white },
+  sponsored: { alignItems: 'center' },
+  storeIcon: { position: 'absolute', top: 8, left: 9 },
+  tag: {
+    height: TAG_H - 2,
+    marginTop: 2,
+    paddingHorizontal: 6,
+    borderRadius: radius.pill,
+    backgroundColor: colors.navy,
+    justifyContent: 'center',
+  },
+  tagText: { lineHeight: 18 },
   square: { width: 26, height: 26, borderRadius: radius.card / 2, alignItems: 'center', justifyContent: 'center' },
 });

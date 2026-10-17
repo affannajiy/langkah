@@ -104,8 +104,22 @@ export type ReportKind = 'hazard' | 'improvement';
 
 export type MapAmenityKind = 'crossing' | 'bus_stop' | 'shelter';
 
+// A partner shop on the map and its voucher (guide Section 15.6). Names are proper
+// nouns; the offer comes in both languages from the server.
+export type SponsoredPin = {
+  id: string;
+  lngLat: LngLat;
+  name: string;
+  offer: { en: string; ms: string };
+  rm: number;
+  item: string; // shop_items id of the voucher
+  cost: number;
+  address: string;
+};
+
 export type MapView = {
   hazards: { id: string; lngLat: LngLat; category: string }[];
   amenities: { kind: MapAmenityKind; lngLat: LngLat }[];
+  sponsored: SponsoredPin[]; // at most 3, closest to the middle of the view
   counts: { hazards: number; improvements: number };
 };

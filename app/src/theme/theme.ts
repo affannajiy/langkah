@@ -50,7 +50,7 @@ export const colors = {
 
 // Stacking order of map markers (Android translationZ). Without it, pins that
 // load later draw over route tags and the user's dot.
-export const mapZ = { amenity: 1, hazard: 2, routeTag: 3, destination: 4, you: 5 } as const;
+export const mapZ = { amenity: 1, sponsored: 1, hazard: 2, routeTag: 3, destination: 4, you: 5 } as const;
 
 // 8 dp grid
 export const spacing = {

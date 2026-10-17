@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "council",
+      "runtimeExecutable": "data-scripts/.venv/Scripts/python",
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "council"],
+      "port": 8765
+    }
+  ]
+}

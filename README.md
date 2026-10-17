@@ -70,6 +70,8 @@ The budget is RM0: every service above is free and none needs a card.
 | `app/src/theme/theme.ts` | All design tokens (colours, spacing, radii, type) |
 | `supabase/migrations/` | Every schema change, function and RLS policy, in order |
 | `data-scripts/` | `ipoh_extract.py` (clip and check OSM data), `load_to_supabase.py` (load and build the network) `seed_demo.py` (demo reports, photos and walk) and `check_payload.py` (Section 7.4 sizes). `demo-photos/` holds the demo report photos and their credits. `raw/`, `out/` and `.venv/` are git-ignored. |
+| `council/` | The council dashboard: a static web page (plain HTML and JS, no build) on GitHub Pages. `config.js` is git-ignored. |
+| `.github/workflows/` | `council-pages.yml` deploys `council/` to GitHub Pages |
 | `docs/` | The guide, colour scheme, architecture diagram and final screen PNGs |
 | `assets/logo/` | Master logo files. `app/assets/brand/` holds the copies the build uses. |
 | `rulebooks/` | Engineering, security and UI/UX rulebooks |
@@ -293,6 +295,31 @@ It also writes `out/demo-walk.gpx`, the fastest line of that walk, for the emula
 ```bash
 python seed_demo.py --clear
 ```
+
+### Council dashboard (web, guide Section 15.7)
+
+A read-only page for MBI: improvement requests ranked by upvotes (with CSV and GeoJSON download), a hazard heatmap, 12-week trends and the most common report types. It calls one function, `council_data`, with the public anon key. No names or user ids. Public for the prototype; staff sign-in comes before a real sale.
+
+**Sample data for the pitch** (about 150 backdated reports over 12 weeks by their own sample accounts; open improvements also show in the app's Community tab):
+
+```bash
+python seed_demo.py --council-stats
+python seed_demo.py --clear-council-stats
+```
+
+`--clear` removes the demo photos the samples use too, so run `--council-stats` again after it.
+
+**Preview on the laptop:** copy `council/config.example.js` to `council/config.js`, fill in the same URL and anon key as `app/.env`, then serve the folder and open http://localhost:8765:
+
+```bash
+python -m http.server 8765 --directory council
+```
+
+**Put it on GitHub Pages (once):**
+1. GitHub repo, **Settings**, **Secrets and variables**, **Actions**, **Variables** tab: add `SUPABASE_URL` and `SUPABASE_ANON_KEY` (the anon key, never the service role key).
+2. **Settings**, **Pages**, **Source**: **GitHub Actions**.
+3. Push a change in `council/` to `main`, or open **Actions**, **Council dashboard**, **Run workflow** (that button only shows once the workflow file is on the default branch).
+4. The page is at `https://affannajiy.github.io/langkah/`.
 
 ### Add a new pilot area
 

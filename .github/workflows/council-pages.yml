@@ -1,0 +1,48 @@
+# Council dashboard on GitHub Pages (docs/revenue-plan.md Phase 13; guide Section 15.7).
+# Free for a public repo. config.js is written here from repo variables, so no key
+# is committed. Only the public anon key is used, never the service role key.
+name: Council dashboard
+
+on:
+  push:
+    branches: [main]
+    paths: ['council/**', '.github/workflows/council-pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: council-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write config.js
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Set the repo variables SUPABASE_URL and SUPABASE_ANON_KEY (Settings > Secrets and variables > Actions > Variables)."
+            exit 1
+          fi
+          mkdir -p _site
+          cp council/index.html council/style.css council/app.js council/strings.js council/icon.png _site/
+          printf "window.LANGKAH_CONFIG = { url: '%s', anonKey: '%s' };\n" "$SUPABASE_URL" "$SUPABASE_ANON_KEY" > _site/config.js
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

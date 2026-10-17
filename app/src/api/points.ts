@@ -1,3 +1,4 @@
+import { rememberPartners, type PartnerInfo } from '../points/partners';
 import { setPlusActive } from '../points/plus';
 import { supabase } from './supabase';
 
@@ -173,18 +174,53 @@ export async function cosmeticUse(slot: 'frame' | 'badge', item: string | null):
 export type ShopItem = { id: string; kind: 'voucher' | 'frame' | 'badge'; cost: number };
 export type OwnedItem = { id: string; item: string; code: string | null; at: string };
 
+function partnerInfo(v: unknown): PartnerInfo | null {
+  if (!isObj(v)) return null;
+  const name = str(v.name);
+  if (!name) return null;
+  return { name, en: str(v.en ?? v.offer_en) ?? '', ms: str(v.ms ?? v.offer_ms) ?? '', rm: num(v.rm ?? v.rm_off), address: str(v.addr ?? v.address) ?? '' };
+}
+
+// The shop list. Vouchers show only while their partner shop is open (the server
+// filters), and bring the shop's name and offer with them.
 export async function shopItems(): Promise<ShopItem[]> {
-  const { data, error } = await supabase.from('shop_items').select('id, kind, cost').order('sort');
+  const { data, error } = await supabase
+    .from('shop_items')
+    .select('id, kind, cost, partner:partners(name, offer_en, offer_ms, rm_off, address)')
+    .order('sort');
   if (error) throw new PointsError(error.message);
-  return (data ?? []).map((r) => ({ id: String(r.id), kind: r.kind as ShopItem['kind'], cost: num(r.cost) }));
+  const rows = (data ?? []) as Record<string, unknown>[];
+  const partners: Record<string, PartnerInfo> = {};
+  const items: ShopItem[] = [];
+  for (const r of rows) {
+    const kind = r.kind as ShopItem['kind'];
+    const p = partnerInfo(r.partner);
+    // A voucher whose shop is closed comes back without its partner: skip it.
+    if (kind === 'voucher' && !p) continue;
+    if (p) partners[String(r.id)] = p;
+    items.push({ id: String(r.id), kind, cost: num(r.cost) });
+  }
+  rememberPartners(partners);
+  return items;
 }
 
 export async function myItems(): Promise<OwnedItem[]> {
-  const { data, error } = await supabase
-    .from('user_items')
-    .select('id, item_id, code, created_at')
-    .order('created_at', { ascending: false })
-    .limit(50);
-  if (error) throw new PointsError(error.message);
-  return (data ?? []).map((r) => ({ id: String(r.id), item: String(r.item_id), code: str(r.code), at: String(r.created_at) }));
+  const d = await rpc('my_items');
+  const rows = Array.isArray(d) ? d.filter(isObj) : [];
+  const partners: Record<string, PartnerInfo> = {};
+  const items = rows.map((r) => {
+    const item = String(r.item);
+    const p = partnerInfo(r.p);
+    if (p) partners[item] = p;
+    return { id: String(r.id), item, code: str(r.code), at: String(r.at) };
+  });
+  rememberPartners(partners);
+  return items;
+}
+
+// Sponsored pins that were on screen, or tapped, for the partner report. Counted
+// once per shop a day on the server, so a failure here is only logged.
+export async function partnerSeen(ids: string[], kind: 'view' | 'tap'): Promise<void> {
+  if (ids.length === 0) return;
+  await rpc('partner_seen', { p_ids: ids.slice(0, 5), p_kind: kind });
 }

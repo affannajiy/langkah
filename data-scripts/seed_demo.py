@@ -16,6 +16,17 @@ so each note says where the photo is from.
 Usage (inside the data-scripts venv):
     python seed_demo.py                 # add or refresh the demo reports, write out/demo-walk.gpx
     python seed_demo.py --clear         # remove the demo accounts and everything they posted
+    python seed_demo.py --partner-stats # 30 days of sample partner counts for the sales pitch
+    python seed_demo.py --clear-partner-stats
+    python seed_demo.py --council-stats # 12 weeks of sample reports for the council dashboard
+    python seed_demo.py --clear-council-stats
+
+Sample partner counts (Phase 12) have no user and are marked demo, so
+partner_report.py can tell them apart from real views, taps and redeems.
+Sample council reports (Phase 13) belong to their own sample accounts, so
+--clear-council-stats removes them without touching the demo walk or real reports.
+They are real reports to the app: open improvements show in Community, and
+hazards older than 7 days are expired, so those only show on the dashboard.
 
 Needs DATABASE_URL in data-scripts/.env. Photos also need SUPABASE_URL and
 SUPABASE_SERVICE_ROLE_KEY there (laptop only, never in the app or git); without
@@ -29,6 +40,7 @@ import datetime as dt
 import json
 import math
 import os
+import random
 import sys
 import urllib.error
 import urllib.request
@@ -79,6 +91,42 @@ IMPROVEMENTS = [
      "Demo: potholes along the edge fill with water after rain. Example photo from Senai, Johor.", 2, "pothole.jpg"),
     ("street_lights", 101.08164, 4.59709, None, 1, None),
 ]
+
+# Council dashboard samples (Phase 13): one reporter and 14 voters, apart from the
+# demo walk accounts so each set can be removed on its own.
+SAMPLE_REPORTER = "6c616e67-6b61-4864-8065-6d6f00000100"
+SAMPLE_VOTERS = [f"6c616e67-6b61-4864-8065-6d6f000001{i:02d}" for i in range(1, 15)]
+# Busy walking spots in Old Town, New Town and around (lon, lat, weight).
+SAMPLE_SPOTS = [
+    (101.07360, 4.59720, 5),  # railway station and the padang
+    (101.07780, 4.59630, 5),  # Concubine Lane and Jalan Panglima
+    (101.07650, 4.59480, 4),  # Jalan Sultan Yusuf
+    (101.08050, 4.59760, 4),  # Jalan Sultan Idris Shah, New Town
+    (101.08420, 4.59950, 3),  # Jalan Raja Ekram
+    (101.08800, 4.60150, 3),  # Greentown
+    (101.09050, 4.59600, 2),  # Ipoh Parade
+    (101.08250, 4.59200, 2),  # Jalan Sultan Iskandar, Kinta riverside
+    (101.07100, 4.60300, 2),  # Jalan Tun Abdul Razak
+    (101.09400, 4.61200, 1),  # Ipoh Garden
+]
+SAMPLE_HAZARD_CATS = [("broken_sidewalk", 5), ("blocked_path", 4), ("unsafe_crossing", 3),
+                      ("no_light", 3), ("flooding", 2), ("other", 1)]
+SAMPLE_IMPROVEMENT_CATS = [("zebra_crossing", 4), ("fix_sidewalk", 4), ("street_lights", 3),
+                           ("shelter", 2), ("kerb_ramp", 2), ("repaint_crossing", 2), ("other", 1)]
+# Example photos that fit the request (demo-photos/), on about half of those requests.
+SAMPLE_PHOTOS = {
+    "fix_sidewalk": ["pothole.jpg", "broken-sidewalk.jpg"],
+    "zebra_crossing": ["unsafe-crossing.jpg"],
+    "repaint_crossing": ["unsafe-crossing.jpg"],
+}
+SAMPLE_NOTES = {
+    "zebra_crossing": "Sample: people cross here every day with no crossing",
+    "fix_sidewalk": "Sample: the path is broken and uneven along this stretch",
+    "street_lights": "Sample: very dark here after 8 pm",
+    "shelter": "Sample: no shade on this walk, hot by midday",
+    "kerb_ramp": "Sample: no ramp, hard with a stroller or wheelchair",
+    "repaint_crossing": "Sample: the crossing lines have faded",
+}
 
 WALK_SPEED = 1.3  # m/s, same as route_safe
 GPX_STEP_M = 5.0
@@ -196,6 +244,104 @@ def clear(conn, storage):
         print("Removed the demo photos.")
 
 
+def partner_stats(conn, days=30):
+    # Made-up daily views, taps and redeems per partner shop, replacing any old samples.
+    conn.execute("delete from public.partner_events where demo")
+    partners = [r[0] for r in conn.execute(
+        "select id from public.partners order by id").fetchall()]
+    rng = random.Random(12)
+    today = dt.date.today()
+    rows = []
+    for i, pid in enumerate(partners):
+        base = rng.randint(25, 70)  # some shops sit on busier walks
+        for d in range(days):
+            day = today - dt.timedelta(days=d + 1)
+            weekend = day.weekday() >= 5
+            views = max(1, int(base * (1.4 if weekend else 1.0) * rng.uniform(0.7, 1.3)))
+            taps = int(views * rng.uniform(0.08, 0.2))
+            redeems = int(taps * rng.uniform(0.2, 0.45))
+            for kind, n in (("view", views), ("tap", taps), ("redeem", redeems)):
+                if n > 0:
+                    rows.append((pid, kind, day, n))
+    with conn.cursor() as cur:
+        cur.executemany(
+            "insert into public.partner_events (partner_id, kind, day, n, demo) values (%s, %s, %s, %s, true)",
+            rows)
+    print(f"Added {len(rows)} sample partner rows for {len(partners)} shops over {days} days (marked demo).")
+
+
+def council_stats(conn, photos, weeks=12):
+    """About 150 backdated reports and their votes by the sample accounts, replacing old samples."""
+    conn.execute("delete from auth.users where id = any(%s)", ([SAMPLE_REPORTER, *SAMPLE_VOTERS],))
+    add_account(conn, SAMPLE_REPORTER, "sample-reporter@langkah.invalid", "Sample reporter")
+    for i, voter in enumerate(SAMPLE_VOTERS, start=1):
+        add_account(conn, voter, f"sample-voter{i}@langkah.invalid", f"Sample voter {i}")
+    # No demo helper votes on sample hazards.
+    conn.execute("set local langkah.no_points = 'on'")
+
+    rng = random.Random(13)
+    now = dt.datetime.now(dt.timezone.utc)
+    spots = [s for s in SAMPLE_SPOTS for _ in range(s[2])]
+
+    def pick(cats):
+        return rng.choice([c for c, w in cats for _ in range(w)])
+
+    def place():
+        lon, lat, _ = rng.choice(spots)
+        return round(lon + rng.gauss(0, 0.0007), 5), round(lat + rng.gauss(0, 0.0006), 5)
+
+    def when():
+        # More reports in recent weeks, as if the app is growing.
+        days = weeks * 7 * (1 - math.sqrt(rng.random()))
+        return now - dt.timedelta(days=days, hours=rng.uniform(0, 12))
+
+    votes = []  # (report id, voter, vote, time)
+    for _ in range(100):
+        t = when()
+        lon, lat = place()
+        rid = add_report_as(conn, SAMPLE_REPORTER, "hazard", pick(SAMPLE_HAZARD_CATS), lon, lat, None)
+        confirms = rng.choice([0, 0, 1, 2, 2, 3, 4])
+        times = sorted(min(now, t + dt.timedelta(hours=rng.uniform(1, 48))) for _ in range(confirms))
+        votes += [(rid, v, "confirm", at) for v, at in zip(rng.sample(SAMPLE_VOTERS, confirms), times)]
+        # Status and dates as if the clock had run: 7 days, or 7 after the last Still there.
+        expires = (times[-1] if times else t) + dt.timedelta(days=7)
+        status = "expired" if expires <= now else ("active" if confirms >= 2 else "pending")
+        conn.execute("update public.reports set created_at = %s, expires_at = %s, status = %s where id = %s",
+                     (t, expires, status, rid))
+
+    for i in range(50):
+        t = when()
+        lon, lat = place()
+        cat = pick(SAMPLE_IMPROVEMENT_CATS)
+        fits = [photos[f] for f in SAMPLE_PHOTOS.get(cat, []) if f in photos]
+        photo = fits[i % len(fits)] if fits and i % 2 == 0 else None
+        rid = add_report_as(conn, SAMPLE_REPORTER, "improvement", cat, lon, lat,
+                            SAMPLE_NOTES.get(cat) if rng.random() < 0.6 else None, photo)
+        # Older requests have had longer to collect upvotes.
+        age = (now - t).days / (weeks * 7)
+        ups = min(len(SAMPLE_VOTERS), int(rng.paretovariate(1.3) * (1 + 4 * age)) - 1 + rng.randint(0, 2))
+        hours = max(1.0, (now - t).total_seconds() / 3600)
+        votes += [(rid, v, "upvote", t + dt.timedelta(hours=rng.uniform(0, hours)))
+                  for v in rng.sample(SAMPLE_VOTERS, ups)]
+        conn.execute("update public.reports set created_at = %s, status = %s where id = %s",
+                     (t, "active" if ups >= 2 else "pending", rid))
+
+    # Status is set above. The vote triggers would stamp the real clock time and
+    # restart the 7 days, so they are off while the backdated votes go in.
+    with conn.cursor() as cur:
+        cur.execute("alter table public.report_votes disable trigger report_votes_touch")
+        cur.execute("alter table public.report_votes disable trigger report_votes_apply")
+        cur.execute("alter table public.report_votes disable trigger report_votes_points")
+        cur.executemany(
+            "insert into public.report_votes (report_id, user_id, vote, created_at) values (%s, %s, %s, %s)",
+            votes)
+        cur.execute("alter table public.report_votes enable trigger report_votes_points")
+        cur.execute("alter table public.report_votes enable trigger report_votes_apply")
+        cur.execute("alter table public.report_votes enable trigger report_votes_touch")
+    print(f"Added 100 sample hazards and 50 sample improvements over {weeks} weeks, "
+          f"with {len(votes)} votes from {len(SAMPLE_VOTERS)} sample voters.")
+
+
 def add_account(conn, user_id, email, name):
     conn.execute(
         """
@@ -208,6 +354,17 @@ def add_account(conn, user_id, email, name):
         """,
         (user_id, email, f'{{"name": "{name}"}}'),
     )
+
+
+def add_report_as(conn, user_id, kind, category, lon, lat, note, photo_path=None):
+    return conn.execute(
+        """
+        insert into public.reports (user_id, kind, category, geom, note, photo_path)
+        values (%s, %s, %s, extensions.st_setsrid(extensions.st_makepoint(%s, %s), 4326), %s, %s)
+        returning id
+        """,
+        (user_id, kind, category, lon, lat, note, photo_path),
+    ).fetchone()[0]
 
 
 def add_report(conn, kind, category, lon, lat, note, photo_path=None, status=None):
@@ -258,6 +415,11 @@ def seed(conn, photos):
 def main():
     parser = argparse.ArgumentParser(description="Add or remove the Langkah demo hazards.")
     parser.add_argument("--clear", action="store_true", help="remove the demo accounts, their reports and photos")
+    parser.add_argument("--partner-stats", action="store_true", help="add 30 days of sample partner counts (marked demo)")
+    parser.add_argument("--clear-partner-stats", action="store_true", help="remove the sample partner counts")
+    parser.add_argument("--council-stats", action="store_true",
+                        help="add 12 weeks of sample reports for the council dashboard")
+    parser.add_argument("--clear-council-stats", action="store_true", help="remove the sample council reports")
     parser.add_argument("--gpx", default=os.path.join("out", "demo-walk.gpx"), help="where to write the demo walk")
     args = parser.parse_args()
 
@@ -269,6 +431,25 @@ def main():
 
     storage = storage_from_env()
     with psycopg.connect(url, sslmode="require") as conn:
+        if args.partner_stats:
+            partner_stats(conn)
+            conn.commit()
+            return
+        if args.clear_partner_stats:
+            n = conn.execute("delete from public.partner_events where demo").rowcount
+            conn.commit()
+            print(f"Removed {n} sample partner rows.")
+            return
+        if args.council_stats:
+            council_stats(conn, upload_photos(storage) if storage else {})
+            conn.commit()
+            return
+        if args.clear_council_stats:
+            n = conn.execute("delete from auth.users where id = any(%s)",
+                             ([SAMPLE_REPORTER, *SAMPLE_VOTERS],)).rowcount
+            conn.commit()
+            print(f"Removed {n} sample accounts and their council reports.")
+            return
         if args.clear:
             clear(conn, storage)
             return

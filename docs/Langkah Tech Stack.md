@@ -495,7 +495,7 @@ There are two kinds of APK. The **development build** connects to a teammate's l
 
 ## 14. Future Work
 
-Firstly, SOS and live location sharing with trusted contacts, which came up during planning but is outside the approved scope. Secondly, the OKU accessibility layer and AI classification of report photos from the original idea. Thirdly, a separate council dashboard with heatmaps, a self-hosted GraphHopper routing server once Langkah grows past a single city, and AI-generated sidewalk networks from aerial imagery with Tile2Net (Hosseini et al., 2023) to go beyond the hand-drawn pilot corridors. Lastly, an iOS release and a Penang expansion covering the Bukit Jambul to FIZ walk that inspired the project.
+Firstly, SOS and live location sharing with trusted contacts, which came up during planning but is outside the approved scope. Secondly, the OKU accessibility layer and AI classification of report photos from the original idea. Thirdly, staff sign-in and status updates for the council dashboard (Section 15.7), a self-hosted GraphHopper routing server once Langkah grows past a single city, and AI-generated sidewalk networks from aerial imagery with Tile2Net (Hosseini et al., 2023) to go beyond the hand-drawn pilot corridors. Lastly, an iOS release and a Penang expansion covering the Bukit Jambul to FIZ walk that inspired the project.
 
 ## 15. Langkah Points
 
@@ -528,7 +528,7 @@ Langkah Plus gives 20 starred places instead of 3 (stars stay on the phone, like
 - A `point_ledger` table holds every change, and `point_balances` holds one balance per user. RLS is on; users read only their own rows; the app cannot insert or update either table.
 - Points move only through `security definer` functions. Caps are enforced in SQL by the Malaysian day (Asia/Kuala_Lumpur). A `ref` on each line stops the same earn being paid twice.
 - Supabase grants EXECUTE on new functions to `anon` and `authenticated` by default. Migration 13 turns that default off for the `public` schema, so helpers such as `points_add` stay private and every app entry point is granted by name.
-- The shop: `shop_items` (id, kind, price; wording lives in the app's translation files) and `user_items` (what a user bought; a voucher row carries its code). `shop_buy`, `plus_buy`, `cosmetic_use`, `topup_mock` and `ad_finish` are the only ways in.
+- The shop: `shop_items` (id, kind, price; cosmetic wording lives in the app's translation files, voucher wording comes from the partner, Section 15.6) and `user_items` (what a user bought; a voucher row carries its code). `shop_buy`, `plus_buy`, `cosmetic_use`, `topup_mock` and `ad_finish` are the only ways in.
 - Walk distance is measured on the phone from the GPS fixes. Fixes worse than 30 m and jumps faster than 4 m/s are dropped. Only metres and seconds are sent; the server rejects an average faster than 3 m/s. The track never leaves the phone.
 - Guests earn points, but guest points live only on that phone's account. If a guest signs in with a Google account that already has Langkah, the guest's points stay behind.
 
@@ -539,6 +539,22 @@ The first launch offers Sign in with Google, Continue as guest, and Try the demo
 ### 15.5 Money rules
 
 Every mock top-up screen shows "DEMO · no real money". Nothing is typed, saved or sent to a bank, and there is no card option. The bank login and TAC fill themselves; the server picks the points from the pack and caps top-ups at RM500 per Malaysian month. Mock ads are parody brands with our own art, offered only from the wallet and never during a walk. Before any real sale: check the Bank Negara e-money policy document (bought points that pay for other shops' vouchers may count as e-money), and use Google Play Billing for top-ups on Android (15% fee).
+
+### 15.6 Partner shops and sponsored pins
+
+- A `partners` table holds each shop: name, offer in English and Bahasa Melayu, RM off, address, location and open dates (Malaysian days). Each voucher in `shop_items` belongs to one partner and shows only while that partner is open. A new partner is a database row; the app needs no update.
+- Sponsored pins: a white teardrop with a navy outline, a shop icon and a "Sponsored" tag, so a pin never reads as a hazard or an amenity. At most 3 on screen, the closest to the middle of the view (the Waze rule), from `map_in_view` with the rest of the visible area.
+- They show on the browse map only: never while comparing routes, reporting or walking, and never as a popup. A tap opens a bottom sheet with the offer, Get voucher (the shop's usual confirm dialog) and Walk here (the usual route compare). Shops never change routes, alerts or reports.
+- Counts for the partner report: `partner_seen` stores a view (the pin was on screen) or a tap once per user, shop and Malaysian day, so panning adds nothing. Redeems come from `user_items`. The table is private; `data-scripts/partner_report.py` prints counts per shop with no user ids. Sample counts for the pitch (`seed_demo.py --partner-stats`) are marked demo and flagged in the report.
+
+### 15.7 Council dashboard
+
+- A read-only web page for the council in `council/`: plain HTML and JavaScript with no build step, MapLibre GL JS and the OpenFreeMap Positron style (the OpenStreetMap credit stays visible), the Langkah colours and Atkinson Hyperlegible Next. Bahasa Melayu first, with an English switch; every string lives in `council/strings.js`.
+- It shows open improvement requests ranked by upvotes (photo, street, status, CSV and GeoJSON with the same columns as the app export), a hazard heatmap for 30, 90 or 365 days with expired hazards included and each hazard weighted 1 + its Still there votes, 12-week trends (new hazards, new requests, new upvotes, by Malaysian week) and the most common report types.
+- One `security definer` function, `council_data(p_days)`, returns all of it. No names, no user ids, coordinates at 5 decimals, and a reporter's vote on their own report never counts. User notes are set as text on the page, never as HTML, and the CSV escapes a leading `=`, `+`, `-` or `@`.
+- Hosting: GitHub Pages, deployed by `.github/workflows/council-pages.yml`, which writes `config.js` from repo variables so no key is committed. Only the public anon key is used.
+- Public for the prototype. Before a real sale: staff sign-in by email magic link, with a staff list checked in SQL.
+- Sample data for the pitch: `seed_demo.py --council-stats` adds backdated reports by their own sample accounts; `--clear-council-stats` removes them.
 
 ## References
 

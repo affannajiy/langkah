@@ -8,7 +8,8 @@ import { BackHandler, Pressable, StyleSheet, View, useWindowDimensions } from 'r
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { streetAt } from '../../api/reports';
-import type { RouteError, RoutePair } from '../../api/types';
+import { partnerSeen } from '../../api/points';
+import type { RouteError, RoutePair, SponsoredPin } from '../../api/types';
 import { useAuth } from '../../auth/AuthProvider';
 import { AppText, TextScaleCap } from '../../components/AppText';
 import { BatteryTipSheet, hasStrictBatterySaver } from '../../components/BatteryTipSheet';
@@ -19,6 +20,7 @@ import { Snackbar, useSnackbar } from '../../components/Snackbar';
 import { CompareSheet } from '../../features/map/CompareSheet';
 import { HomeBottomControls, HomeTopControls } from '../../features/map/HomeControls';
 import { LayersSheet } from '../../features/map/LayersSheet';
+import { PartnerSheet } from '../../features/map/PartnerSheet';
 import { PeekSheet } from '../../features/map/PeekSheet';
 import { ReportFlowSheet, type ReportStep } from '../../features/report/ReportFlowSheet';
 import { SearchSheet, type SearchPurpose } from '../../features/map/SearchSheet';
@@ -136,6 +138,7 @@ export default function MapScreen() {
   const [trail, setTrail] = useState<LngLat[] | null>(null);
   const { layers: toggles, locationAsked, batteryTipSeen } = useSettings();
   const [batteryTip, setBatteryTip] = useState(false);
+  const [partner, setPartner] = useState<SponsoredPin | null>(null);
 
   const home = screen.kind === 'home';
   const comparing = screen.kind === 'compare';
@@ -399,6 +402,41 @@ export default function MapScreen() {
     setTrip({ from: trip.to, to: trip.from });
   }
 
+  // --- sponsored shops (guide Section 15.6) ----------------------------------
+
+  // Browse map only: hidden while comparing routes or reporting.
+  const showSponsored = home;
+  const sponsoredIds = showSponsored ? (mapView.view?.sponsored ?? []).map((s) => s.id).join(',') : '';
+  // Count each pin once a day on the phone too, so panning sends nothing new.
+  const seenToday = useRef<{ day: string; ids: Set<string> }>({ day: '', ids: new Set() });
+  useEffect(() => {
+    if (!sponsoredIds) return;
+    const day = new Date().toDateString();
+    if (seenToday.current.day !== day) seenToday.current = { day, ids: new Set() };
+    const fresh = sponsoredIds.split(',').filter((id) => !seenToday.current.ids.has(id));
+    if (fresh.length === 0) return;
+    fresh.forEach((id) => seenToday.current.ids.add(id));
+    partnerSeen(fresh, 'view').catch((e) => console.warn('partner_seen failed', e));
+  }, [sponsoredIds]);
+
+  const openPartner = useCallback((pin: SponsoredPin) => {
+    setPartner(pin);
+    partnerSeen([pin.id], 'tap').catch((e) => console.warn('partner_seen failed', e));
+  }, []);
+
+  function walkToPartner(pin: SponsoredPin) {
+    setPartner(null);
+    const place: StoredPlace = { name: pin.name, area: pin.address, category: 'shop', lngLat: pin.lngLat };
+    addRecent(place);
+    startTrip(place);
+  }
+
+  function voucherFromPartner(pin: SponsoredPin) {
+    setPartner(null);
+    router.push({ pathname: '/shop', params: { buy: pin.item } });
+  }
+
+
   // --- report flow (guide Section 6.3, screen 6) ---------------------------
 
   // Step 3: frame the walker (or the current view) under the pin once the sheet has shrunk.
@@ -449,6 +487,7 @@ export default function MapScreen() {
   }, [screenW, pinY]);
 
   function openReport(at: LngLat | null = null, walked: LngLat[] | null = null) {
+    setPartner(null);
     setPin(at);
     setTrail(walked);
     setPinStreet(null);
@@ -529,6 +568,10 @@ export default function MapScreen() {
         setLayersOpen(false);
         return true;
       }
+      if (partner) {
+        setPartner(null);
+        return true;
+      }
       if (screen.kind === 'search') {
         closeSearch();
         return true;
@@ -568,7 +611,7 @@ export default function MapScreen() {
             }}
           >
             <Camera ref={cameraRef} initialViewState={{ bounds: IPOH_BOUNDS }} minZoom={MIN_ZOOM} maxZoom={MAX_ZOOM} />
-            <MapPins view={mapView.view} toggles={toggles} />
+            <MapPins view={mapView.view} toggles={toggles} onSponsored={showSponsored ? openPartner : undefined} />
             {reporting && trail && <TrailLayer points={trail} />}
             {comparing && pair && toLL && (
               <RouteLayers
@@ -734,6 +777,13 @@ export default function MapScreen() {
               toggles={toggles}
               onChange={(layers) => updateSettings({ layers })}
               onClose={() => setLayersOpen(false)}
+            />
+            <PartnerSheet
+              pin={home ? partner : null}
+              here={access === 'granted' ? here : null}
+              onWalk={walkToPartner}
+              onVoucher={voucherFromPartner}
+              onClose={() => setPartner(null)}
             />
             <LocationSheet
               visible={locationSheet}

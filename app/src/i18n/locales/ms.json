@@ -358,7 +358,9 @@
     "shelter": "Tempat berteduh",
     "start": "Mula",
     "destination": "Destinasi",
-    "you": "Anda di sini"
+    "you": "Anda di sini",
+    "sponsored": "Ditaja",
+    "sponsoredA11y": "Kedai ditaja: {{name}}. Diskaun RM{{rm}}, {{offer}}"
   },
   "hazard": {
     "broken_sidewalk": "Kaki lima rosak",
@@ -762,7 +764,7 @@
     "inUse": "Sedang diguna",
     "owned": "Dimiliki",
     "withPlus": "Dengan Plus",
-    "madeUp": "Kedai rekaan untuk demo. Dalam Fasa 12, rakan kongsi sebenar di Ipoh mengisi senarai ini.",
+    "madeUp": "Kedai Ipoh rekaan untuk demo. Setiap satu ada di peta sebagai pin Ditaja.",
     "cosmeticsNote": "Bingkai dan lencana dipaparkan di tab Saya. Ia tidak sesekali mengubah laluan atau laporan.",
     "loadFailed": "Tidak dapat memuatkan kedai.",
     "confirmTitle": "Belanja mata untuk {{item}}?",
@@ -782,22 +784,6 @@
       "not_owned": "Dapatkan ini dahulu."
     },
     "item": {
-      "kopi_kinta": {
-        "name": "Kopi Kinta Corner",
-        "detail": "Mana-mana kopi atau teh, Old Town"
-      },
-      "roti_pak_mat": {
-        "name": "Roti Bakar Pak Mat",
-        "detail": "Set roti bakar kaya"
-      },
-      "tau_fu_fa": {
-        "name": "Lorong Tau Fu Fa",
-        "detail": "Mana-mana mangkuk, Concubine Lane"
-      },
-      "kinta_bookstop": {
-        "name": "Kinta Bookstop",
-        "detail": "Buku melebihi RM30"
-      },
       "frame_teal": {
         "name": "Cincin teal",
         "detail": "Bingkai avatar warna hijau Langkah"
@@ -830,7 +816,8 @@
         "name": "Lencana Plus",
         "detail": "Percuma semasa Plus aktif"
       }
-    }
+    },
+    "voucher": "Baucar"
   },
   "plus": {
     "row": "Langkah Plus",
@@ -886,5 +873,13 @@
     "count": "{{n}} daripada {{max}}",
     "empty": "Bintangkan tempat pada helaian laluan supaya mudah dicari dalam Carian.",
     "openHint": "Menunjukkan laluan ke tempat ini"
+  },
+  "partner": {
+    "tag": "Ditaja",
+    "offer": "Diskaun RM{{rm}} · {{offer}}",
+    "away": "Kira-kira {{distance}} dari anda",
+    "walk": "Jalan ke sini",
+    "voucher": "Dapatkan baucar · {{cost}} mata",
+    "why": "Kedai membayar untuk dipaparkan di sini. Laluan, amaran dan laporan tidak pernah berubah kerananya."
   }
 }

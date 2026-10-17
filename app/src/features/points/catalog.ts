@@ -1,26 +1,37 @@
 import type { TFunction } from 'i18next';
 import { Crown, Footprints, Moon, Sunrise, type LucideIcon } from 'lucide-react-native';
 
+import { offerText, partnerOf } from '../../points/partners';
 import { colors } from '../../theme/theme';
 
-// How each shop item looks (guide Section 15.2). Prices come from the server's
-// shop_items table; names and wording from shop.item.<id> in the translation files.
+// How each shop item looks (guide Sections 15.2 and 15.6). Prices come from the
+// server's shop_items table. A voucher's shop name and offer come from its partner
+// (server data); cosmetic names from shop.item.<id> in the translation files.
 
-// Shop item ids come from the server, so the key is built at run time.
 export function itemText(t: TFunction, id: string, part: 'name' | 'detail'): string {
-  return t(`shop.item.${id}.${part}` as 'shop.item.kopi_kinta.name');
+  const p = partnerOf(id);
+  if (p) return part === 'name' ? p.name : offerText(p);
+  // Cosmetic ids come from the server, so the key is built at run time.
+  return t(`shop.item.${id}.${part}` as 'shop.item.frame_teal.name', { defaultValue: part === 'name' ? t('shop.voucher') : '' });
 }
 
 export type VoucherLook = { rm: number; soft: string; text: string };
 export type FrameLook = { ring: string; width: number; dashed?: boolean; double?: boolean };
 export type BadgeLook = { icon: LucideIcon; fill: string; color: string };
 
-export const VOUCHERS: Record<string, VoucherLook> = {
-  kopi_kinta: { rm: 2, soft: colors.hazardSoft, text: colors.hazardText },
-  roti_pak_mat: { rm: 3, soft: colors.safeSoft, text: colors.safeText },
-  tau_fu_fa: { rm: 1, soft: colors.communitySoft, text: colors.communityText },
-  kinta_bookstop: { rm: 5, soft: colors.interactiveSoft, text: colors.interactiveText },
-};
+// Voucher stub colours, picked from the id so a shop keeps its colour everywhere.
+const VOUCHER_TINTS = [
+  { soft: colors.hazardSoft, text: colors.hazardText },
+  { soft: colors.safeSoft, text: colors.safeText },
+  { soft: colors.communitySoft, text: colors.communityText },
+  { soft: colors.interactiveSoft, text: colors.interactiveText },
+];
+
+export function voucherLook(id: string): VoucherLook {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return { rm: partnerOf(id)?.rm ?? 0, ...VOUCHER_TINTS[h % VOUCHER_TINTS.length]! };
+}
 
 export const PLUS_GOLD = '#C99A1E';
 

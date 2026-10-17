@@ -24,3 +24,6 @@ __pycache__/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Council page: written by the Pages workflow, or copied from config.example.js locally
+council/config.js

@@ -358,7 +358,9 @@
     "shelter": "Shelter",
     "start": "Start",
     "destination": "Destination",
-    "you": "You are here"
+    "you": "You are here",
+    "sponsored": "Sponsored",
+    "sponsoredA11y": "Sponsored shop: {{name}}. RM{{rm}} off, {{offer}}"
   },
   "hazard": {
     "broken_sidewalk": "Broken sidewalk",
@@ -762,7 +764,7 @@
     "inUse": "In use",
     "owned": "Owned",
     "withPlus": "With Plus",
-    "madeUp": "Made-up shops for the demo. In Phase 12 real Ipoh partners fill this list.",
+    "madeUp": "Made-up Ipoh shops for the demo. Each one is on the map as a Sponsored pin.",
     "cosmeticsNote": "Frames and badges show on your Me tab. They never change routes or reports.",
     "loadFailed": "Could not load the shop.",
     "confirmTitle": "Spend points on {{item}}?",
@@ -782,22 +784,6 @@
       "not_owned": "Get this first."
     },
     "item": {
-      "kopi_kinta": {
-        "name": "Kopi Kinta Corner",
-        "detail": "Any kopi or teh, Old Town"
-      },
-      "roti_pak_mat": {
-        "name": "Roti Bakar Pak Mat",
-        "detail": "Kaya toast set"
-      },
-      "tau_fu_fa": {
-        "name": "Lorong Tau Fu Fa",
-        "detail": "Any bowl, Concubine Lane"
-      },
-      "kinta_bookstop": {
-        "name": "Kinta Bookstop",
-        "detail": "Books over RM30"
-      },
       "frame_teal": {
         "name": "Teal ring",
         "detail": "Avatar frame in Langkah green"
@@ -830,7 +816,8 @@
         "name": "Plus badge",
         "detail": "Free while Plus is on"
       }
-    }
+    },
+    "voucher": "Voucher"
   },
   "plus": {
     "row": "Langkah Plus",
@@ -886,5 +873,13 @@
     "count": "{{n}} of {{max}}",
     "empty": "Star a place on the route sheet to find it fast in Search.",
     "openHint": "Shows routes to this place"
+  },
+  "partner": {
+    "tag": "Sponsored",
+    "offer": "RM{{rm}} off · {{offer}}",
+    "away": "About {{distance}} from you",
+    "walk": "Walk here",
+    "voucher": "Get voucher · {{cost}} pts",
+    "why": "Shops pay to show here. Routes, alerts and reports never change for them."
   }
 }

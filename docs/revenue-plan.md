@@ -1,6 +1,6 @@
 # Revenue plan and Phases 10 to 13
 
-Decided on 2026-10-17 and revised the same day (one coin, mock top-up, demo account, parody ads). The rules the code follows are in Section 15 of `Langkah Tech Stack.md`. Phases 10 and 11 are built; Phases 12 and 13 are planned.
+Decided on 2026-10-17 and revised the same day (one coin, mock top-up, demo account, parody ads). The rules the code follows are in Section 15 of `Langkah Tech Stack.md`. Phases 10 to 13 are built.
 
 ## Why not a monthly fee
 
@@ -164,7 +164,10 @@ Built as planned, with these choices: ads keep the one app font (brand looks com
 4. **Cosmetics** (avatar frame, badges) and the **Plus** page. Plus perks: live walk share with family, 20 saved places instead of 3, a Plus badge and gold frame. No extra points, so Plus never becomes a faster way to buy points.
 5. With too few points, a bottom sheet (not a dialog) shows how to earn or top up.
 
-### Phase 12: Shops on the map
+### Phase 12: Shops on the map (built)
+
+Built as planned, with these choices: each voucher in the shop links 1:1 to a `partners` row (made-up shops on real Old Town and New Town streets; names and offers in the database); a white teardrop pin with a "Sponsored" tag; a tap opens a sheet with Get voucher and Walk here; views and taps count once per user, shop and day; no Layers switch for the pins; `partner_report.py` prints a table and writes a CSV, and `seed_demo.py --partner-stats` adds sample counts marked demo. Rules in guide Section 15.6.
+
 - **Migration:** a `partners` table (shop, location, voucher, active dates).
 - **Sponsored pins:**
   - a separate pin shape with the word "Sponsored", at most 3 on screen (the Waze rule)
@@ -173,14 +176,15 @@ Built as planned, with these choices: ads keep the one app font (brand looks com
 - A partner report script in `data-scripts/` (views and redeems per shop), for the sales pitch.
 
 ### Phase 13: Council dashboard
-- A read-only web page for MBI, the FixMyStreet Pro idea:
-  - ranked improvement requests
-  - a hazard heatmap
-  - trends over time
-  - CSV and GeoJSON export (already in the app)
+- A read-only web page for MBI, the FixMyStreet Pro idea, in `council/`:
+  - ranked improvement requests, with photos, CSV and GeoJSON download
+  - a hazard heatmap for 30, 90 or 365 days, expired hazards included
+  - 12-week trends and the most common report types
+  - Bahasa Melayu first, with an English switch
 - No names or user ids, the same as the app export.
-- **Hosting:** a static page on GitHub Pages (RM0) that reads a Supabase view with no user ids.
-- **Staff sign-in:** email magic link, with an `mbi_staff` role checked by RLS. You set up GitHub Pages and the Supabase email settings; the steps will be in that phase's notes.
+- **Hosting:** a static page on GitHub Pages (RM0), deployed by `.github/workflows/council-pages.yml`. It calls one function, `council_data` (migration 15). Setup steps are in the README.
+- **Sample data:** `seed_demo.py --council-stats` adds about 150 backdated reports so the trends are not empty for the pitch.
+- **Later, before a real sale:** staff sign-in by email magic link with a staff list checked in SQL. The prototype is public, since the data holds no names.
 
 ## Not in code: grants and partners
 - **Cradle CIP Spark:** a conditional grant of up to RM150,000 over 18 months for pre-commercial tech. Teams of at least 2 can apply as individuals before setting up a company. Apply through the MYStartup portal.

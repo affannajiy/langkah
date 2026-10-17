@@ -171,6 +171,18 @@ export async function mapInView(bounds: LngLatBounds, signal?: AbortSignal): Pro
     amenities: rows(data.am)
       .filter((r) => AMENITY_KINDS.has(r[0] as string))
       .map((r) => ({ kind: r[0] as MapAmenityKind, lngLat: [num(r[1]), num(r[2])] as LngLat })),
+    sponsored: rows(data.sp)
+      .slice(0, 3)
+      .map((r) => ({
+        id: str(r[0]),
+        lngLat: [num(r[1]), num(r[2])] as LngLat,
+        name: str(r[3]),
+        offer: { en: str(r[4]), ms: str(r[5]) },
+        rm: num(r[6]),
+        item: str(r[7]),
+        cost: num(r[8]),
+        address: str(r[9]),
+      })),
     counts: { hazards: num(counts.hz ?? 0), improvements: num(counts.im ?? 0) },
   };
 }

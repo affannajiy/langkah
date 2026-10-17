@@ -6,24 +6,24 @@ import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
 import { shortDate } from '../../i18n/format';
 import { colors, radius, spacing } from '../../theme/theme';
-import { itemText, VOUCHERS } from './catalog';
+import { itemText, voucherLook } from './catalog';
 
 // A redeemed voucher's code, to show at the counter. Goes inside a ScrimSheet.
 export function VoucherBody({ item, code, at, onClose }: { item: string; code: string; at: string; onClose: () => void }) {
   const { t } = useTranslation();
-  const look = VOUCHERS[item];
+  const look = voucherLook(item);
   return (
     <>
       <View style={styles.head}>
-        <View style={[styles.icon, { backgroundColor: look?.soft ?? colors.interactiveSoft }]}>
-          <Ticket size={26} color={look?.text ?? colors.interactiveText} />
+        <View style={[styles.icon, { backgroundColor: look.soft }]}>
+          <Ticket size={26} color={look.text} />
         </View>
         <View style={styles.flex}>
           <AppText variant="heading" color={colors.navy} accessibilityRole="header">
             {itemText(t, item, 'name')}
           </AppText>
           <AppText color={colors.textMuted}>
-            {t('shop.voucherLine', { rm: look?.rm ?? 0, detail: itemText(t, item, 'detail') })}
+            {t('shop.voucherLine', { rm: look.rm, detail: itemText(t, item, 'detail') })}
           </AppText>
         </View>
       </View>

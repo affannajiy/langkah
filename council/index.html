@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Langkah untuk Majlis</title>
+  <meta name="description" content="Pedestrian hazard and improvement reports in Ipoh, from Langkah walkers.">
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet">
+  <link href="style.css" rel="stylesheet">
+</head>
+<body>
+  <header class="top">
+    <div class="top-in">
+      <div class="brand">
+        <img src="icon.png" alt="" width="44" height="44">
+        <div>
+          <h1 data-t="title"></h1>
+          <p class="sub"><span data-t="sub"></span> · <span id="updated"></span></p>
+        </div>
+      </div>
+      <div class="controls">
+        <div class="seg" role="radiogroup" id="period" data-label="period">
+          <button type="button" role="radio" data-days="30"></button>
+          <button type="button" role="radio" data-days="90"></button>
+          <button type="button" role="radio" data-days="365"></button>
+        </div>
+        <button type="button" class="lang" id="lang"></button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <p class="notice" role="note"><span class="notice-mark" aria-hidden="true">i</span><span data-t="prototype"></span></p>
+
+    <div id="state" class="state" role="status" aria-live="polite"></div>
+
+    <section class="stats" aria-label="Summary">
+      <div class="stat hz"><span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 22 12 12 22 2 12Z"/><path class="ink" d="M11 7h2v6h-2zM11 15h2v2h-2z"/></svg></span><div><b id="sumHz">-</b><span data-t="sumHz"></span></div></div>
+      <div class="stat im"><span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path class="ink" d="M11 7h2v4h4v2h-4v4h-2v-4H7v-2h4z"/></svg></span><div><b id="sumIm">-</b><span data-t="sumIm"></span></div></div>
+      <div class="stat up"><span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path class="ink" d="M12 6 18 13h-4v5h-4v-5H6z"/></svg></span><div><b id="sumUp">-</b><span data-t="sumUp"></span></div></div>
+      <div class="stat mo"><span class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="3"/><path class="ink" d="M6 9h12v2H6zM6 13h7v2H6z"/></svg></span><div><b id="sumMonth">-</b><span data-t="sumMonth"></span></div></div>
+    </section>
+
+    <div class="grid">
+      <section class="card map-card" aria-labelledby="mapTitle">
+        <div class="card-head">
+          <h2 id="mapTitle" data-t="mapTitle"></h2>
+          <p class="hint" data-t="mapHint"></p>
+        </div>
+        <div class="map-tools">
+          <label class="check"><input type="checkbox" id="layerHeat" checked><span class="key key-hz" aria-hidden="true"></span><span data-t="layerHeat"></span></label>
+          <label class="check"><input type="checkbox" id="layerIm" checked><span class="key key-im" aria-hidden="true"></span><span data-t="layerIm"></span></label>
+          <label class="pick"><span data-t="hzCat"></span><select id="hzCat"></select></label>
+        </div>
+        <div id="map" class="map"></div>
+      </section>
+
+      <section class="card list-card" aria-labelledby="listTitle">
+        <div class="card-head">
+          <h2 id="listTitle" data-t="listTitle"></h2>
+          <p class="hint" data-t="listHint"></p>
+        </div>
+        <div class="list-tools">
+          <label class="pick"><span data-t="imCat"></span><select id="imCat"></select></label>
+          <div class="downloads">
+            <button type="button" class="btn" id="csv"></button>
+            <button type="button" class="btn" id="geojson"></button>
+          </div>
+        </div>
+        <ol id="list" class="list"></ol>
+        <button type="button" class="btn more" id="more" hidden></button>
+      </section>
+    </div>
+
+    <section class="card" aria-labelledby="trendsTitle">
+      <div class="card-head">
+        <h2 id="trendsTitle" data-t="trendsTitle"></h2>
+        <p class="hint" data-t="trendsHint"></p>
+      </div>
+      <div class="charts">
+        <figure class="chart" id="wHz"></figure>
+        <figure class="chart" id="wIm"></figure>
+        <figure class="chart" id="wUp"></figure>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="catsTitle">
+      <div class="card-head"><h2 id="catsTitle"></h2></div>
+      <div class="cats">
+        <div><h3 data-t="catsHz"></h3><ul class="bars" id="catsHz"></ul></div>
+        <div><h3 data-t="catsIm"></h3><ul class="bars" id="catsIm"></ul></div>
+      </div>
+    </section>
+
+    <p class="privacy" data-t="privacy"></p>
+  </main>
+
+  <footer class="foot"><span data-t="footer"></span></footer>
+
+  <script src="config.js"></script>
+  <script src="strings.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

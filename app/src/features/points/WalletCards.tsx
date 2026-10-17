@@ -199,8 +199,9 @@ function describe(l: LedgerLine, t: T): { title: string; sub: string | null } {
       return { title: t('ledger.welcome'), sub: null };
     case 'voucher':
     case 'cosmetic': {
+      // Vouchers bought since Phase 12 keep the shop name on the line.
       const item = s(m.item);
-      return { title: l.reason === 'voucher' ? t('ledger.voucher') : t('ledger.cosmetic'), sub: item ? itemText(t, item, 'name') : null };
+      return { title: l.reason === 'voucher' ? t('ledger.voucher') : t('ledger.cosmetic'), sub: s(m.name) ?? (item ? itemText(t, item, 'name') : null) };
     }
     case 'plus':
       return { title: t('ledger.plus'), sub: s(m.until) ? t('ledger.plusUntil', { date: shortDate(String(m.until)) }) : null };
