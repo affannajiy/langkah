@@ -10,6 +10,7 @@ import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
 import { setLanguage } from '../i18n';
 import { updateSettings, type Language } from '../storage/settings';
+import { cappedContent } from '../theme/layout';
 import { colors, radius, spacing, touchTarget } from '../theme/theme';
 
 const MARK = require('../../assets/brand/splash-mark-white-512.png');
@@ -157,7 +158,8 @@ const styles = StyleSheet.create({
   dots: { flexDirection: 'row', gap: spacing.sm },
   dot: { width: 24, height: 6, borderRadius: 3, backgroundColor: colors.border },
   dotOn: { backgroundColor: colors.navy },
-  content: { gap: spacing.lg, paddingVertical: spacing.xl },
+  content: {
+    ...cappedContent, gap: spacing.lg, paddingVertical: spacing.xl },
   mark: {
     alignSelf: 'center',
     width: 96,

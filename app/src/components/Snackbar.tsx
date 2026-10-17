@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { useSideInset } from '../theme/layout';
 import { colors, radius, shadow, spacing, touchTarget } from '../theme/theme';
 import { AppText } from './AppText';
 
@@ -40,9 +41,10 @@ export function useSnackbar() {
 type Props = { message: SnackbarMessage | null; onHide: () => void; bottom: number };
 
 export function Snackbar({ message, onHide, bottom }: Props) {
+  const side = useSideInset(spacing.md);
   if (!message) return null;
   return (
-    <View style={[styles.bar, { bottom }]} accessibilityLiveRegion="polite">
+    <View style={[styles.bar, { bottom, left: side, right: side }]} accessibilityLiveRegion="polite">
       <AppText variant="label" color={colors.white} style={styles.text}>
         {message.text}
       </AppText>

@@ -201,6 +201,7 @@ The project is hosted on Supabase (Singapore region). Every change goes through 
 | `…08_route_per_area` | `route_safe` routes inside the pilot area's own network (Ipoh or Seri Iskandar) |
 | `…09_reports_community` | Trust rules (votes set status), `profiles`, `report_create`, `report_vote`, `community_reports`, `community_export`, `street_at`, `sync_profile`, nightly expiry on pg_cron |
 | `…10_me_ratings_demo` | `walk_ratings` and `rate_walk` (Arrival), `my_reports` and `my_stats` (Me tab), the private `app_flags` demo switch and `app_status` |
+| `…11_score_weights` | Table 9 penalties move into `private.score_weights`; `private.score_segments()` rescores without a rebuild (tuning: [docs/user-test-plan.md](docs/user-test-plan.md)) |
 
 The app can call only `search_places`, `route_safe`, `map_in_view`, the report and Community functions above, plus the tables RLS allows. Road data is never read directly by the app.
 
@@ -320,6 +321,14 @@ python check_payload.py
 ```
 
 **Accessibility** (guide Section 5.4): work through [docs/accessibility-check.md](docs/accessibility-check.md) on the preview APK.
+
+**Walk ratings and weights** (guide Section 7.1). Inside `data-scripts/`, read-only:
+
+```bash
+python rating_report.py
+```
+
+The group test and tuning steps are in [docs/user-test-plan.md](docs/user-test-plan.md).
 
 ## 7. Demo script (oral presentation, 5 minutes)
 

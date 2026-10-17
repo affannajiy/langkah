@@ -67,6 +67,17 @@ export const radius = {
 // Minimum touch target (Section 5.4)
 export const touchTarget = 48;
 
+// Widest a sheet, bar or list may get. On wider screens (big phones in
+// landscape-size windows, foldables, tablets) it sits centred.
+export const maxContentWidth = 560;
+
+// Below this window height (dp) the Map home folds the saved-place chips away.
+export const shortScreenHeight = 640;
+
+// Below this window height (dp) the walk screen goes compact: phones in split screen,
+// foldables in landscape. Android's "compact height" class.
+export const compactHeight = 480;
+
 export const fontFamily = 'AtkinsonHyperlegibleNext';
 
 // Largest text scale for controls that float over the map and for the tab bar.

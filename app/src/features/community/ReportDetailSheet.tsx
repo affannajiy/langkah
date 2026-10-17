@@ -11,6 +11,7 @@ import { MapCredit } from '../../components/MapCredit';
 import { shortDate, timeAgo } from '../../i18n/format';
 import { HazardMark } from '../../map/MapPins';
 import { useLangkahMapStyle } from '../../map/useLangkahMapStyle';
+import { useSideInset } from '../../theme/layout';
 import { colors, radius, shadow, spacing, touchTarget } from '../../theme/theme';
 import { categoryKey } from '../report/categoryIcons';
 import { ImprovementMark } from './CommunityPins';
@@ -38,6 +39,7 @@ export function ReportDetailSheet({ report: r, busy, bottom, onVote, onClose, ow
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
+  const side = useSideInset();
   const { style: mapStyle, land: mapLand } = useLangkahMapStyle();
   const subtitle = useSubtitle(r);
   const miniRef = useRef<MapRef>(null);
@@ -56,7 +58,7 @@ export function ReportDetailSheet({ report: r, busy, bottom, onVote, onClose, ow
   return (
     <>
       <Pressable style={styles.scrim} accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onClose} />
-      <View style={[styles.sheet, { bottom, maxHeight: screenH - insets.top - bottom - spacing.lg }]}>
+      <View style={[styles.sheet, { left: side, right: side, bottom, maxHeight: screenH - insets.top - bottom - spacing.lg }]}>
         <View style={styles.handle} />
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.header}>
@@ -213,7 +215,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  photo: { width: '100%', height: 200, borderRadius: radius.card, backgroundColor: colors.surface },
+  photo: { width: '100%', aspectRatio: 4 / 3, borderRadius: radius.card, backgroundColor: colors.surface },
   chips: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flexWrap: 'wrap' },
   mini: { height: 150, borderRadius: radius.card, overflow: 'hidden' },
   credit: { position: 'absolute', left: spacing.sm, bottom: spacing.sm },

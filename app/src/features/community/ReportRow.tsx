@@ -123,7 +123,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     overflow: 'hidden',
   },
-  hero: { width: '100%', height: 180, backgroundColor: colors.surface },
+  // 4:3 like the camera shots, so the height follows the screen width.
+  hero: { width: '100%', aspectRatio: 4 / 3, backgroundColor: colors.surface },
   featuredBody: { padding: spacing.md, gap: spacing.xs },
   featuredRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md, marginTop: spacing.sm },
 });

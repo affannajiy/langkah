@@ -40,6 +40,7 @@ import { useRoutes } from '../../route/useRoutes';
 import { takeChooseSaved, useRecentPlaces, useSavedPlaces, type SavedKey, type StoredPlace } from '../../storage/places';
 import { flushQueue, queuedCount } from '../../storage/reportQueue';
 import { updateSettings, useSettings } from '../../storage/settings';
+import { useSideInset } from '../../theme/layout';
 import { chromeTextScale, colors, radius, shadow, spacing } from '../../theme/theme';
 
 const RECENTRE_ZOOM = 16;
@@ -82,6 +83,7 @@ export default function MapScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
+  const side = useSideInset(spacing.md);
   const navigation = useNavigation();
   const router = useRouter();
   const { style: mapStyle, land: mapLand } = useLangkahMapStyle();
@@ -552,7 +554,7 @@ export default function MapScreen() {
             />
             <PeekSheet state={mapView.state} nearUser={nearUser} onLayout={setPeekH} />
             {/* Above the Report button: recentre (56) + gap + Report (64). */}
-            <View style={[styles.status, { bottom: peekH + spacing.md * 3 + 120 }]} pointerEvents="box-none">
+            <View style={[styles.status, { left: side, right: side, bottom: peekH + spacing.md * 3 + 120 }]} pointerEvents="box-none">
               {!online && <StatusBanner icon={CloudOff} text={t('offline.banner')} />}
               {online && access === 'granted' && !servicesOn && (
                 <StatusBanner
@@ -608,7 +610,7 @@ export default function MapScreen() {
         )}
 
         {home && mapFailed && (
-          <View style={[styles.banner, { top: insets.top + spacing.md }]} accessibilityLiveRegion="polite">
+          <View style={[styles.banner, { left: side, right: side, top: insets.top + spacing.md }]} accessibilityLiveRegion="polite">
             <TriangleAlert size={20} color={colors.hazardText} />
             <AppText variant="label" color={colors.navy} style={styles.bannerText}>
               {t('map.loadFailed')}
@@ -617,7 +619,7 @@ export default function MapScreen() {
         )}
 
         {home && outsidePilot && !mapFailed && (
-          <View style={[styles.banner, styles.infoBanner, { top: insets.top + spacing.md }]} accessibilityLiveRegion="polite">
+          <View style={[styles.banner, styles.infoBanner, { left: side, right: side, top: insets.top + spacing.md }]} accessibilityLiveRegion="polite">
             <MapPinOff size={20} color={colors.interactiveText} />
             <AppText variant="label" color={colors.navy} style={styles.bannerText}>
               {t('map.outsidePilot')}
@@ -669,6 +671,7 @@ export default function MapScreen() {
               recent={recent}
               onPick={onPick}
               onPickSaved={onPickSaved}
+              onSavedLongPress={onSavedLongPress}
               onUseMyLocation={onUseMyLocation}
               onClose={closeSearch}
             />

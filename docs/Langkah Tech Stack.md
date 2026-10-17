@@ -295,6 +295,8 @@ A virtual street audit is the inspection of streets through street-level photos 
 
 *Table 9 shows the starting penalties, which will be tuned after test walks with users.*
 
+The penalties live in the `private.score_weights` table, so a tuning change is one SQL update and a rescore, with no new migration. `docs/user-test-plan.md` lists the steps.
+
 ### 7.2 Keeping reports trustworthy
 
 This answers the moderation issue raised in the Week 3 progress report. Both kinds of report live in one reports table, with one map-pin screen and one voting flow.

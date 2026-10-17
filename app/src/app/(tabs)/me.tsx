@@ -44,6 +44,7 @@ import { timeAgo } from '../../i18n/format';
 import { useOnline } from '../../net/useOnline';
 import { requestChooseSaved, SAVED_KEYS, useSavedPlaces, type SavedKey } from '../../storage/places';
 import { queuedCount, subscribeQueue } from '../../storage/reportQueue';
+import { cappedContent } from '../../theme/layout';
 import { colors, radius, spacing, touchTarget } from '../../theme/theme';
 
 const SAVED_ICONS: Record<SavedKey, LucideIcon> = { home: House, utp: GraduationCap, work: Briefcase };
@@ -397,7 +398,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  content: { padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xxl },
+  content: {
+    ...cappedContent, padding: spacing.md, gap: spacing.md, paddingBottom: spacing.xxl },
   card: { backgroundColor: colors.white, borderRadius: radius.sheet, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   icon: { width: 56, height: 56, borderRadius: radius.card, alignItems: 'center', justifyContent: 'center' },

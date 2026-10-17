@@ -20,6 +20,7 @@ import { HazardMark } from '../../map/MapPins';
 import { useHere } from '../../map/useHere';
 import { useLocationPermission } from '../../map/useLocationPermission';
 import { useOnline } from '../../net/useOnline';
+import { cappedContent } from '../../theme/layout';
 import { chromeTextScale, colors, radius, spacing, touchTarget } from '../../theme/theme';
 
 const SORTS: CommunitySort[] = ['top', 'newest', 'nearest'];
@@ -306,7 +307,8 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   center: { textAlign: 'center' },
   // Wraps on narrow phones: the List / Map toggle drops under the title.
-  top: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md },
+  top: {
+    ...cappedContent, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.md },
   titleBlock: { flexGrow: 1, flexShrink: 1, minWidth: 180 },
   bigTitle: { fontSize: 32, lineHeight: 40 },
   segment: { flexDirection: 'row', backgroundColor: colors.neutralBadge, borderRadius: radius.sheet, padding: spacing.xs },
@@ -320,6 +322,7 @@ const styles = StyleSheet.create({
   },
   segmentOn: { backgroundColor: colors.white },
   kinds: {
+    ...cappedContent,
     flexDirection: 'row',
     margin: spacing.md,
     marginBottom: 0,
@@ -341,6 +344,7 @@ const styles = StyleSheet.create({
   kindOn: { backgroundColor: colors.navy },
   kindText: { flexShrink: 1 },
   sorts: {
+    ...cappedContent,
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
@@ -361,7 +365,8 @@ const styles = StyleSheet.create({
   export: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: touchTarget, paddingLeft: spacing.sm },
   underline: { textDecorationLine: 'underline' },
   listHeader: { gap: spacing.md, paddingBottom: spacing.md },
-  listContent: { padding: spacing.md, paddingBottom: spacing.xxl },
+  listContent: {
+    ...cappedContent, padding: spacing.md, paddingBottom: spacing.xxl },
   loading: { marginTop: spacing.xxl },
   more: { marginVertical: spacing.md },
   empty: { alignItems: 'center', gap: spacing.md, padding: spacing.xl },

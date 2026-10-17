@@ -24,6 +24,7 @@ import { formatDistance } from '../../i18n/format';
 import { isInPilotArea } from '../../map/config';
 import { placeIcon, SAVED_ICONS } from '../../map/placeIcon';
 import { SAVED_KEYS, type SavedKey, type SavedPlaces, type StoredPlace } from '../../storage/places';
+import { useSideInset } from '../../theme/layout';
 import { chromeTextScale, colors, fontFamily, radius, shadow, spacing, touchTarget, type } from '../../theme/theme';
 
 // What the picked place is for.
@@ -36,6 +37,8 @@ type Props = {
   recent: StoredPlace[];
   onPick: (place: StoredPlace) => void;
   onPickSaved: (key: SavedKey) => void;
+  // Long press clears a saved place (same as the chips on the Map home).
+  onSavedLongPress: (key: SavedKey) => void;
   onUseMyLocation: () => void;
   onClose: () => void;
 };
@@ -52,9 +55,10 @@ type Results =
 
 // Search sheet (guide Section 6.3, screen 2; docs/screens/Search.png). It slides over
 // the map with the field focused. Swipe down or "x" closes it.
-export function SearchSheet({ purpose, near, saved, recent, onPick, onPickSaved, onUseMyLocation, onClose }: Props) {
+export function SearchSheet({ purpose, near, saved, recent, onPick, onPickSaved, onSavedLongPress, onUseMyLocation, onClose }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const side = useSideInset();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Results>({ status: 'idle' });
   const [attempt, setAttempt] = useState(0);
@@ -121,7 +125,7 @@ export function SearchSheet({ purpose, near, saved, recent, onPick, onPickSaved,
         accessibilityLabel={t('search.close')}
         importantForAccessibility="no"
       />
-      <Animated.View style={[styles.sheet, { top: insets.top + spacing.lg, transform: [{ translateY: dragY }] }]}>
+      <Animated.View style={[styles.sheet, { left: side, right: side, top: insets.top + spacing.lg, transform: [{ translateY: dragY }] }]}>
         <View {...pan.panHandlers} style={styles.head}>
           <View style={styles.handle} />
           {title && (
@@ -165,6 +169,7 @@ export function SearchSheet({ purpose, near, saved, recent, onPick, onPickSaved,
                 saved={saved}
                 recent={recent}
                 onPickSaved={onPickSaved}
+                onSavedLongPress={onSavedLongPress}
                 onPickRecent={pick}
                 onUseMyLocation={onUseMyLocation}
               />
@@ -227,12 +232,14 @@ type StartProps = {
   saved: SavedPlaces;
   recent: StoredPlace[];
   onPickSaved: (key: SavedKey) => void;
+  // Long press clears a saved place (same as the chips on the Map home).
+  onSavedLongPress: (key: SavedKey) => void;
   onPickRecent: (p: StoredPlace) => void;
   onUseMyLocation: () => void;
 };
 
 // Before typing: my location (for a start point), saved places and recent searches.
-function StartContent({ purpose, near, saved, recent, onPickSaved, onPickRecent, onUseMyLocation }: StartProps) {
+function StartContent({ purpose, near, saved, recent, onPickSaved, onSavedLongPress, onPickRecent, onUseMyLocation }: StartProps) {
   const { t } = useTranslation();
   return (
     <View style={styles.start}>
@@ -260,6 +267,7 @@ function StartContent({ purpose, near, saved, recent, onPickSaved, onPickRecent,
                 unset={!saved[key]}
                 hint={saved[key] ? t('saved.setHint', { name: saved[key].name }) : t('saved.notSetHint')}
                 onPress={() => onPickSaved(key)}
+                onLongPress={() => onSavedLongPress(key)}
               />
             ))}
           </View>

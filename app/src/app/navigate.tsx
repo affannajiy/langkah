@@ -26,6 +26,7 @@ import { bearingAt, makeTrack } from '../nav/geo';
 import { useWalk } from '../nav/useWalk';
 import { getWalk, setArrival, setWalk, type Walk } from '../nav/walkStore';
 import { queueReport, queueVote } from '../storage/reportQueue';
+import { useSideInset } from '../theme/layout';
 import { chromeTextScale, colors, shadow, spacing, touchTarget } from '../theme/theme';
 
 const WALK_ZOOM = 17.5;
@@ -45,6 +46,7 @@ function WalkScreen({ walk }: { walk: Walk }) {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const side = useSideInset(spacing.md);
   const { style: mapStyle, land: mapLand } = useLangkahMapStyle();
   const snackbar = useSnackbar();
   const { canWrite } = useAuth();
@@ -214,7 +216,7 @@ function WalkScreen({ walk }: { walk: Walk }) {
           </Map>
         )}
 
-        <View style={[styles.top, { top: insets.top + spacing.md }]} pointerEvents="box-none">
+        <View style={[styles.top, { left: side, right: side, top: insets.top + spacing.md }]} pointerEvents="box-none">
           <View onLayout={(e) => setCardBottom(insets.top + spacing.md + e.nativeEvent.layout.height)}>
             <InstructionCard view={view} destName={walk.to.name} />
           </View>

@@ -10,6 +10,7 @@ import { rateWalk } from '../api/reports';
 import { AppText } from '../components/AppText';
 import { formatDistance, minutes } from '../i18n/format';
 import { getArrival, setArrival, setReportAfterWalk, type Arrival } from '../nav/walkStore';
+import { cappedContent } from '../theme/layout';
 import { colors, radius, spacing, touchTarget } from '../theme/theme';
 
 const FACES = [1, 2, 3, 4, 5] as const;
@@ -195,7 +196,8 @@ function ArrivalView({ arrival: a }: { arrival: Arrival }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface, paddingHorizontal: spacing.md },
-  content: { alignItems: 'stretch', gap: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.lg },
+  content: {
+    ...cappedContent, alignItems: 'stretch', gap: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.lg },
   halo: {
     alignSelf: 'center',
     width: 120,

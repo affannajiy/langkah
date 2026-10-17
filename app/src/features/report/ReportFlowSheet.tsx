@@ -27,6 +27,7 @@ import {
 import { useAuth } from '../../auth/AuthProvider';
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
+import { useSideInset } from '../../theme/layout';
 import { colors, fontFamily, radius, shadow, spacing, touchTarget, type as typeScale } from '../../theme/theme';
 import { categoryKey, HAZARD_ICONS, IMPROVEMENT_ICONS } from './categoryIcons';
 import { pickPhoto } from './pickPhoto';
@@ -51,6 +52,7 @@ export function ReportFlowSheet({ pin, street, onStep, onHeight, onClose, onDone
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
+  const side = useSideInset();
   const { requireSignIn } = useAuth();
 
   const [step, setStep] = useState<ReportStep>(1);
@@ -116,7 +118,7 @@ export function ReportFlowSheet({ pin, street, onStep, onHeight, onClose, onDone
 
   return (
     <View
-      style={[styles.sheet, { paddingBottom: insets.bottom + spacing.md, maxHeight: screenH - insets.top - spacing.xxl }]}
+      style={[styles.sheet, { left: side, right: side, paddingBottom: insets.bottom + spacing.md, maxHeight: screenH - insets.top - spacing.xxl }]}
       onLayout={(e) => onHeight(e.nativeEvent.layout.height)}
     >
       <View style={styles.handle} />

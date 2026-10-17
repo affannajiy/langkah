@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AccessibilityInfo, Animated, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useSideInset } from '../theme/layout';
 import { colors, radius, shadow, spacing } from '../theme/theme';
 
 type Props = {
@@ -24,6 +25,7 @@ export function Sheet({ visible, children, overSystemBar }: Props) {
   // top of a tall sheet (big text, small screen) peeking over the tab bar.
   const { height: screenH } = useWindowDimensions();
   const [height, setHeight] = useState(screenH);
+  const side = useSideInset();
   const offset = useRef(new Animated.Value(visible ? 0 : 1)).current;
 
   useEffect(() => {
@@ -49,6 +51,7 @@ export function Sheet({ visible, children, overSystemBar }: Props) {
       onLayout={(e) => setHeight(e.nativeEvent.layout.height)}
       style={[
         styles.sheet,
+        { left: side, right: side },
         // Never taller than the screen: the content scrolls instead (largest text sizes).
         { maxHeight: screenH - insets.top - spacing.lg },
         overSystemBar && { paddingBottom: spacing.lg + insets.bottom },

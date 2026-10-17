@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, Animated, PanResponder, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 
+import { useSideInset } from '../theme/layout';
 import { colors, radius, shadow, spacing } from '../theme/theme';
 
 type Props = {
@@ -24,6 +25,7 @@ const FLICK_VELOCITY = 0.6;
 // that steps between sizes, for people who cannot drag (WCAG 2.5.7).
 export function BottomSheet({ snapPoints, index, onIndexChange, onDismiss, header, children, style }: Props) {
   const { t } = useTranslation();
+  const side = useSideInset();
   const maxH = Math.max(...snapPoints);
   const offsetFor = (i: number) => maxH - (snapPoints[i] ?? snapPoints[0] ?? 0);
   const y = useRef(new Animated.Value(offsetFor(index))).current;
@@ -88,7 +90,7 @@ export function BottomSheet({ snapPoints, index, onIndexChange, onDismiss, heade
   const resizable = snapPoints.length > 1;
 
   return (
-    <Animated.View style={[styles.sheet, { height: maxH, transform: [{ translateY: y }] }, style]}>
+    <Animated.View style={[styles.sheet, { left: side, right: side, height: maxH, transform: [{ translateY: y }] }, style]}>
       <View {...pan.panHandlers}>
         <Pressable
           accessibilityRole="button"

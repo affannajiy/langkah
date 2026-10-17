@@ -18,6 +18,7 @@ import type { Step } from '../../api/types';
 import { AppText } from '../../components/AppText';
 import { formatDistance } from '../../i18n/format';
 import type { WalkView } from '../../nav/useWalk';
+import { useCompactHeight } from '../../theme/layout';
 import { colors, radius, shadow, spacing } from '../../theme/theme';
 
 const ICONS: Record<Step['t'], LucideIcon> = {
@@ -57,6 +58,7 @@ type Props = { view: WalkView; destName: string };
 // Navy card at the top of the walking screen (docs/screens/Navigation.png).
 export function InstructionCard({ view, destName }: Props) {
   const { t } = useTranslation();
+  const compact = useCompactHeight();
 
   let Icon: LucideIcon = LocateFixed;
   let big: string;
@@ -84,13 +86,38 @@ export function InstructionCard({ view, destName }: Props) {
     line = t('nav.step.arrive', { name: destName });
   }
 
+  const label = [big, line, sub].filter(Boolean).join('. ');
+
+  // Very short window: one line (arrow, distance, street) so the map keeps its room.
+  if (compact) {
+    return (
+      <View
+        style={[styles.card, styles.cardCompact]}
+        accessible
+        accessibilityRole="header"
+        accessibilityLiveRegion="polite"
+        accessibilityLabel={label}
+      >
+        <View style={[styles.iconBox, styles.iconBoxCompact]}>
+          <Icon size={28} color={colors.white} strokeWidth={2.5} />
+        </View>
+        <AppText variant="heading" color={colors.white}>
+          {big}
+        </AppText>
+        <AppText variant="bodyStrong" color={colors.white} numberOfLines={1} style={styles.text}>
+          {line}
+        </AppText>
+      </View>
+    );
+  }
+
   return (
     <View
       style={styles.card}
       accessible
       accessibilityRole="header"
       accessibilityLiveRegion="polite"
-      accessibilityLabel={[big, line, sub].filter(Boolean).join('. ')}
+      accessibilityLabel={label}
     >
       <View style={styles.iconBox}>
         <Icon size={40} color={colors.white} strokeWidth={2.5} />
@@ -131,4 +158,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: { flex: 1, gap: 2 },
+  cardCompact: { gap: spacing.sm, padding: spacing.sm },
+  iconBoxCompact: { width: 48, height: 48 },
 });

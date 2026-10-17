@@ -1,5 +1,19 @@
 # Changelog
 
+## Phase 8: Test and tune (2026-10-18)
+
+### Added
+- **`private.score_weights`** (migration `…11_score_weights`): the Table 9 penalties now sit in a table instead of inside `rebuild_network()`. RLS is on, and the app has no access.
+  - `private.score_segments()` does the scoring on its own, so a tuning change is one `update` plus `select private.score_segments();`, without rebuilding the topology. `rebuild_network()` calls it.
+  - The active hazard penalty (3.0) is read at route time in `private.route_net()`.
+  - The starting values are the Table 9 values, so routes do not change until someone tunes them. A missing rule stops the rescore with an error instead of scoring 0.
+- **`data-scripts/rating_report.py`** (read-only): shows how safe walks felt next to the route score, by day or night and safest or fastest, with the correlation and the walks where the two disagree. It also prints the weights in use. No new dependency (uses `psycopg`, like the loader).
+- **`docs/user-test-plan.md`**: the group run-through for the 4 weeks before the final prototype, how to tune one weight at a time, and a log.
+
+### Not done
+- The migration is not applied yet: you run `npx supabase db push`. It was checked by reading only, since there is no local Postgres on this laptop.
+- `rating_report.py` compiles but was not run: the `langkah` Python environment was not found on this laptop.
+
 ## Phase 7: Demo readiness (2026-10-11)
 
 ### Added
@@ -51,6 +65,14 @@ Tested on the emulator at 411 dp and 320 dp wide, text at 1.0x, 1.3x and 2.0x, w
 - **Community header** wraps (List / Map drops under the title); Hazards / Improvements and the sort chips no longer overflow.
 - **Walk bar:** the time stays on one line; the map credit keeps a fixed 12 sp so it never breaks inside "OpenStreetMap".
 - **Crash on the first walk location:** `expo-task-manager` saves each background location as a job, and Android refuses that without `RECEIVE_BOOT_COMPLETED`, which the explicit permission list left out. It is added (no prompt; Langkah starts nothing after a restart). **Needs a new build.**
+
+### Fixed (any phone width or height)
+- **Wide screens:** sheets, the walk bar, banners, the snackbar, the search and report sheets, and the Community, Me, Settings, Welcome and Arrival lists stop at 560 dp wide (`maxContentWidth`) and sit centred. On normal phones nothing changes. The map stays full width, and the app stays portrait.
+- **Report photos** in Community cards and report details are 4:3 (like the camera shots) instead of a fixed 180 or 200 dp, so they scale with the screen.
+- **Short screens:** under 640 dp tall (`shortScreenHeight`), or under 360 dp wide with text over 1.3x, the Map home folds away the saved-place chips so more map shows. Saved places are still in the search sheet, which now also clears one on a long press.
+- **Very short windows** (under 480 dp tall, `compactHeight`: split screen, or a foldable in landscape): the walk screen's instruction card becomes one line (arrow, distance, street; TalkBack still reads the landmark), and the walk bar uses less padding, a smaller time and a one-line caption. The hazard banner stays full size. Sheets and route compare already size from the window, so they fit and scroll.
+- **Why landscape matters:** Expo 57 targets Android SDK 36. On Android 16, screens at least 600 dp in both directions (foldable inner screens, tablets) ignore the portrait lock. The width cap and the short-window rules keep those screens looking normal.
+- **Research behind the numbers:** most Android phones are 360 to 412 dp wide and 780 to 915 dp tall. 320 dp is the narrowest we support (a 360 dp phone with Display size on large). Text stays in sp and follows the phone's font setting (up to 200% on Android 14+); body text is 16 sp and nothing is under 14 sp except the map credit.
 
 ### Added (battery savers)
 - A one-time tip before the first walk on Honor, Huawei, Xiaomi, Oppo, Realme, OnePlus, Vivo and Samsung phones, whose battery savers can stop a walk's location with the screen off. **Start walk** goes on at once; **Open Settings** opens Langkah's app settings. The brand comes from Android (`Platform.constants`), so no new package. English and Bahasa Melayu.

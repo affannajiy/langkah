@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '../../components/AppText';
 import { IconButton } from '../../components/IconButton';
+import { useSideInset } from '../../theme/layout';
 import { colors, radius, shadow, spacing, touchTarget } from '../../theme/theme';
 
 type Props = {
@@ -22,11 +23,12 @@ type Props = {
 export function TripBar({ fromLabel, toLabel, onBack, onFrom, onTo, onSwap, onLayout }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const side = useSideInset(spacing.md);
   const from = fromLabel ?? t('route.chooseStart');
 
   return (
     <View
-      style={[styles.bar, { top: insets.top + spacing.sm }]}
+      style={[styles.bar, { left: side, right: side, top: insets.top + spacing.sm }]}
       onLayout={(e) => onLayout(e.nativeEvent.layout.y + e.nativeEvent.layout.height)}
     >
       <IconButton icon={ChevronLeft} kind="plain" size={touchTarget} label={t('route.back')} onPress={onBack} />

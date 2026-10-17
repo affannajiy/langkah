@@ -12,6 +12,7 @@ import { Button } from '../components/Button';
 import { Snackbar, useSnackbar } from '../components/Snackbar';
 import i18n, { setLanguage } from '../i18n';
 import { updateSettings, useSettings, type Language, type LayerToggles } from '../storage/settings';
+import { cappedContent } from '../theme/layout';
 import { colors, radius, spacing, touchTarget } from '../theme/theme';
 
 const OSM_COPYRIGHT = 'https://www.openstreetmap.org/copyright';
@@ -178,7 +179,8 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.sm, paddingVertical: spacing.sm },
   back: { width: touchTarget, height: touchTarget, alignItems: 'center', justifyContent: 'center' },
-  content: { padding: spacing.md, gap: spacing.lg },
+  content: {
+    ...cappedContent, padding: spacing.md, gap: spacing.lg },
   section: { gap: spacing.sm },
   card: { backgroundColor: colors.white, borderRadius: radius.card, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md },
   choices: { flexDirection: 'row', gap: spacing.sm },

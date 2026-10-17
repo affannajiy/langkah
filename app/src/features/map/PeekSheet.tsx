@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import type { MapViewState } from '../../map/useMapView';
+import { useSideInset } from '../../theme/layout';
 import { colors, radius, shadow, spacing } from '../../theme/theme';
 
 type Props = { state: MapViewState; nearUser: boolean; onLayout: (height: number) => void };
@@ -12,6 +13,7 @@ type Props = { state: MapViewState; nearUser: boolean; onLayout: (height: number
 // Tapping a hazard to open its card arrives with reports in Phase 5.
 export function PeekSheet({ state, nearUser, onLayout }: Props) {
   const { t } = useTranslation();
+  const side = useSideInset();
   const view = state.status === 'ok' ? state.view : state.status === 'zoomed_out' ? null : state.last;
 
   let body: React.ReactNode;
@@ -43,7 +45,7 @@ export function PeekSheet({ state, nearUser, onLayout }: Props) {
   }
 
   return (
-    <View style={styles.sheet} onLayout={(e) => onLayout(e.nativeEvent.layout.height)}>
+    <View style={[styles.sheet, { left: side, right: side }]} onLayout={(e) => onLayout(e.nativeEvent.layout.height)}>
       <View style={styles.handle} />
       <AppText variant="heading" color={colors.navy} accessibilityRole="header">
         {nearUser ? t('home.nearYou') : t('home.inThisArea')}

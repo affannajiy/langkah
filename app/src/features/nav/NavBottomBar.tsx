@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '../../components/AppText';
 import { formatDistance, minutes } from '../../i18n/format';
+import { useCompactHeight, useSideInset } from '../../theme/layout';
 import { colors, radius, shadow, spacing, touchTarget } from '../../theme/theme';
 
 type Props = {
@@ -22,10 +23,17 @@ type Props = {
 export function NavBottomBar({ remainingM, remainingS, destName, arrived, onEnd, onQuickReport, onHeight }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const side = useSideInset();
+  // Very short window: less padding, smaller time, one-line caption.
+  const compact = useCompactHeight();
 
   return (
     <View
-      style={[styles.bar, { paddingBottom: insets.bottom + spacing.md }]}
+      style={[
+        styles.bar,
+        { left: side, right: side, paddingBottom: insets.bottom + (compact ? spacing.sm : spacing.md) },
+        compact && styles.barCompact,
+      ]}
       onLayout={(e: LayoutChangeEvent) => onHeight(e.nativeEvent.layout.height)}
     >
       <Pressable
@@ -48,10 +56,10 @@ export function NavBottomBar({ remainingM, remainingS, destName, arrived, onEnd,
         ) : (
           <>
             {/* One line always: on narrow phones the time shrinks a little instead of wrapping. */}
-            <AppText variant="title" color={colors.safeText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+            <AppText variant={compact ? 'heading' : 'title'} color={colors.safeText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               {t('units.min', { count: minutes(remainingS) })}
             </AppText>
-            <AppText variant="caption" color={colors.textMuted} numberOfLines={2}>
+            <AppText variant="caption" color={colors.textMuted} numberOfLines={compact ? 1 : 2}>
               {t('nav.left', { distance: formatDistance(remainingM), name: destName })}
             </AppText>
           </>
@@ -63,7 +71,7 @@ export function NavBottomBar({ remainingM, remainingS, destName, arrived, onEnd,
           accessibilityRole="button"
           accessibilityLabel={t('nav.quickReport')}
           onPress={onQuickReport}
-          style={({ pressed }) => [styles.report, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.report, compact && styles.reportCompact, pressed && styles.pressed]}
         >
           <TriangleAlert size={30} color={colors.text} strokeWidth={2.25} />
         </Pressable>
@@ -110,5 +118,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...shadow.floating,
   },
+  barCompact: { paddingTop: spacing.sm },
+  reportCompact: { width: 56, height: 56, borderRadius: 28 },
   pressed: { opacity: 0.85 },
 });
