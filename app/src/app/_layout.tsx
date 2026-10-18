@@ -5,14 +5,16 @@ import '../nav/walkLocation';
 import { OfflineManager } from '@maplibre/maplibre-react-native';
 import Stack from 'expo-router/stack';
 import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
-import { useCallback, useState } from 'react';
+import { setStatusBarStyle, StatusBar } from 'expo-status-bar';
+import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '../auth/AuthProvider';
 import { LoadingScreen } from '../components/LoadingScreen';
 import { TILE_CACHE_BYTES } from '../map/config';
+import { wantedStatusBarStyle } from '../map/useMapStatusBar';
+import { warmUp } from '../route/warmUp';
 import { PointsSnackbar } from '../points/PointsSnackbar';
 import { colors } from '../theme/theme';
 
@@ -31,10 +33,19 @@ export default function RootLayout() {
   const hideNativeSplash = useCallback(() => SplashScreen.hide(), []);
   const finishLoading = useCallback(() => setLoading(false), []);
 
+  // Wake the server and read saved searches while the loading screen shows (guide Section 17.1).
+  useEffect(() => warmUp(), []);
+
+  // The loading screen's light icons give way to what the screen below asked for,
+  // not to a fixed dark style (test note N2).
+  useEffect(() => {
+    if (!loading) setStatusBarStyle(wantedStatusBarStyle());
+  }, [loading]);
+
   return (
     <SafeAreaProvider>
       <View style={styles.root}>
-        <StatusBar style={loading ? 'light' : 'dark'} />
+        {loading && <StatusBar style="light" />}
         <AuthProvider>
           {/* Tabs, plus the walking screen on top of them without the tab bar. */}
           <Stack screenOptions={{ headerShown: false, animation: 'fade' }} />

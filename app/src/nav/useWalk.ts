@@ -88,7 +88,7 @@ function nextStep(route: Route, track: Track, along: number): WalkView['next'] {
 
 export function useWalk(walk: Walk) {
   const { t } = useTranslation();
-  // Voice (Phase 19) speaks from the fix handler, so it reads the latest text through a ref.
+  // Voice (Phase 18) speaks from the fix handler, so it reads the latest text through a ref.
   const say = useRef({ t, dest: walk.to.name });
   say.current = { t, dest: walk.to.name };
   const [route, setRoute] = useState<Route>(walk.route);

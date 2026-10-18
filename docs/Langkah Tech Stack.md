@@ -558,52 +558,117 @@ Every mock top-up screen shows "DEMO · no real money". Nothing is typed, saved 
 - Reading stays public for the prototype. Staff sign in by email magic link to change a request's status (Section 16.4); a staff list in SQL decides who may.
 - Sample data for the pitch: `seed_demo.py --council-stats` adds backdated reports by their own sample accounts; `--clear-council-stats` removes them.
 
-## 16. Demo Upgrade (Phases 18 to 24)
+## 16. Demo Upgrade (Phase 18)
 
 Decided by the owner on 2026-10-18 after the MVP was complete, in order of demo impact. Each one builds on what is already there and costs nothing: no new paid service and no card.
 
-### 16.1 Live walk share (Phase 18)
+### 16.1 Live walk share
 
 - During a walk, Share opens a sheet that says what a friend will see and when it stops. Tapping Share link is the consent; then the Android share sheet sends a link. Guests may share too: a share is never public content.
 - The friend's page is `council/walk.html?t=TOKEN` on the same GitHub Pages site: a map with the walker's latest position, the planned route, the destination, time left and "updated 20 s ago", then "Arrived at 14:32". It calls `share_view(token)` with the anon key every 10 s. The page sets no referrer and asks not to be indexed.
 - The server keeps one row per walker (`walk_shares`) with the latest position only, overwritten in place, at most every 15 s (20 m moved, or a minute standing still), coordinates at 5 decimals. A new link replaces the old one. The token is 128 random bits.
 - Arriving or ending the walk wipes the position, route and destination at once; the emptied row stays 15 minutes so the page can say Arrived or Ended, then pg_cron deletes it. Every share ends 2 hours after it started, even if the phone never says so.
 
-### 16.2 Voice guidance (Phase 19)
+### 16.2 Voice guidance
 
 - `expo-speech` (free, approved 2026-10-18) speaks turns ("In 20 metres, turn left onto Jalan Sultan Idris Shah"), hazards by landmark, rerouting and arrival, about 0.3 s after the haptic pulse: haptics first, then text, then voice.
 - Off by default. A speaker button on the walk screen and a Settings switch turn it on. A hazard or arrival cuts off anything still being said.
 
-### 16.3 Rain and heat (Phase 20)
+### 16.3 Rain and heat
 
 - On route compare the app asks Open-Meteo (free, no key) about the middle of the pilot area, never the walker's own spot, at most every 15 minutes. Rain now, a 60% chance within the hour, or feels-like 35 °C (MetMalaysia heat level 1) turns on "prefer cover"; a chip shows why and turns it off or on for the trip.
 - With prefer cover on, Safest pays an extra 0.6 per metre not under cover (`private.score_weights` rule `uncovered_weather`). The shown score does not change: weather is not a safety fact about a street. Fastest never changes.
 - OSM has only about 4 km of covered walkways in the pilot areas, mostly the railway station, so today this changes few routes. Street checks (16.6) add more.
 - Open-Meteo's free plan is for non-commercial use. Before a real launch, switch to MET Malaysia data or a paid plan.
 
-### 16.4 The Fixed loop (Phase 21)
+### 16.4 The Fixed loop
 
 - Council staff sign in on the dashboard with an email magic link (Supabase, no sign-up: only existing accounts get a link). The staff list `private.council_staff` decides who may change a request: Open, Planned or Fixed. Being signed in grants nothing by itself.
 - Planned and Fixed each tell the reporter once, as a snackbar the next time they open the app, and Fixed pays +50 points once (a reopen never pays twice). Requests show a "Planned by council" or "Fixed by council" chip in Community and on Me.
 - Fixed requests leave the ranked list and show after it for a year. Points still never touch the ranking: upvotes earn nothing.
 - Setup: add the Pages URL to Supabase Auth's redirect URLs, and add staff emails by SQL (never in git).
 
-### 16.5 Badges and streaks (Phase 22)
+### 16.5 Badges and streaks
 
 - Eight badges on the Me tab, worked out from what is already stored: First walk, 10 km, 50 km, First report, 5 hazards confirmed, 7-day check-in, Street checker (10 street checks) and Got it fixed. Each shows its progress; earned ones say Earned with a tick.
 - The streak counts Malaysian weeks in a row with at least one walk, not days, so nobody walks just to keep it. Badges pay no points.
 
-### 16.6 Map-the-gaps street checks (Phase 23)
+### 16.6 Map-the-gaps street checks
 
 - Almost every street in the pilot areas is "not yet checked" in OSM. After a walk, a signed-in walker sees up to 3 short questions about named streets on the route just walked: is there a sidewalk, is it lit at night, is it covered. Not sure is never sent. Only the street and the answer go to the server, never the route.
 - An answer changes nothing alone. When 2 different walkers agree (and more than disagree), it becomes a street fact: it fills in what OSM left unknown, never overrides OSM, and those streets are rescored at once. Facts are kept apart from the OSM rows, so a data refresh applies them again.
 - +2 points per answer, 5 paid a day. Demo: Afrina (demo) agrees with the demo user at once, so the change shows on one phone.
 
-### 16.7 Step-free mode (Phase 24)
+### 16.7 Step-free mode
 
 - Settings, Avoid steps: both routes skip stairs (`highway=steps`, 53 segments in the pilot areas). The route sheet shows a Step-free tag.
 - Kerb ramps are barely mapped yet (3 in the pilot areas), so the route card says how many crossings on the route have no kerb ramp mapped near them. This is not full wheelchair routing (Section 14).
 - If no walk without stairs exists, the sheet says so and points to the setting.
+
+## 17. Feel Upgrade (Phase 19)
+
+Decided by the owner on 2026-10-18 after the Phase 18 test. The goal: the app should feel instant, and walking should feel close, not like looking down from above. No new dependency: motion uses React Native's built-in `Animated` (native driver) and `LayoutAnimation`, and the compass comes from `expo-location`. Every motion is skipped when the phone's Reduce Motion setting is on. Build it all, then test it together in `docs/final-test.md`.
+
+Measured before starting: `route_safe` answers in 0.2 to 0.4 s and `search_places` in about 0.2 s (0.85 s when the server is cold). The server is not the slow part; waiting in the app is.
+
+### 17.1 Speed
+
+Borrowed from McMaster-Carr's site: start work on intent, cache everything, never shift the layout.
+
+- Warm the server at launch with one tiny search, so the first real search is not cold.
+- Start `route_safe` on press-in of a search result or place, while the map flies and the sheet slides.
+- When the route sheet opens, also fetch the other scoring mode and the prefer-cover variant in the background, so those toggles show at once.
+- Cache in memory: the last 50 routes (keyed by 5-decimal points, mode and options, kept 10 minutes because hazards change) and the last 100 searches. Keep the last 20 searches and recent places on the phone, so a cold start shows them at once.
+- Search debounce goes from 250 to 150 ms. While typing, the previous results stay on screen.
+- Route cards show skeletons the same size as the real cards instead of a spinner, so nothing jumps when they land.
+
+### 17.2 Nearby-first search
+
+- `search_places` (new migration) sorts equally good matches by distance and pushes places in the other pilot area down. Example of the problem: near UTP, "cafe" listed Ipoh cafes 26 km away above V5 Cafe 391 m away.
+
+### 17.3 Route sheet layout and motion
+
+- Header: the long Night scoring pill becomes the round moon or sun button (the same as on the map home), beside the star, so "2 walking routes" fits on one line. The rain chip stays on the row below.
+- The route line draws itself from start to end, the route cards rise one after another, and the score ring fills.
+- Buttons and chips shrink to 96% while pressed, toggles cross-fade, and snackbars slide in.
+
+### 17.4 Walk view in 3D
+
+- The camera sits behind and above the walker: pitch about 55°, zoom about 18.5, heading up, with the walker low on the screen so more of the way ahead shows.
+- Buildings are raised in 3D from the OpenFreeMap building heights: light grey by day, low-opacity navy by night, so the route stays easy to read.
+- The walker is a navy arrow that points along the walk, with a soft light-blue cone for where the phone faces (compass from `expo-location`) and an accuracy ring when GPS is weak. It glides between GPS fixes instead of jumping.
+- The route already walked turns grey.
+- A map view button (icon and word) above voice and share cycles three views: **3D** (the tilted view above), **2D** (flat, zoom about 17.5, still turning with the walk) and **North** (flat, north up, walker in the middle). Tapping it also turns following back on. The choice is remembered for the next walk; Reset demo puts back 3D.
+- The walker's arrow is sized for the zoom the camera is heading to while the camera moves by itself (the swoop, following), so it never balloons during the swoop; when the user pinches, it follows the live zoom.
+
+### 17.5 Walk motion
+
+- Tapping Start: the camera swoops from the overview down and behind the walker (about 1.2 s), and the turn card slides in from the top.
+- Turn card: the next step slides up and fades in, the distance counts down live, and the card pulses at "turn now" (with the haptic pulse, as before).
+
+### 17.6 Test-note fixes
+
+- N1: with prefer cover on, Safest must never be a route with a lower score or more hazards than the one it replaces.
+- N2: the status bar icons are light on the first night map screen after install.
+- N3: the friend's page (`council/walk.html`) calls `map.resize()` when it loads and when the window changes size.
+
+### 17.7 As built
+
+- Speed: `route/routeCache.ts` shares one request per trip and keeps answers; `storage/searchCache.ts` keeps searches (memory and phone); `route/warmUp.ts` runs at launch. Press-in fetches both cover choices, because the weather is not known yet.
+- Search ranking (migration 23): match quality, plus 0.25 when the name starts with the query, minus 0.12 × ln(1 + km), minus 0.3 beyond 15 km.
+- Draw-on: MapLibre Native has no line trim, so the app redraws a growing part of each line for 0.7 s.
+- The walker is drawn as flat map shapes (arrow, cone, ring) sized in screen pixels, so they lie on the street in 3D and turn with the map.
+- N1 (migration 24): with cover on, the server also builds the plain Safest and keeps it when the covered line scores lower or passes more hazards.
+- Shared motion helpers: `theme/motion.ts` (Reduce Motion, enter, press scale) and `components/ScalePressable.tsx`.
+
+### 17.8 Before the full test
+
+Small fixes from `docs/test-notes.md`, built before the full test of the whole app:
+
+- N4: if location services were off at launch, the map finds the user once they are turned on, or when the app comes back to the front, without a restart.
+- N6: at night the walker arrow is light blue (#56B4E9) with its white edge, so it stands out on the navy map.
+- G1: when the finished walk cannot be saved (offline), the Arrival screen says so in a snackbar with Try again, instead of looking saved.
+- G8: the waiting banner counts reports and votes together ("1 report or vote is waiting on this phone").
 
 ## References
 

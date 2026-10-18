@@ -1,5 +1,4 @@
 import { GeoJSONSource, Layer, Marker, type LngLat } from '@maplibre/maplibre-react-native';
-import { Navigation2 } from 'lucide-react-native';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
@@ -116,39 +115,6 @@ export const WalkLayers = memo(function WalkLayers({ track, kind, along, hazards
   );
 });
 
-// The walker: blue dot with an arrow. The map turns with the walking direction,
-// so the arrow always points up the screen.
-export function WalkerDot({ at }: { at: LngLat }) {
-  const { t } = useTranslation();
-  return (
-    <Marker lngLat={at} anchor="center" style={{ zIndex: mapZ.you }}>
-      <View accessible accessibilityLabel={t('pin.you')} style={styles.halo}>
-        <View style={styles.dot}>
-          <Navigation2 size={18} color={colors.white} fill={colors.white} />
-        </View>
-      </View>
-    </Marker>
-  );
-}
-
 const styles = StyleSheet.create({
   ring: { padding: 2, borderRadius: radius.card / 2 + 2, backgroundColor: colors.white },
-  halo: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.userHalo,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dot: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.userDot,
-    borderWidth: 3,
-    borderColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 });

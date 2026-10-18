@@ -11,14 +11,16 @@ import {
   Navigation2,
   type LucideIcon,
 } from 'lucide-react-native';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
 
 import type { Step } from '../../api/types';
 import { AppText } from '../../components/AppText';
 import { formatDistance } from '../../i18n/format';
 import type { WalkView } from '../../nav/useWalk';
 import { useCompactHeight } from '../../theme/layout';
+import { motion, reduceMotion, useEnter } from '../../theme/motion';
 import { colors, radius, shadow, spacing } from '../../theme/theme';
 
 const ICONS: Record<Step['t'], LucideIcon> = {
@@ -55,10 +57,73 @@ function landmarkText(step: Step, t: TFunction): string | null {
 
 type Props = { view: WalkView; destName: string };
 
+// Under this distance the card says "Now" and pulses (with the turn haptic, as before).
+const NOW_M = 10;
+const COUNT_MS = 900;
+const COUNT_FRAME_MS = 50;
+
+// The distance runs down smoothly between GPS fixes instead of stepping (guide Section 17.5).
+function useCountdown(target: number): number {
+  const [shown, setShown] = useState(target);
+  const from = useRef(shown);
+  from.current = shown;
+  useEffect(() => {
+    const start = from.current;
+    // A new step jumps straight to its distance; only a shrinking distance runs down.
+    if (reduceMotion() || target > start || start - target > 200) {
+      setShown(target);
+      return;
+    }
+    const began = Date.now();
+    const timer = setInterval(() => {
+      const t = Math.min(1, (Date.now() - began) / COUNT_MS);
+      setShown(start + (target - start) * t);
+      if (t >= 1) clearInterval(timer);
+    }, COUNT_FRAME_MS);
+    return () => clearInterval(timer);
+  }, [target]);
+  // A jump shows on this render, not one frame late with the old step's number.
+  return target > shown || shown - target > 200 ? target : shown;
+}
+
+// Each new step slides up and fades in.
+function StepIn({ children, style }: { children: ReactNode; style?: object }) {
+  const enter = useEnter(0, motion.base);
+  const lift = enter.interpolate({ inputRange: [0, 1], outputRange: [14, 0] });
+  return <Animated.View style={[style, { opacity: enter, transform: [{ translateY: lift }] }]}>{children}</Animated.View>;
+}
+
+// A gentle pulse on the arrow box at "turn now".
+function usePulse(on: boolean): Animated.Value {
+  const scale = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (!on || reduceMotion()) {
+      scale.setValue(1);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scale, { toValue: 1.1, duration: 350, useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1, duration: 350, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [on, scale]);
+  return scale;
+}
+
 // Navy card at the top of the walking screen (docs/screens/Navigation.png).
 export function InstructionCard({ view, destName }: Props) {
   const { t } = useTranslation();
   const compact = useCompactHeight();
+  const nextM = useCountdown(view.next?.distM ?? 0);
+  const now = !view.arrived && !!view.at && view.joined && !!view.next && view.next.distM < NOW_M;
+  const pulse = usePulse(now);
+  // The card slides down into place when the walk starts.
+  const enter = useEnter(0, motion.slow);
+  const drop = enter.interpolate({ inputRange: [0, 1], outputRange: [-32, 0] });
+  const slide = { opacity: enter, transform: [{ translateY: drop }] };
 
   let Icon: LucideIcon = LocateFixed;
   let big: string;
@@ -78,7 +143,7 @@ export function InstructionCard({ view, destName }: Props) {
     line = t('nav.toRoute');
   } else if (view.next) {
     Icon = ICONS[view.next.step.t];
-    big = view.next.distM < 10 ? t('nav.now') : formatDistance(view.next.distM);
+    big = now ? t('nav.now') : formatDistance(nextM);
     line = stepText(view.next.step, destName, t);
     sub = landmarkText(view.next.step, t);
   } else {
@@ -86,43 +151,48 @@ export function InstructionCard({ view, destName }: Props) {
     line = t('nav.step.arrive', { name: destName });
   }
 
-  const label = [big, line, sub].filter(Boolean).join('. ');
+  // TalkBack reads the real distance, not the running number.
+  const label = [view.next && !now && view.joined && !view.arrived && view.at ? formatDistance(view.next.distM) : big, line, sub]
+    .filter(Boolean)
+    .join('. ');
+  // A new step (or state) swaps the text with a slide.
+  const stepKey = view.arrived ? 'arrived' : !view.at ? 'waiting' : !view.joined ? 'join' : view.next ? `s${view.next.step.i}` : 'end';
 
   // Very short window: one line (arrow, distance, street) so the map keeps its room.
   if (compact) {
     return (
-      <View
-        style={[styles.card, styles.cardCompact]}
+      <Animated.View
+        style={[styles.card, styles.cardCompact, slide]}
         accessible
         accessibilityRole="header"
         accessibilityLiveRegion="polite"
         accessibilityLabel={label}
       >
-        <View style={[styles.iconBox, styles.iconBoxCompact]}>
+        <Animated.View style={[styles.iconBox, styles.iconBoxCompact, { transform: [{ scale: pulse }] }]}>
           <Icon size={28} color={colors.white} strokeWidth={2.5} />
-        </View>
+        </Animated.View>
         <AppText variant="heading" color={colors.white}>
           {big}
         </AppText>
         <AppText variant="bodyStrong" color={colors.white} numberOfLines={1} style={styles.text}>
           {line}
         </AppText>
-      </View>
+      </Animated.View>
     );
   }
 
   return (
-    <View
-      style={styles.card}
+    <Animated.View
+      style={[styles.card, slide]}
       accessible
       accessibilityRole="header"
       accessibilityLiveRegion="polite"
       accessibilityLabel={label}
     >
-      <View style={styles.iconBox}>
+      <Animated.View style={[styles.iconBox, { transform: [{ scale: pulse }] }]}>
         <Icon size={40} color={colors.white} strokeWidth={2.5} />
-      </View>
-      <View style={styles.text}>
+      </Animated.View>
+      <StepIn key={stepKey} style={styles.text}>
         <AppText variant="instruction" color={colors.white}>
           {big}
         </AppText>
@@ -134,8 +204,8 @@ export function InstructionCard({ view, destName }: Props) {
             {sub}
           </AppText>
         )}
-      </View>
-    </View>
+      </StepIn>
+    </Animated.View>
   );
 }
 

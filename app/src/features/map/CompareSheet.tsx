@@ -1,7 +1,7 @@
 import { Accessibility, Check, CircleAlert, CloudRain, Footprints, Star, Sun, Umbrella } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Animated, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { Route, RouteError, ScoringMode } from '../../api/types';
@@ -9,8 +9,11 @@ import { AppText } from '../../components/AppText';
 import { BottomSheet } from '../../components/BottomSheet';
 import { ModeChip } from '../../components/ModeChip';
 import { RouteCard } from '../../components/RouteCard';
+import { RouteCardSkeleton } from '../../components/RouteCardSkeleton';
+import { ScalePressable } from '../../components/ScalePressable';
 import type { RouteKind } from '../../map/RouteLayers';
 import type { RoutesState } from '../../route/useRoutes';
+import { motion, reduceMotion, useEnter } from '../../theme/motion';
 import { colors, radius, spacing, touchTarget } from '../../theme/theme';
 
 type Props = {
@@ -31,7 +34,7 @@ type Props = {
   maxHeight: number;
   // Star the destination (starred places, more with Plus). Absent for "your location".
   star?: { on: boolean; onPress: () => void };
-  // Prefer covered walkways (Phase 20): on by itself in rain or heat, or by the chip.
+  // Prefer covered walkways (Phase 18): on by itself in rain or heat, or by the chip.
   cover: { on: boolean; reason: 'rain' | 'rainSoon' | 'heat' | null; onToggle: () => void };
   stepFree: boolean; // Settings, Avoid steps (Phase 24)
 };
@@ -66,8 +69,11 @@ export function CompareSheet(props: Props) {
   const [measured, setMeasured] = useState(false);
 
   const ok = state.status === 'ok';
+  // While routes load, skeleton cards and a resting Start hold the sheet's final shape.
+  const loading = state.status === 'loading' || state.status === 'idle';
+  const showFooter = ok || loading;
   // Start stays pinned under the cards; without routes, only the system bar needs room.
-  const bottom = ok ? footerH : insets.bottom + spacing.lg;
+  const bottom = showFooter ? footerH : insets.bottom + spacing.lg;
   const collapsed = Math.min(mainH + bottom, screenH * 0.75, maxHeight);
   // Small screens or big text: the cards scroll above Start instead of pushing it off screen.
   const overflow = mainH + bottom > collapsed;
@@ -90,7 +96,7 @@ export function CompareSheet(props: Props) {
         <ScrollView
           style={styles.flex}
           scrollEnabled={index > 0 || overflow}
-          contentContainerStyle={{ paddingBottom: ok ? spacing.md : insets.bottom + spacing.lg }}
+          contentContainerStyle={{ paddingBottom: showFooter ? spacing.md : insets.bottom + spacing.lg }}
         >
           <View
             style={styles.main}
@@ -100,15 +106,15 @@ export function CompareSheet(props: Props) {
               setMeasured(true);
             }}
           >
+            {/* Round moon or sun and the star, so the title keeps one line (guide Section 17.3). */}
             <View style={styles.titleRow}>
               <AppText variant="heading" color={colors.navy} accessibilityRole="header" style={styles.title}>
                 {state.status === 'ok' ? t('route.title', { count: routeCount }) : t('route.titleAny')}
               </AppText>
-              {/* Chip and star stay together, so the wider night chip never pushes the star onto its own line. */}
               <View style={styles.controls}>
-                <ModeChip mode={mode} size="long" onPress={onToggleMode} />
+                <ModeChip mode={mode} size="small" onPress={onToggleMode} />
                 {props.star && (
-                  <Pressable
+                  <ScalePressable
                     accessibilityRole="button"
                     accessibilityLabel={props.star.on ? t('starred.remove', { name: props.destinationName }) : t('starred.add', { name: props.destinationName })}
                     accessibilityState={{ selected: props.star.on }}
@@ -116,7 +122,7 @@ export function CompareSheet(props: Props) {
                     style={({ pressed }) => [styles.star, props.star?.on && styles.starOn, pressed && styles.pressed]}
                   >
                     <Star size={22} color={props.star.on ? colors.hazardText : colors.navy} fill={props.star.on ? colors.hazard : 'none'} />
-                  </Pressable>
+                  </ScalePressable>
                 )}
               </View>
             </View>
@@ -127,21 +133,23 @@ export function CompareSheet(props: Props) {
             <Details route={props.selected === 'safest' ? state.pair.safest : state.pair.fastest} />
           )}
         </ScrollView>
-        {ok && (
+        {showFooter && (
           <View
             style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}
             onLayout={(e) => setFooterH(e.nativeEvent.layout.height)}
           >
-            <Pressable
+            <ScalePressable
               accessibilityRole="button"
+              accessibilityState={{ disabled: !ok }}
+              disabled={!ok}
               onPress={props.onStart}
-              style={({ pressed }) => [styles.primary, styles.start, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.primary, styles.start, !ok && styles.waiting, pressed && styles.pressed]}
             >
               <Footprints size={24} color={colors.white} />
               <AppText variant="heading" color={colors.white}>
                 {startLabel}
               </AppText>
-            </Pressable>
+            </ScalePressable>
           </View>
         )}
       </View>
@@ -154,9 +162,9 @@ function Body({ state, destinationName, selected, onSelect, onRetry, onChooseSta
 
   if (state.status === 'idle' || state.status === 'loading') {
     return (
-      <View style={styles.loading} accessibilityLiveRegion="polite">
-        <ActivityIndicator color={colors.safeText} />
-        <AppText color={colors.textMuted}>{t('route.loading')}</AppText>
+      <View style={styles.cards} accessible accessibilityLabel={t('route.loading')} accessibilityLiveRegion="polite">
+        <RouteCardSkeleton ring />
+        <RouteCardSkeleton />
       </View>
     );
   }
@@ -174,18 +182,18 @@ function Body({ state, destinationName, selected, onSelect, onRetry, onChooseSta
           </AppText>
         </View>
         {needsStart && (
-          <Pressable accessibilityRole="button" onPress={onChooseStart} style={styles.primary}>
+          <ScalePressable accessibilityRole="button" onPress={onChooseStart} style={styles.primary}>
             <AppText variant="bodyStrong" color={colors.white}>
               {t('route.chooseStart')}
             </AppText>
-          </Pressable>
+          </ScalePressable>
         )}
         {canRetry && (
-          <Pressable accessibilityRole="button" onPress={onRetry} style={styles.primary}>
+          <ScalePressable accessibilityRole="button" onPress={onRetry} style={styles.primary}>
             <AppText variant="bodyStrong" color={colors.white}>
               {t('route.retry')}
             </AppText>
-          </Pressable>
+          </ScalePressable>
         )}
       </View>
     );
@@ -204,14 +212,43 @@ function Body({ state, destinationName, selected, onSelect, onRetry, onChooseSta
           </AppText>
         </View>
       )}
-      <RouteCard kind="safest" route={pair.safest} both={pair.same} selected={selected === 'safest'} onPress={() => onSelect('safest')} />
-      {pair.same ? (
-        <AppText color={colors.textMuted}>{t('route.same')}</AppText>
-      ) : (
-        <RouteCard kind="fastest" route={pair.fastest} selected={selected === 'fastest'} onPress={() => onSelect('fastest')} />
-      )}
+      <Rise delay={0}>
+        <RouteCard kind="safest" route={pair.safest} both={pair.same} selected={selected === 'safest'} onPress={() => onSelect('safest')} />
+      </Rise>
+      <Rise delay={STAGGER_MS}>
+        {pair.same ? (
+          <AppText color={colors.textMuted}>{t('route.same')}</AppText>
+        ) : (
+          <RouteCard kind="fastest" route={pair.fastest} selected={selected === 'fastest'} onPress={() => onSelect('fastest')} />
+        )}
+      </Rise>
     </View>
   );
+}
+
+const STAGGER_MS = 70;
+
+// Cards rise into place one after the other when routes land (guide Section 17.3).
+function Rise({ delay, children }: { delay: number; children: ReactNode }) {
+  const enter = useEnter(delay);
+  const lift = enter.interpolate({ inputRange: [0, 1], outputRange: [16, 0] });
+  return <Animated.View style={{ opacity: enter, transform: [{ translateY: lift }] }}>{children}</Animated.View>;
+}
+
+// A short fade each time a toggle's state changes, so the switch reads as one smooth change.
+function useFadeOnChange(value: unknown) {
+  const fade = useRef(new Animated.Value(1)).current;
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    if (reduceMotion()) return;
+    fade.setValue(0.3);
+    Animated.timing(fade, { toValue: 1, duration: motion.base, useNativeDriver: true }).start();
+  }, [value, fade]);
+  return fade;
 }
 
 // Route options under the title: the cover chip (a toggle) and, when Settings asks
@@ -220,9 +257,10 @@ function Options({ cover, stepFree }: Pick<Props, 'cover' | 'stepFree'>) {
   const { t } = useTranslation();
   const Icon = cover.reason === 'rain' || cover.reason === 'rainSoon' ? CloudRain : cover.reason === 'heat' ? Sun : Umbrella;
   const label = cover.on && cover.reason ? t(`route.cover.${cover.reason}`) : t('route.cover.on');
+  const fade = useFadeOnChange(cover.on);
   return (
-    <View style={styles.options}>
-      <Pressable
+    <Animated.View style={[styles.options, { opacity: fade }]}>
+      <ScalePressable
         accessibilityRole="switch"
         accessibilityState={{ checked: cover.on }}
         accessibilityHint={t('route.cover.hint')}
@@ -235,7 +273,7 @@ function Options({ cover, stepFree }: Pick<Props, 'cover' | 'stepFree'>) {
         </AppText>
         {/* On also shows a tick, so the state never rests on colour alone. */}
         {cover.on && <Check size={18} color={colors.interactiveText} strokeWidth={2.5} />}
-      </Pressable>
+      </ScalePressable>
       {stepFree && (
         <View style={[styles.option, styles.optionOn]} accessible accessibilityLabel={t('route.stepFreeA11y')}>
           <Accessibility size={20} color={colors.interactiveText} />
@@ -244,7 +282,7 @@ function Options({ cover, stepFree }: Pick<Props, 'cover' | 'stepFree'>) {
           </AppText>
         </View>
       )}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -297,11 +335,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   starOn: { backgroundColor: colors.hazardSoft, borderColor: colors.hazard },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
-  title: { flex: 1, minWidth: 120 },
-  controls: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginLeft: 'auto' },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  title: { flex: 1 },
+  controls: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   cards: { gap: spacing.sm + spacing.xs },
-  loading: { minHeight: 200, alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
   error: { gap: spacing.md, paddingVertical: spacing.md },
   errorText: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
   flex: { flex: 1 },
@@ -318,6 +355,7 @@ const styles = StyleSheet.create({
   start: { minHeight: touchTarget + spacing.sm },
   footer: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, backgroundColor: colors.white },
   pressed: { opacity: 0.85 },
+  waiting: { opacity: 0.5 },
   details: { paddingHorizontal: spacing.md, paddingTop: spacing.lg, gap: spacing.sm },
   detailRow: {
     flexDirection: 'row',

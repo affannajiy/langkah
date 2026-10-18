@@ -10,6 +10,7 @@ import { walkFinish } from '../api/points';
 import { rateWalk } from '../api/reports';
 import { useAuth } from '../auth/AuthProvider';
 import { AppText } from '../components/AppText';
+import { Snackbar, useSnackbar } from '../components/Snackbar';
 import { StreetChecks } from '../features/arrival/StreetChecks';
 import { formatDistance, minutes } from '../i18n/format';
 import { getArrival, setArrival, setReportAfterWalk, type Arrival } from '../nav/walkStore';
@@ -79,10 +80,12 @@ function ArrivalView({ arrival: a }: { arrival: Arrival }) {
   const [points, setPoints] = useState<number | null>(null);
   const { canWrite } = useAuth();
   const left = useRef(false);
-  // Walk points (guide Section 15): sent once, as soon as the screen opens.
+  const snack = useSnackbar();
+  // Walk points (guide Section 15): sent once, as soon as the screen opens. A failure
+  // (offline) says so, with Try again, instead of looking saved (test note G1).
   const finished = useRef<Promise<string | null> | null>(null);
-  useEffect(() => {
-    if (finished.current) return;
+  const retry = useRef(() => {});
+  const send = useCallback(() => {
     finished.current = walkFinish(a.gpsM, a.durationS, a.to.name)
       .then((r) => {
         setPoints(r.points);
@@ -90,9 +93,14 @@ function ArrivalView({ arrival: a }: { arrival: Arrival }) {
       })
       .catch((error: unknown) => {
         console.warn('Could not send the finished walk', error);
+        snack.show({ text: t('arrival.saveFailed'), actionLabel: t('arrival.retry'), onAction: () => retry.current() });
         return null;
       });
-  }, [a]);
+  }, [a, snack, t]);
+  useEffect(() => {
+    retry.current = send;
+    if (!finished.current) send();
+  }, [send]);
 
   // The rating is sent once, when the user leaves this screen. Optional, so a
   // failure (offline) is only logged.
@@ -221,6 +229,7 @@ function ArrivalView({ arrival: a }: { arrival: Arrival }) {
           </AppText>
         </Pressable>
       </View>
+      <Snackbar message={snack.message} onHide={snack.hide} bottom={insets.bottom + touchTarget + spacing.xl} />
     </View>
   );
 }

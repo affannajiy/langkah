@@ -175,7 +175,12 @@
       follow = false;
       $('follow').hidden = !(last && last.state === 'live' && last.pos);
     });
+    // A page that opens small, or whose box gets its size late, keeps a 400 x 300 map
+    // unless it is told to measure again (test note N3).
+    window.addEventListener('resize', () => map.resize());
+    if (window.ResizeObserver) new ResizeObserver(() => map.resize()).observe(document.getElementById('map'));
     map.on('load', () => {
+      map.resize();
       map.addSource('route', { type: 'geojson', data: line([]) });
       map.addSource('dest', { type: 'geojson', data: point(null) });
       map.addSource('you', { type: 'geojson', data: point(null) });

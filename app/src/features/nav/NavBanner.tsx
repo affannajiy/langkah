@@ -19,7 +19,7 @@ type Props = {
   onHide: () => void;
 };
 
-// Where a hazard is, by landmark (never by side of the road). Also spoken (Phase 19).
+// Where a hazard is, by landmark (never by side of the road). Also spoken (Phase 18).
 export function hazardWhere(landmark: HazardLandmark, t: TFunction): string | null {
   if (landmark?.k === 'beforeCrossing') return t('nav.hazard.beforeCrossing');
   if (landmark?.k === 'afterCrossing') return t('nav.hazard.afterCrossing');

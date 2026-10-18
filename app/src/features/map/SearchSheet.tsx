@@ -16,7 +16,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { searchPlaces } from '../../api/langkah';
 import type { Place } from '../../api/types';
 import { AppText } from '../../components/AppText';
 import { IconButton } from '../../components/IconButton';
@@ -25,6 +24,7 @@ import { formatDistance } from '../../i18n/format';
 import { isInPilotArea } from '../../map/config';
 import { placeIcon, SAVED_ICONS } from '../../map/placeIcon';
 import { SAVED_KEYS, useStarred, type SavedKey, type SavedPlaces, type StoredPlace } from '../../storage/places';
+import { cachedSearch, search, staleSearch } from '../../storage/searchCache';
 import { useSideInset } from '../../theme/layout';
 import { chromeTextScale, colors, fontFamily, radius, shadow, spacing, touchTarget, type } from '../../theme/theme';
 
@@ -42,9 +42,11 @@ type Props = {
   onSavedLongPress: (key: SavedKey) => void;
   onUseMyLocation: () => void;
   onClose: () => void;
+  // A finger is on a place: start fetching its routes before the tap ends (guide Section 17.1).
+  onPrefetch?: (place: StoredPlace) => void;
 };
 
-const DEBOUNCE_MS = 250;
+const DEBOUNCE_MS = 150;
 const MIN_CHARS = 2;
 const DISMISS_DRAG = 100;
 
@@ -56,7 +58,7 @@ type Results =
 
 // Search sheet (guide Section 6.3, screen 2; docs/screens/Search.png). It slides over
 // the map with the field focused. Swipe down or "x" closes it.
-export function SearchSheet({ purpose, near, saved, recent, onPick, onPickSaved, onSavedLongPress, onUseMyLocation, onClose }: Props) {
+export function SearchSheet({ purpose, near, saved, recent, onPick, onPickSaved, onSavedLongPress, onUseMyLocation, onClose, onPrefetch }: Props) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const side = useSideInset();
@@ -68,7 +70,8 @@ export function SearchSheet({ purpose, near, saved, recent, onPick, onPickSaved,
   // Android keeps the keyboard up when the focused field unmounts, covering the route cards.
   useEffect(() => () => Keyboard.dismiss(), []);
 
-  // Debounced search; a newer query cancels the older request.
+  // Debounced search; a newer query cancels the older request. A search done before
+  // shows at once, and the last results stay on screen while the next ones load.
   const nearKey = near ? `${near[0].toFixed(4)},${near[1].toFixed(4)}` : '';
   useEffect(() => {
     const q = query.trim();
@@ -76,10 +79,17 @@ export function SearchSheet({ purpose, near, saved, recent, onPick, onPickSaved,
       setResults({ status: 'idle' });
       return;
     }
+    const hit = cachedSearch(q, near);
+    if (hit) {
+      setResults({ status: 'ok', q, places: hit });
+      return;
+    }
     const controller = new AbortController();
+    const stale = near ? null : staleSearch(q);
+    if (stale) setResults({ status: 'ok', q, places: stale });
+    else setResults((prev) => ({ status: 'loading', q, last: prev.status === 'ok' ? prev.places : prev.status === 'loading' ? prev.last : [] }));
     const timer = setTimeout(() => {
-      setResults((prev) => ({ status: 'loading', q, last: prev.status === 'ok' ? prev.places : prev.status === 'loading' ? prev.last : [] }));
-      searchPlaces(q, near, controller.signal)
+      search(q, near, controller.signal)
         .then((places) => !controller.signal.aborted && setResults({ status: 'ok', q, places }))
         .catch((error: unknown) => {
           if (controller.signal.aborted) return;
@@ -117,7 +127,9 @@ export function SearchSheet({ purpose, near, saved, recent, onPick, onPickSaved,
   const showStart = query.trim().length < MIN_CHARS;
   const places = results.status === 'ok' ? results.places : results.status === 'loading' ? results.last : [];
 
-  const pick = (p: Place | StoredPlace) => onPick({ name: p.name, area: p.area, category: p.category, lngLat: p.lngLat });
+  const stored = (p: Place | StoredPlace): StoredPlace => ({ name: p.name, area: p.area, category: p.category, lngLat: p.lngLat });
+  const pick = (p: Place | StoredPlace) => onPick(stored(p));
+  const prefetch = (p: Place | StoredPlace) => onPrefetch?.(stored(p));
 
   return (
     <View style={StyleSheet.absoluteFill}>
@@ -175,13 +187,14 @@ export function SearchSheet({ purpose, near, saved, recent, onPick, onPickSaved,
                 onPickSaved={onPickSaved}
                 onSavedLongPress={onSavedLongPress}
                 onPickRecent={pick}
+                onPressIn={prefetch}
                 onUseMyLocation={onUseMyLocation}
               />
             ) : (
               <ResultsHeader results={results} count={places.length} />
             )
           }
-          renderItem={({ item }) => <PlaceRow place={item} onPress={() => pick(item)} />}
+          renderItem={({ item }) => <PlaceRow place={item} onPress={() => pick(item)} onPressIn={() => prefetch(item)} />}
           ItemSeparatorComponent={Separator}
           ListFooterComponent={
             // The "compares routes" hint only fits a destination search.
@@ -239,11 +252,12 @@ type StartProps = {
   // Long press clears a saved place (same as the chips on the Map home).
   onSavedLongPress: (key: SavedKey) => void;
   onPickRecent: (p: StoredPlace) => void;
+  onPressIn: (p: StoredPlace) => void;
   onUseMyLocation: () => void;
 };
 
 // Before typing: my location (for a start point), saved places and recent searches.
-function StartContent({ purpose, near, saved, recent, onPickSaved, onSavedLongPress, onPickRecent, onUseMyLocation }: StartProps) {
+function StartContent({ purpose, near, saved, recent, onPickSaved, onSavedLongPress, onPickRecent, onPressIn, onUseMyLocation }: StartProps) {
   const { t } = useTranslation();
   const starred = useStarred();
   return (
@@ -286,7 +300,7 @@ function StartContent({ purpose, near, saved, recent, onPickSaved, onSavedLongPr
           {starred.map((p, i) => (
             <View key={`${p.name}:${i}`}>
               {i > 0 && <Separator />}
-              <PlaceRow place={{ ...p, distM: null }} icon={Star} onPress={() => onPickRecent(p)} />
+              <PlaceRow place={{ ...p, distM: null }} icon={Star} onPress={() => onPickRecent(p)} onPressIn={() => onPressIn(p)} />
             </View>
           ))}
         </View>
@@ -299,7 +313,7 @@ function StartContent({ purpose, near, saved, recent, onPickSaved, onSavedLongPr
           {recent.map((p, i) => (
             <View key={`${p.name}:${i}`}>
               {i > 0 && <Separator />}
-              <PlaceRow place={{ ...p, distM: null }} icon={Clock} onPress={() => onPickRecent(p)} />
+              <PlaceRow place={{ ...p, distM: null }} icon={Clock} onPress={() => onPickRecent(p)} onPressIn={() => onPressIn(p)} />
             </View>
           ))}
         </View>
@@ -308,7 +322,7 @@ function StartContent({ purpose, near, saved, recent, onPickSaved, onSavedLongPr
   );
 }
 
-function PlaceRow({ place, onPress, icon }: { place: Place; onPress: () => void; icon?: typeof Clock }) {
+function PlaceRow({ place, onPress, onPressIn, icon }: { place: Place; onPress: () => void; onPressIn?: () => void; icon?: typeof Clock }) {
   const { t } = useTranslation();
   const Icon = icon ?? placeIcon(place.category);
   const outside = !isInPilotArea(place.lngLat);
@@ -322,6 +336,7 @@ function PlaceRow({ place, onPress, icon }: { place: Place; onPress: () => void;
       accessibilityRole="button"
       accessibilityLabel={[place.name, sub, distance && t('search.away', { distance })].filter(Boolean).join(', ')}
       onPress={onPress}
+      onPressIn={onPressIn}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
       <View style={styles.rowIcon}>

@@ -120,18 +120,43 @@ function detailLayers(mode: ScoringMode): Layer[] {
   ];
 }
 
+// Raised buildings for the walk view (guide Section 17.4), from the OpenFreeMap building
+// heights already in the tiles. Light grey by day; low-opacity navy by night, so the
+// route and pins stay the strongest thing on screen.
+function buildings3d(mode: ScoringMode): Layer {
+  const night = mode === 'night';
+  return {
+    id: 'langkah_building_3d',
+    type: 'fill-extrusion',
+    source: 'openmaptiles',
+    'source-layer': 'building',
+    minzoom: 15,
+    paint: {
+      'fill-extrusion-color': night ? '#2A4B73' : '#D3D9E2',
+      'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 6],
+      'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+      'fill-extrusion-opacity': night ? 0.45 : 0.75,
+    },
+  };
+}
+
 // Shown behind the map while tiles load.
 export const MAP_LAND: Record<ScoringMode, string> = { day: '#E9ECF1', night: NIGHT_LAND };
 
 const FETCH_TIMEOUT_MS = 8000;
 
-function recolour(style: StyleSpecification, mode: ScoringMode): StyleSpecification {
+function recolour(style: StyleSpecification, mode: ScoringMode, raised: boolean): StyleSpecification {
   const table = mode === 'night' ? NIGHT_PAINT : DAY_PAINT;
   // Detail goes under the town and city names, after the street names, so street
   // names win when labels collide.
   const at = style.layers.findIndex((l) => l.id === 'airport');
   const cut = at < 0 ? style.layers.length : at;
-  const layers = [...style.layers.slice(0, cut), ...detailLayers(mode), ...style.layers.slice(cut)];
+  let layers = [...style.layers.slice(0, cut), ...detailLayers(mode), ...style.layers.slice(cut)];
+  // Raised blocks sit right on top of the flat footprints, under roads and labels.
+  if (raised) {
+    const b = layers.findIndex((l) => l.id === 'building');
+    if (b >= 0) layers = [...layers.slice(0, b + 1), buildings3d(mode), ...layers.slice(b + 1)];
+  }
   return {
     ...style,
     layers: layers.map((layer) => {
@@ -169,7 +194,8 @@ function loadPositron(): Promise<StyleSpecification | null> {
 
 // Positron recoloured for day or night; night follows the scoring mode. If the
 // download fails, falls back to the stock Positron URL so the map still shows.
-export function useLangkahMapStyle(): { style: string | StyleSpecification | null; land: string } {
+// raised adds 3D buildings (walk screen only).
+export function useLangkahMapStyle(raised = false): { style: string | StyleSpecification | null; land: string } {
   const { mode } = useScoringMode();
   const [base, setBase] = useState<StyleSpecification | 'fallback' | null>(null);
 
@@ -186,8 +212,8 @@ export function useLangkahMapStyle(): { style: string | StyleSpecification | nul
   const style = useMemo(() => {
     if (base === null) return null;
     if (base === 'fallback') return POSITRON_STYLE_URL;
-    return recolour(base, mode);
-  }, [base, mode]);
+    return recolour(base, mode, raised);
+  }, [base, mode, raised]);
 
   return { style, land: base === 'fallback' ? MAP_LAND.day : MAP_LAND[mode] };
 }

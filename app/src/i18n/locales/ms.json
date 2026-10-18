@@ -335,6 +335,16 @@
     "done": "Selesai",
     "quickReport": "Laporan pantas",
     "recentre": "Ikut kedudukan saya",
+    "view": {
+      "button": "Paparan peta: {{mode}}. Ketik untuk tukar.",
+      "3d": "3D",
+      "2d": "2D",
+      "north": "Utara",
+      "3dName": "3D, berpusing bersama anda",
+      "2dName": "2D, berpusing bersama anda",
+      "northName": "2D, utara di atas",
+      "snack": "Paparan peta: {{mode}}"
+    },
     "backAgain": "Tekan kembali sekali lagi untuk menamatkan perjalanan.",
     "hazard": {
       "title": "{{hazard}} dalam {{distance}}",
@@ -511,10 +521,10 @@
   },
   "queue": {
     "signIn": "Log masuk",
-    "waiting_one": "{{count}} laporan menunggu dalam telefon ini. Log masuk untuk menghantarnya.",
-    "waiting_other": "{{count}} laporan menunggu dalam telefon ini. Log masuk untuk menghantarnya.",
-    "sent_one": "{{count}} laporan yang disimpan telah dihantar.",
-    "sent_other": "{{count}} laporan yang disimpan telah dihantar."
+    "waiting_one": "{{count}} laporan atau undian menunggu dalam telefon ini. Log masuk untuk menghantarnya.",
+    "waiting_other": "{{count}} laporan atau undian menunggu dalam telefon ini. Log masuk untuk menghantarnya.",
+    "sent_one": "{{count}} laporan atau undian yang disimpan telah dihantar.",
+    "sent_other": "{{count}} laporan atau undian yang disimpan telah dihantar."
   },
   "time": {
     "justNow": "baru tadi",
@@ -546,7 +556,9 @@
       "5": "Sangat selamat"
     },
     "rateNote": "Penilaian anda membantu menambah baik skor keselamatan untuk semua.",
-    "spot": "Nampak sesuatu yang baharu?"
+    "spot": "Nampak sesuatu yang baharu?",
+    "saveFailed": "Perjalanan ini tidak dapat disimpan. Semak sambungan anda.",
+    "retry": "Cuba lagi"
   },
   "settings": {
     "title": "Tetapan",

@@ -2,43 +2,82 @@
 
 Newest first. Phases 10 to 17 were written up after the fact from their commits, so they are shorter than the earlier entries.
 
-## Phases 18 to 24: Demo upgrade (2026-10-18)
+## Phase 19: Feel upgrade (2026-10-18)
+
+Decided after the Phase 18 test (guide Section 17): the app should feel instant and the walk should feel close. No new dependency. **A new preview APK is needed** (JS only). `npm run typecheck` passes, `npx eslint src` has 0 errors. Migrations 23 and 24 are on the live project.
+
+### Speed
+- Server warm-up at launch (`route/warmUp.ts`); a route starts on press-in of a result; the other scoring mode and the prefer-cover variant are fetched in the background, so the toggles show at once.
+- `route/routeCache.ts`: the last 50 routes for 10 minutes, one request per trip. `storage/searchCache.ts`: the last 100 searches in memory, the last 20 on the phone; before the first GPS fix a saved answer for the same words shows at once. Reset demo clears both.
+- Search debounce 150 ms; old results stay while typing. Skeleton route cards the size of the real ones.
+
+### Nearby-first search
+- Migration 23: `search_places` ranks by match, then distance; the other pilot area goes down.
+
+### Route sheet
+- Round moon or sun button beside the star; "2 walking routes" fits on one line.
+- Lines draw on, cards rise, the score ring fills, buttons shrink while pressed, snackbars slide in. All skipped with Remove animations.
+
+### Walk view
+- 3D camera behind the walker (pitch 55°, zoom 18.5), raised buildings, the walked part grey.
+- The walker is a flat arrow on the street with a compass cone and a weak-GPS ring; it glides between fixes.
+- Swoop from the overview on Start; the turn card slides in, counts down and pulses at "Now".
+- View button: **3D**, **2D** (flat, turns with the walk), **North** (flat, north up). Remembered in settings; Reset demo puts back 3D.
+- The arrow is sized for the zoom the camera is heading to, so it no longer balloons during the swoop.
+
+### Test-note fixes
+- N1 (migration 24): with cover on, Safest is never a lower score or more hazards than the plain Safest.
+- N2: light status bar icons on the first night map after install.
+- N3: the friend's page resizes its map on load and on window resize.
+- N4: if location services were off at launch, the map finds the user once they are turned back on (checked every 5 s while there is no fix) or when the app comes back to the front. No restart. `map/useHere.ts`.
+- N6: the walker arrow is light blue on the night map (navy by day). `WalkerPuck.tsx`.
+- G1: if the finished walk cannot be saved, the Arrival screen says "Could not save this walk. Check your connection." with **Try again**. `arrival.tsx`.
+- G8: the map banner and the sent snackbar say "report or vote", since a guest's Still there is a vote.
+
+### Docs
+- Phases renumbered: the demo upgrade is Phase 18, the feel upgrade Phase 19. Phase 20 is the full test.
+- `docs/final-test.md` is a fresh sheet for the full test; the last run's results are in `docs/final-test-run1.md`.
+
+### Not done
+- N5: taps on the search bar are slow for a few seconds after a cold start; cause not found yet.
+
+## Phase 18: Demo upgrade (2026-10-18)
 
 Agreed after the MVP was complete (guide Section 16). Built together, then checked as one: migrations 18 to 22 are applied and each was tested in SQL inside rolled-back transactions; `npm run typecheck` passes, `npx eslint src` has 0 errors, payload check 10 of 10 within budget. **A new development build and a new preview APK are needed** (`expo-speech` is native).
 
-### Phase 18: Live walk share
+### Live walk share
 - **Share** button on the walk screen (above the bottom bar). A sheet says what the friend sees and when it stops; **Share link** is the consent, then the Android share sheet sends `https://affannajiy.github.io/langkah/walk.html?t=TOKEN`. While live the button reads **Live**; the sheet offers Send link again and Stop sharing.
 - Migration 18: `walk_shares` (one row per walker, latest position only), `share_start`, `share_update`, `share_stop`, `share_view` (anon), pg_cron cleanup every 10 minutes. Arriving or ending wipes the position at once; every share ends after 2 hours.
 - `app/src/nav/liveShare.ts` listens to the walk's own fixes, so it keeps going with the screen off: at most every 15 s, only after 20 m moved or a minute standing still. A reroute sends the new line.
 - `council/walk.html` + `walk.js`: the friend's page (live, stale "no update for 3 min", arrived, ended, link ended). Deployed by the council workflow. Checked in the browser at desktop and phone width.
 - Live share is free for everyone, so it left the Plus perks list (guide Section 15.2; `docs/screens/Plus.png` is older).
 
-### Phase 19: Voice guidance
+### Voice guidance
 - New dependency `expo-speech` (approved). `app/src/nav/voice.ts` speaks about 0.3 s after each pulse: the first instruction, turns ("In 20 metres, turn left onto …"), hazards by landmark, rerouting and arrival. A hazard or arrival cuts off older speech.
 - Speaker button on the walk screen and **Voice guidance** in Settings; off by default.
 
-### Phase 20: Rain and heat
+### Rain and heat
 - `app/src/weather/useWeather.ts`: Open-Meteo for the pilot area's centre (2 decimals), 15 minute cache. Rain now, 60% within the hour, or feels-like 35 °C turns on **prefer cover**.
 - Route compare: a chip ("Raining · prefers cover", "Rain likely · prefers cover", "Hot · prefers cover", or "Prefer cover" by hand) with a tick when on.
 - Migration 19: `route_safe` gains `p_cover` (Safest pays 0.6 more per uncovered metre, rule `uncovered_weather`; the shown score is unchanged) and `p_step_free`. Old 5-argument calls still work.
 - Settings credits Open-Meteo (CC BY 4.0).
 
-### Phase 21: Fixed loop
+### Fixed loop
 - Migration 20: `reports.council_status` (open, planned, fixed), `private.council_staff`, `council_me`, `council_set_status` (staff only), `user_notices` with `my_notices` and `notices_seen`; `cs` added to `community_reports`, `my_reports` and `council_data` (fixed requests leave the ranking and follow it for a year). Fixed pays the reporter +50 once.
 - Dashboard: **Staff sign in** (email magic link, `create_user: false`), Mark planned, Mark fixed, Reopen under each request, Planned and Fixed chips, `council_status` in CSV and GeoJSON. Tested with a temporary staff account (deleted afterwards); the test status change was reset.
 - App: "Planned by council" and "Fixed by council" chips in Community, the detail sheet and Me; a snackbar on the next open; ledger line "Your request was fixed by the council".
 - The owner's email is on the live staff list (added by SQL, not in git).
 
-### Phase 22: Badges and streaks
+### Badges and streaks
 - Migration 22: `my_badges()` from walks, reports, the ledger and street answers. No new table, no points.
 - Me tab: **Badges** card with the weekly walk streak and eight badges, each with progress or Earned and a tick.
 
-### Phase 23: Map-the-gaps street checks
+### Map-the-gaps street checks
 - Migration 21: `street_answers`, `private.street_facts`, `street_answer(ways[], attr, value)`, route questions `q` (up to 3 named streets, one question each), `private.rescore_ways` (scoped rescore, the same rules as `score_segments`: 0 of 511 segments differed in a check), and `score_segments` now applies agreed facts first, so a data refresh keeps them. Answers pay +2, 5 a day; Afrina agrees with the demo user.
 - Arrival screen: **Help check these streets** for Google and demo accounts.
 - A first version of migration 21 copied too much of migration 16 and put back the old ledger reasons; fixed in the file and on the live database the same day.
 
-### Phase 24: Step-free mode
+### Step-free mode
 - Settings, **Avoid steps**. Both routes skip `highway=steps` (53 segments); the start and end never snap onto stairs. The route sheet shows a Step-free tag and how many crossings on the route have no kerb ramp mapped (`stats.kx`). No route: "We could not find a walk without stairs".
 
 ### Not done

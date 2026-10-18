@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Pressable, StyleSheet } from 'react-native';
 
 import { useSideInset } from '../theme/layout';
+import { useEnter } from '../theme/motion';
 import { colors, radius, shadow, spacing, touchTarget } from '../theme/theme';
 import { AppText } from './AppText';
 
@@ -41,10 +42,20 @@ export function useSnackbar() {
 type Props = { message: SnackbarMessage | null; onHide: () => void; bottom: number };
 
 export function Snackbar({ message, onHide, bottom }: Props) {
-  const side = useSideInset(spacing.md);
   if (!message) return null;
+  // A new message is a new bar, so each one slides in (guide Section 17.3).
+  return <Bar key={`${message.text}:${message.actionLabel ?? ''}`} message={message} onHide={onHide} bottom={bottom} />;
+}
+
+function Bar({ message, onHide, bottom }: Props & { message: SnackbarMessage }) {
+  const side = useSideInset(spacing.md);
+  const enter = useEnter();
+  const lift = enter.interpolate({ inputRange: [0, 1], outputRange: [24, 0] });
   return (
-    <View style={[styles.bar, { bottom, left: side, right: side }]} accessibilityLiveRegion="polite">
+    <Animated.View
+      style={[styles.bar, { bottom, left: side, right: side, opacity: enter, transform: [{ translateY: lift }] }]}
+      accessibilityLiveRegion="polite"
+    >
       <AppText variant="label" color={colors.white} style={styles.text}>
         {message.text}
       </AppText>
@@ -62,7 +73,7 @@ export function Snackbar({ message, onHide, bottom }: Props) {
           </AppText>
         </Pressable>
       )}
-    </View>
+    </Animated.View>
   );
 }
 

@@ -335,6 +335,16 @@
     "done": "Done",
     "quickReport": "Quick report",
     "recentre": "Follow my position",
+    "view": {
+      "button": "Map view: {{mode}}. Tap to change.",
+      "3d": "3D",
+      "2d": "2D",
+      "north": "North",
+      "3dName": "3D, turns with you",
+      "2dName": "2D, turns with you",
+      "northName": "2D, north up",
+      "snack": "Map view: {{mode}}"
+    },
     "backAgain": "Press back again to end the walk.",
     "hazard": {
       "title": "{{hazard}} in {{distance}}",
@@ -511,10 +521,10 @@
   },
   "queue": {
     "signIn": "Sign in",
-    "waiting_one": "1 report is waiting on this phone. Sign in to send it.",
-    "waiting_other": "{{count}} reports are waiting on this phone. Sign in to send them.",
-    "sent_one": "Sent 1 saved report.",
-    "sent_other": "Sent {{count}} saved reports."
+    "waiting_one": "1 report or vote is waiting on this phone. Sign in to send it.",
+    "waiting_other": "{{count}} reports or votes are waiting on this phone. Sign in to send them.",
+    "sent_one": "Sent 1 saved report or vote.",
+    "sent_other": "Sent {{count}} saved reports or votes."
   },
   "time": {
     "justNow": "just now",
@@ -546,7 +556,9 @@
       "5": "Very safe"
     },
     "rateNote": "Your rating helps tune the safety scores for everyone.",
-    "spot": "Spot anything new?"
+    "spot": "Spot anything new?",
+    "saveFailed": "Could not save this walk. Check your connection.",
+    "retry": "Try again"
   },
   "settings": {
     "title": "Settings",

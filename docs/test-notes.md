@@ -63,3 +63,41 @@ All retested on the emulator on 17 Oct 2026 and passing: rows 38, 39, 40; G2 (72
 | G16 | Hazard rows show Pending or Active. | `ReportRow.tsx` |
 
 Left for the optimisation phase: G1, G5, G6, G7, G8, G10, G17, G18, and the 66 lint findings already in the project.
+
+## Demo upgrade test (build 47d6f7eb, 18 Oct 2026)
+
+Pixel_8 emulator, installed over the old build, then `pm clear` and Try the demo. GPX played as mock gps and network fixes, 1.5 s per point. Rows 46 to 51 and 54 to 56 pass. Rows 52 and 53 (staff sign-in by email link, Fixed loop) are left for you.
+
+| # | Found in | Note | Idea |
+|---|---|---|---|
+| N1 | Row 50 | With cover on (turned on by the rain forecast), Safest becomes the 700 m route with 1 hazard and score 59. Off, Safest is the 900 m route with no hazards and score 69. Cover can pull Safest onto a less safe line. | Check the cover bonus weight against hazards, or name the line "Safest with cover" when they differ. |
+| N2 | First launch | At night the status bar icons were dark on the dark map on the first map screen after install. After leaving and coming back they were light (G4 fix works then). | Set the light style on first focus too. |
+| N3 | Row 47 | In a browser that opened small, the friend's map stayed at 400 x 300 in the corner until a reload. Seen only in the Claude browser pane, not checked on a phone. | Call `map.resize()` on load, or check on row 45's phone. |
+
+Still open from before: G5 route label on the end pin, G6 crossing pins pile up near the station.
+
+## Feel upgrade (Phase 19, 18 Oct 2026)
+
+N1, N2 and N3 are fixed in Phase 19 (guide Section 17.6); retest in `final-test.md` rows 66 to 68. N1 checked on the server: Station to Concubine Lane with cover on keeps the 827 m line, score 72, no hazards, and `route_safe` still answers in about 0.34 s.
+
+### Feel upgrade test (18 Oct 2026)
+
+Pixel_8 emulator. Rows 57 to 64 and 66 to 69 pass; rows 58 and 64 after a fix and a rebuild. Row 65 needs a phone outside.
+
+| # | Found in | Note | Idea |
+|---|---|---|---|
+| N4 | Row 58 retest | Opened with location services off and "No thanks" on Google's dialog, then location turned on: the app stayed without a position (Choose a start point) until it was restarted. `useHere` tries the watch once and does not retry. | Restart the watch when the app comes back to the front or the location setting changes. |
+| N5 | Row 58 retest | On a cold start, taps on the search bar did nothing for the first few seconds after the map showed. | Check what holds the JS thread at launch (cache loads, warm-up). |
+| N6 | Row 64 | At night the navy walker arrow on the navy map is readable only by its white edge. | Light-blue fill at night. |
+
+### Fixes before the full test (Phase 19)
+
+Built before the full test (guide Section 17.8): N4 (location comes back without a restart), N6 (light-blue walker at night), G1 (arrival says when the walk could not be saved, with Try again), G8 (waiting banner says "report or vote"). Retest in the new `final-test.md`: row 10 (N4), 31 (N6), 33 (G8) and 40 (G1). Still open: N5 (slow taps on a cold start), G5, G6, G7, G10, G17, G18.
+
+## Full test (Phase 20, preview APK with Phase 19)
+
+Build: _id_, commit _hash_, date _dd Oct 2026_. Devices: Pixel_8 emulator, Honor phone. Row numbers are those of the new `final-test.md`.
+
+| # | Row | Problem | Idea |
+|---|---|---|---|
+| F1 | | | |

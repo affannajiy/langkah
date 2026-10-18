@@ -7,6 +7,9 @@ import { useSyncExternalStore } from 'react';
 
 export type Language = 'en' | 'ms';
 
+// Walk camera: tilted and turning with you, flat and turning with you, or flat with north up.
+export type WalkCamera = '3d' | '2d' | 'north';
+
 export type LayerToggles = {
   crossings: boolean;
   busStops: boolean;
@@ -20,8 +23,9 @@ export type Settings = {
   language: Language | null; // null: follow the phone until the user picks one
   autoNight: boolean; // night scoring and the dark map after 19:30
   vibration: boolean; // turn, hazard and arrival pulses
-  voice: boolean; // spoken turns and hazards during a walk (Phase 19)
+  voice: boolean; // spoken turns and hazards during a walk (Phase 18)
   avoidSteps: boolean; // step-free routes (Phase 24)
+  walkView: WalkCamera; // last view picked on the walk screen
   layers: LayerToggles;
   onboarded: boolean;
   locationAsked: boolean; // the map asks for location by itself only once
@@ -36,6 +40,7 @@ export const DEFAULT_SETTINGS: Settings = {
   vibration: true,
   voice: false,
   avoidSteps: false,
+  walkView: '3d',
   // The map stays calm: the newer, busier layers start off.
   layers: { crossings: true, busStops: true, shelters: true, covered: true, kerbs: false, rest: false },
   onboarded: false,
@@ -60,6 +65,7 @@ function parse(raw: unknown): Settings {
     vibration: bool(r.vibration, d.vibration),
     voice: bool(r.voice, d.voice),
     avoidSteps: bool(r.avoidSteps, d.avoidSteps),
+    walkView: r.walkView === '2d' || r.walkView === 'north' ? r.walkView : '3d',
     layers: {
       crossings: bool(l.crossings, d.layers.crossings),
       busStops: bool(l.busStops, d.layers.busStops),

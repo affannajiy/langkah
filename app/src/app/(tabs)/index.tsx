@@ -39,6 +39,7 @@ import { useMapView } from '../../map/useMapView';
 import { useScoringMode } from '../../map/useScoringMode';
 import { tabBarStyles, useTabBarStyle } from '../../navigation/tabBar';
 import { useOnline } from '../../net/useOnline';
+import { prefetchRoutes } from '../../route/routeCache';
 import { useRoutes } from '../../route/useRoutes';
 import { useWeather } from '../../weather/useWeather';
 import {
@@ -296,6 +297,12 @@ export default function MapScreen() {
   }
   const meNow = (): Endpoint => ({ kind: 'me', at: here });
 
+  // The moon or sun button shows only an icon (map home and route sheet), so say the new mode in words.
+  function onToggleMode() {
+    snackbar.show({ text: mode === 'night' ? t('home.dayOn') : t('home.nightOn') });
+    toggleMode();
+  }
+
   const startTrip = useCallback(
     (to: StoredPlace) => {
       setTrip({ from: { kind: 'me', at: here }, to: { kind: 'place', place: to } });
@@ -337,6 +344,17 @@ export default function MapScreen() {
     } else {
       startTrip(place);
     }
+  }
+
+  // Finger down on a destination: fetch its routes while the sheet closes and the map moves.
+  // Weather is not known yet, so both cover choices are fetched; each answers in about 0.3 s.
+  function onPrefetch(place: StoredPlace) {
+    if (screen.kind !== 'search' || screen.purpose.kind === 'save') return;
+    const from = screen.purpose.kind === 'from' ? place.lngLat : screen.back === 'compare' && trip ? fromLL : here;
+    const to = screen.purpose.kind === 'from' ? toLL : place.lngLat;
+    if (!from || !to || !isInPilotArea(from) || !isInPilotArea(to)) return;
+    prefetchRoutes(from, to, mode, { cover: false, stepFree: avoidSteps });
+    prefetchRoutes(from, to, mode, { cover: true, stepFree: avoidSteps });
   }
 
   function onPickSaved(key: SavedKey) {
@@ -642,11 +660,7 @@ export default function MapScreen() {
           <>
             <HomeTopControls
               mode={mode}
-              onToggleMode={() => {
-                // The button shows only an icon, so say the new mode in words.
-                snackbar.show({ text: mode === 'night' ? t('home.dayOn') : t('home.nightOn') });
-                toggleMode();
-              }}
+              onToggleMode={onToggleMode}
               onSearch={() => setScreen({ kind: 'search', purpose: { kind: 'to' }, back: 'home' })}
               saved={saved}
               onSavedPress={onSavedPress}
@@ -693,7 +707,7 @@ export default function MapScreen() {
               destinationName={label(trip.to) ?? ''}
               star={starTo ? { on: isStarred(starTo), onPress: onStar } : undefined}
               mode={mode}
-              onToggleMode={toggleMode}
+              onToggleMode={onToggleMode}
               cover={{ on: cover, reason: coverReason, onToggle: () => setCoverPick(!cover) }}
               stepFree={avoidSteps}
               selected={selected}
@@ -784,6 +798,7 @@ export default function MapScreen() {
               onSavedLongPress={onSavedLongPress}
               onUseMyLocation={onUseMyLocation}
               onClose={closeSearch}
+              onPrefetch={onPrefetch}
             />
           </TextScaleCap.Provider>
         )}

@@ -32,15 +32,11 @@ UTP Technopreneurship Team Project, Group 4. Android only for the MVP.
 | 15 | Pre-build audit, smaller APK (R8, no 32-bit x86), ESLint | Done |
 | 16 | More map detail: POI names, house numbers, covered walkways, kerb ramps, rest stops | Done |
 | 17 | Smaller EAS upload (`.easignore`, 539 MB to 6 MB) | Done |
-| 18 | Live walk share: a link a friend opens to follow the walk until arrival (`council/walk.html`) | Done |
-| 19 | Voice guidance: spoken turns, hazards and arrival after the haptic pulse | Done |
-| 20 | Rain and heat: Safest prefers covered walkways when it rains or is very hot (Open-Meteo) | Done |
-| 21 | Fixed loop: staff sign-in on the council page, Planned and Fixed, reporter notice and +50 | Done |
-| 22 | Badges and the weekly walk streak on Me | Done |
-| 23 | Map-the-gaps: street checks after a walk; two walkers agreeing fill in unknown streets | Done |
-| 24 | Step-free mode: Avoid steps in Settings, kerb warning on the route card | Done |
+| 18 | Demo upgrade: live walk share (`council/walk.html`), voice guidance, rain and heat (prefer cover), the council Fixed loop, badges and streaks, map-the-gaps street checks, step-free mode | Done |
+| 19 | Feel upgrade: instant search and routes (caches, warm-up, press-in), nearby-first search, route sheet motion, the 3D walk view with a gliding walker, the 3D / 2D / North view button, and fixes from the test notes (location comes back without a restart, light-blue walker at night, "Could not save this walk" with Try again) | Done |
+| 20 | Full test of the whole app on the preview APK ([docs/final-test.md](docs/final-test.md)) | Next |
 
-The MVP in the guide is complete. Phases 18 to 24 are the demo upgrade agreed on 2026-10-18 (guide Section 16).
+The MVP in the guide is complete. Phase 18 is the demo upgrade (guide Section 16), Phase 19 the feel upgrade (Section 17), both on 2026-10-18. Phase 20 is the full test of the whole app: [docs/final-test.md](docs/final-test.md).
 
 ### Pilot areas
 
@@ -91,10 +87,13 @@ The budget is RM0: every service above is free and none needs a card.
 | `app/src/features/points/`, `topup/`, `ads/` | Wallet cards, voucher and low-points sheets, the mock bank and e-wallet steps, the parody ad brands |
 | `app/src/points/` | Points snackbar, Plus status, partner offer text |
 | `app/src/route/` | Route card reasons (the chips) |
-| `app/src/api/share.ts`, `notices.ts`, `streets.ts`, `badges.ts` | Live walk share, council news, street checks and badges (Phases 18 to 23) |
+| `app/src/api/share.ts`, `notices.ts`, `streets.ts`, `badges.ts` | Live walk share, council news, street checks and badges (Phase 18) |
 | `app/src/nav/liveShare.ts`, `nav/voice.ts` | Sends the latest position while a share is live; spoken guidance |
-| `app/src/weather/` | Rain and heat from Open-Meteo for the pilot area (Phase 20) |
-| `app/src/features/arrival/` | Street checks on the Arrival screen (Phase 23) |
+| `app/src/weather/` | Rain and heat from Open-Meteo for the pilot area (Phase 18) |
+| `app/src/features/arrival/` | Street checks on the Arrival screen (Phase 18) |
+| `app/src/route/routeCache.ts`, `route/warmUp.ts`, `storage/searchCache.ts` | Route and search caches, server warm-up at launch (Phase 19) |
+| `app/src/features/nav/WalkerPuck.tsx`, `nav/useCompass.ts` | The walker arrow, compass cone and GPS ring on the walk map (Phase 19) |
+| `app/src/theme/motion.ts`, `components/ScalePressable.tsx` | Shared motion: Reduce Motion, enter, press scale (Phase 19) |
 | `app/plugins/` | Config plugins (`withNetworkPing.js`: HTTP/2 pings so requests recover after a network change) |
 | `app/src/nav/` | Walk engine: line snapping, off-route and arrival, haptics, walk location service |
 | `app/src/map/` | Map config (pilot areas), pins, route lines, user dot, location hooks |
@@ -137,7 +136,7 @@ See [SETUP_CHECKLIST.md](SETUP_CHECKLIST.md) for the full list of tools and free
 
 Expo Go cannot run MapLibre, so we use our own **development build**: an APK with the native code, which loads the JavaScript live from your laptop.
 
-1. **Build the development APK** (first time, and again only when a native package or a permission changes: AsyncStorage in Phase 3, `expo-task-manager` and the walk permissions in Phase 4, Google sign-in, the photo picker, the image resizer and file sharing in Phase 5, `expo-network` in Phase 6, `expo-build-properties` in Phase 15, `expo-speech` in Phase 19). Inside `app/`:
+1. **Build the development APK** (first time, and again only when a native package or a permission changes: AsyncStorage in Phase 3, `expo-task-manager` and the walk permissions in Phase 4, Google sign-in, the photo picker, the image resizer and file sharing in Phase 5, `expo-network` in Phase 6, `expo-build-properties` in Phase 15, `expo-speech` in Phase 18). Inside `app/`:
    ```bash
    eas build -p android --profile development
    ```
@@ -349,7 +348,7 @@ python seed_demo.py --clear
 
 A page for MBI: improvement requests ranked by upvotes (with CSV and GeoJSON download), a hazard heatmap, 12-week trends and the most common report types. It reads with one function, `council_data`, and the public anon key. No names or user ids. Reading is public for the prototype.
 
-**Staff sign-in (Phase 21, once):** staff mark a request Planned or Fixed; the reporter is told in the app and gets +50 points when it is fixed.
+**Staff sign-in (Phase 18, once):** staff mark a request Planned or Fixed; the reporter is told in the app and gets +50 points when it is fixed.
 1. Supabase dashboard, **Authentication**, **URL Configuration**, **Redirect URLs**: add `https://affannajiy.github.io/langkah/` (and `http://localhost:8765/` for the laptop preview).
 2. The staff member needs a Supabase account with that email (a Google sign-in in the app counts, or **Authentication**, **Users**, **Add user**). Nobody can sign up from the page.
 3. Put the email on the staff list in the **SQL editor** (never in git):
@@ -452,7 +451,7 @@ Before starting: emulator location at Ipoh Railway Station (4.597368, 101.073437
 | 4:20 | **Me**, **Settings**, **Bahasa Melayu** | Every screen works in English and Bahasa Melayu. |
 | 4:40 | Closing slide | All on free tools and open data: OpenStreetMap, Supabase and MapLibre, so it costs RM0 to run for the pilot. Next: more pilot areas such as Seri Iskandar, and offline maps. |
 
-**Extras to swap in (Phases 18 to 24),** if there is time or instead of a row above:
+**Extras to swap in (Phases 18 and 19),** if there is time or instead of a row above:
 
 | Show | Say |
 |---|---|
@@ -462,6 +461,7 @@ Before starting: emulator location at Ipoh Railway Station (4.597368, 101.073437
 | **Arrival**: answer a street check | Almost every street is unchecked in OpenStreetMap. Two walkers agreeing fill the gap and the street is rescored at once. |
 | Council page: **Staff sign in**, **Mark fixed** | The council closes the loop. The reporter is told in the app and earns 50 points. |
 | **Me**, **Badges** | Badges and a weekly walk streak; they never buy ranking. |
+| **Start** a walk, then the view button (3D, 2D, North) | The camera swoops down behind the walker like a car sat-nav, with buildings in 3D. One tap flattens it, another turns north up. |
 
 ### If something goes wrong
 
@@ -489,8 +489,8 @@ Before starting: emulator location at Ipoh Railway Station (4.597368, 101.073437
 - The **service role key** and the **database password** never go in the app, in git or in chat. `.env` files are git-ignored; keep the `.env.example` files up to date.
 - Every new table turns on RLS in the same migration that creates it.
 - Location stays on the phone. It is only sent as the start of a route request (including a reroute) and never stored. The one exception is **live walk share** (Phase 18), and only after the walker taps Share link: the server keeps the latest position (5 decimals) in one row, overwritten in place, wipes it when the walk arrives or ends, and deletes every share 2 hours after it started. The link's token is 128 random bits; the page sends no referrer and asks not to be indexed.
-- Weather (Phase 20) is asked about the middle of the pilot area, never the user's position.
-- Street checks (Phase 23) send only the street's OSM way ids and the answer, never the route. They need a Google or demo account, like reports.
+- Weather (Phase 18) is asked about the middle of the pilot area, never the user's position.
+- Street checks (Phase 18) send only the street's OSM way ids and the answer, never the route. They need a Google or demo account, like reports.
 - Council staff are decided by `private.council_staff`, checked in SQL on every status change. Signing in on the dashboard grants nothing by itself, and the sign-in form never says whether an email is on the list.
 - During a walk, location runs as a foreground service with a visible notification and stops when the walk ends. Langkah never asks for "Allow all the time" location (`ACCESS_BACKGROUND_LOCATION` is blocked).
 - Guests (Supabase anonymous accounts) can read but never write. RLS checks for a Google-signed-in account on every report, vote and photo upload. The one exception is demo mode, a database-only switch (section 4) that lets guests write while it is on.

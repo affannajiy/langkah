@@ -7,7 +7,10 @@ import { myNotices, noticesSeen } from '../api/notices';
 import { dailyCheckin, demoReset, demoStart, isDemoUser } from '../api/points';
 import { supabase } from '../api/supabase';
 import { notifyPoints } from '../points/notice';
+import { clearRouteCache } from '../route/routeCache';
 import { clearRecentPlaces, clearStarred, requestMapHome } from '../storage/places';
+import { clearSearchCache } from '../storage/searchCache';
+import { updateSettings } from '../storage/settings';
 import { flushQueue } from '../storage/reportQueue';
 import { SignInSheet, type SignInReason } from './SignInSheet';
 
@@ -274,6 +277,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await demoReset();
       await clearRecentPlaces();
       await clearStarred();
+      await clearSearchCache();
+      clearRouteCache();
+      updateSettings({ walkView: '3d' });
       requestMapHome();
       return true;
     } catch (error) {

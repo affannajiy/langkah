@@ -1,6 +1,6 @@
 import { GeoJSONSource, Layer, Marker, type LngLat } from '@maplibre/maplibre-react-native';
 import { Minus, Shield } from 'lucide-react-native';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -8,6 +8,8 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import type { Route, RoutePair } from '../api/types';
 import { AppText } from '../components/AppText';
 import { minutes } from '../i18n/format';
+import { makeTrack, slice } from '../nav/geo';
+import { reduceMotion } from '../theme/motion';
 import { colors, mapZ, radius, shadow, spacing } from '../theme/theme';
 
 export type RouteKind = 'safest' | 'fastest';
@@ -103,35 +105,66 @@ function tagPoints(pair: RoutePair): { safest: LngLat; fastest: LngLat | null } 
   return { safest, fastest };
 }
 
+// The lines draw themselves from start to end when new routes land (guide Section 17.3).
+const DRAW_MS = 700;
+const DRAW_FRAME_MS = 33;
+
+function useDrawOn(pair: RoutePair): number {
+  const [progress, setProgress] = useState(reduceMotion() ? 1 : 0);
+  useEffect(() => {
+    if (reduceMotion()) {
+      setProgress(1);
+      return;
+    }
+    setProgress(0);
+    const began = Date.now();
+    const timer = setInterval(() => {
+      const t = Math.min(1, (Date.now() - began) / DRAW_MS);
+      // Ease out: fast at first, settling at the destination.
+      setProgress(1 - (1 - t) ** 3);
+      if (t >= 1) clearInterval(timer);
+    }, DRAW_FRAME_MS);
+    return () => clearInterval(timer);
+  }, [pair]);
+  return progress;
+}
+
+function drawn(points: LngLat[], progress: number): LngLat[] {
+  if (progress >= 1) return points;
+  const track = makeTrack(points);
+  const part = slice(track, 0, Math.max(track.total * progress, 0.5));
+  return part.length >= 2 ? part : points.slice(0, 2);
+}
+
 // Both route lines (guide Section 6.2): safest solid teal with a white outline,
 // fastest dashed grey on a white casing, and white dots over streets that are not yet checked.
 // The lines also differ by label text, so colour is never the only cue.
 export function RouteLayers({ pair, selected, onSelect, start, end }: Props) {
   const { t } = useTranslation();
   const showFastest = !pair.same;
+  const progress = useDrawOn(pair);
+  const done = progress >= 1;
 
   const routes = useMemo<GeoJSON.FeatureCollection>(
     () => ({
       type: 'FeatureCollection',
       features: [
         ...(showFastest
-          ? [{ type: 'Feature' as const, id: 'fastest', properties: { kind: 'fastest' }, geometry: line(pair.fastest.points) }]
+          ? [{ type: 'Feature' as const, id: 'fastest', properties: { kind: 'fastest' }, geometry: line(drawn(pair.fastest.points, progress)) }]
           : []),
-        { type: 'Feature' as const, id: 'safest', properties: { kind: 'safest' }, geometry: line(pair.safest.points) },
+        { type: 'Feature' as const, id: 'safest', properties: { kind: 'safest' }, geometry: line(drawn(pair.safest.points, progress)) },
       ],
     }),
-    [pair, showFastest],
+    [pair, showFastest, progress],
   );
 
   const unchecked = useMemo<GeoJSON.FeatureCollection>(
     () => ({
       type: 'FeatureCollection',
-      features: [
-        ...(showFastest ? uncheckedParts(pair.fastest, 'fastest') : []),
-        ...uncheckedParts(pair.safest, 'safest'),
-      ],
+      // Dots and tags join once the lines have finished drawing.
+      features: done ? [...(showFastest ? uncheckedParts(pair.fastest, 'fastest') : []), ...uncheckedParts(pair.safest, 'safest')] : [],
     }),
-    [pair, showFastest],
+    [pair, showFastest, done],
   );
 
   const tags = useMemo(() => tagPoints(pair), [pair]);
@@ -208,15 +241,17 @@ export function RouteLayers({ pair, selected, onSelect, start, end }: Props) {
         />
       </GeoJSONSource>
 
-      {tags.fastest && (
+      {done && tags.fastest && (
         <RouteTag kind="fastest" lngLat={tags.fastest} label={t('route.fastestTag', { count: minutes(pair.fastest.timeS) })} onPress={() => onSelect('fastest')} />
       )}
-      <RouteTag
-        kind="safest"
-        lngLat={tags.safest}
-        label={pair.same ? t('route.bothTag', { count: minutes(pair.safest.timeS) }) : t('route.safestTag', { count: minutes(pair.safest.timeS) })}
-        onPress={() => onSelect('safest')}
-      />
+      {done && (
+        <RouteTag
+          kind="safest"
+          lngLat={tags.safest}
+          label={pair.same ? t('route.bothTag', { count: minutes(pair.safest.timeS) }) : t('route.safestTag', { count: minutes(pair.safest.timeS) })}
+          onPress={() => onSelect('safest')}
+        />
+      )}
 
       {start && (
         <Marker lngLat={start} anchor="center" style={{ zIndex: mapZ.destination }}>

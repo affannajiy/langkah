@@ -1,16 +1,18 @@
 import { Moon, Sun } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, type ViewStyle } from 'react-native';
+import { StyleSheet, type ViewStyle } from 'react-native';
 
 import type { ScoringMode } from '../api/types';
 import { colors, radius, shadow, spacing, touchTarget } from '../theme/theme';
 import { AppText } from './AppText';
+import { ScalePressable } from './ScalePressable';
 
 type Props = {
   mode: ScoringMode;
   onPress: () => void;
-  // 'icon' is a round icon-only button (map home); 'long' says Night scoring / Day scoring (route sheet).
-  size?: 'icon' | 'long';
+  // 'icon' is the big round button on the map home; 'small' the 48 dp round one beside the
+  // star on the route sheet (guide Section 17.3); 'long' says Night scoring / Day scoring.
+  size?: 'icon' | 'small' | 'long';
   style?: ViewStyle;
 };
 
@@ -22,14 +24,15 @@ export function ModeChip({ mode, onPress, size = 'icon', style }: Props) {
   const Icon = night ? Moon : Sun;
 
   return (
-    <Pressable
+    <ScalePressable
       accessibilityRole="button"
       accessibilityLabel={night ? t('home.modeA11yNight') : t('home.modeA11yDay')}
-      accessibilityHint={size === 'long' ? t('route.scoringHint') : night ? t('home.modeHintNight') : t('home.modeHintDay')}
+      accessibilityHint={size === 'icon' ? (night ? t('home.modeHintNight') : t('home.modeHintDay')) : t('route.scoringHint')}
       onPress={onPress}
       style={({ pressed }) => [
         styles.chip,
         size === 'icon' && styles.round,
+        size === 'small' && styles.small,
         night ? styles.night : styles.day,
         pressed && styles.pressed,
         style,
@@ -41,7 +44,7 @@ export function ModeChip({ mode, onPress, size = 'icon', style }: Props) {
           {night ? t('route.nightScoring') : t('route.dayScoring')}
         </AppText>
       )}
-    </Pressable>
+    </ScalePressable>
   );
 }
 
@@ -56,6 +59,7 @@ const styles = StyleSheet.create({
   },
   // Same height as the search pill beside it.
   round: { width: 64, height: 64, paddingHorizontal: 0, justifyContent: 'center', ...shadow.floating },
+  small: { width: touchTarget, height: touchTarget, paddingHorizontal: 0, justifyContent: 'center' },
   night: { backgroundColor: colors.navy },
   day: { backgroundColor: colors.white, borderWidth: 1.5, borderColor: colors.border },
   pressed: { opacity: 0.85 },
