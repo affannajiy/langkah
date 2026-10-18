@@ -34,6 +34,8 @@ const config: ExpoConfig = {
       'WRITE_EXTERNAL_STORAGE',
       'RECORD_AUDIO',
       'ACCESS_WIFI_STATE',
+      // Draw over other apps: only the dev client's debug overlay asks for it (test note F23).
+      'SYSTEM_ALERT_WINDOW',
     ],
     predictiveBackGestureEnabled: false,
   },

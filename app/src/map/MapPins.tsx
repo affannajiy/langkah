@@ -140,18 +140,23 @@ type Props = {
   onSponsored?: (pin: SponsoredPin) => void;
 };
 
-// Pins of the same kind closer than this show as one, so a junction with
-// several mapped crossings does not draw a stack of icons.
-const MERGE_M = 20;
+// Pins of the same kind that would touch on screen show as one, so a junction with
+// several mapped crossings does not draw a stack of icons (test note G6). The gap
+// is about one icon (32 dp) at the view's zoom, and never under 20 m.
+const MERGE_MIN_M = 20;
+const MERGE_PX = 32;
 const M_PER_DEG = 111_320;
+// Metres per dp at zoom 0 on the equator, for MapLibre's 512 dp tiles.
+const M_PER_PX_Z0 = 78_271.5;
 
-function mergeClose<T extends { kind: string; lngLat: [number, number] }>(items: T[]): T[] {
+function mergeClose<T extends { kind: string; lngLat: [number, number] }>(items: T[], zoom: number): T[] {
   const kept: T[] = [];
   for (const item of items) {
     const [x, y] = item.lngLat;
     const k = Math.cos((y * Math.PI) / 180);
+    const mergeM = Math.max(MERGE_MIN_M, (MERGE_PX * M_PER_PX_Z0 * k) / 2 ** zoom);
     const near = kept.some(
-      (o) => o.kind === item.kind && Math.hypot((o.lngLat[0] - x) * k, o.lngLat[1] - y) * M_PER_DEG < MERGE_M,
+      (o) => o.kind === item.kind && Math.hypot((o.lngLat[0] - x) * k, o.lngLat[1] - y) * M_PER_DEG < mergeM,
     );
     if (!near) kept.push(item);
   }
@@ -164,7 +169,7 @@ export const MapPins = memo(function MapPins({ view, toggles, onSponsored }: Pro
   const { t } = useTranslation();
   if (!view) return null;
 
-  const amenities = mergeClose(view.amenities).filter((a) => {
+  const amenities = mergeClose(view.amenities, view.zoom).filter((a) => {
     const layer = KIND_LAYER[a.kind];
     return toggles[layer.toggle] && view.zoom >= layer.minZoom;
   });

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 
 import { reduceMotion } from '../theme/motion';
@@ -7,7 +7,7 @@ import { colors, radius, spacing } from '../theme/theme';
 // Grey stand-in with the same size as a RouteCard, shown while routes load, so the
 // sheet does not jump when the real cards land (guide Section 17.1).
 export function RouteCardSkeleton({ ring }: { ring?: boolean }) {
-  const pulse = useRef(new Animated.Value(1)).current;
+  const pulse = useState(() => new Animated.Value(1))[0];
   useEffect(() => {
     if (reduceMotion()) return;
     const loop = Animated.loop(

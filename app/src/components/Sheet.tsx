@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { AccessibilityInfo, Animated, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -26,7 +26,7 @@ export function Sheet({ visible, children, overSystemBar }: Props) {
   const { height: screenH } = useWindowDimensions();
   const [height, setHeight] = useState(screenH);
   const side = useSideInset();
-  const offset = useRef(new Animated.Value(visible ? 0 : 1)).current;
+  const offset = useState(() => new Animated.Value(visible ? 0 : 1))[0];
 
   useEffect(() => {
     let cancelled = false;

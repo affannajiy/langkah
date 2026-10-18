@@ -1,24 +1,43 @@
 import { Redirect, useRouter } from 'expo-router';
-import { Check, CircleParking } from 'lucide-react-native';
+import { Check, ChevronDown, CircleParking, CloudOff } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  BackHandler,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { walkFinish } from '../api/points';
-import { rateWalk } from '../api/reports';
+import { randomId, rateWalk } from '../api/reports';
 import { useAuth } from '../auth/AuthProvider';
 import { AppText } from '../components/AppText';
 import { Snackbar, useSnackbar } from '../components/Snackbar';
 import { StreetChecks } from '../features/arrival/StreetChecks';
 import { formatDistance, minutes } from '../i18n/format';
 import { getArrival, setArrival, setReportAfterWalk, type Arrival } from '../nav/walkStore';
+import { dropWalk, queueWalk } from '../storage/walkQueue';
 import { cappedContent } from '../theme/layout';
 import { colors, radius, spacing, touchTarget } from '../theme/theme';
 
 const FACES = [1, 2, 3, 4, 5] as const;
 type Rating = (typeof FACES)[number];
+
+// A picked face is coloured by what it means (test note F11): unsafe in caution
+// orange, okay in blue, safe in teal. The word under it says the same.
+const FACE_TONE: Record<Rating, { fg: string; edge: string; bg: string }> = {
+  1: { fg: colors.hazardText, edge: colors.hazard, bg: colors.hazardSoft },
+  2: { fg: colors.hazardText, edge: colors.hazard, bg: colors.hazardSoft },
+  3: { fg: colors.interactiveText, edge: colors.interactive, bg: colors.interactiveSoft },
+  4: { fg: colors.safeText, edge: colors.safe, bg: colors.safeSoft },
+  5: { fg: colors.safeText, edge: colors.safe, bg: colors.safeSoft },
+};
 
 // Journey complete (guide Section 6.3, screen 8; docs/screens/Arrival.png).
 export default function ArrivalScreen() {
@@ -81,44 +100,79 @@ function ArrivalView({ arrival: a }: { arrival: Arrival }) {
   const { canWrite } = useAuth();
   const left = useRef(false);
   const snack = useSnackbar();
-  // Walk points (guide Section 15): sent once, as soon as the screen opens. A failure
-  // (offline) says so, with Try again, instead of looking saved (test note G1).
-  const finished = useRef<Promise<string | null> | null>(null);
-  const retry = useRef(() => {});
+  // Walk points (guide Section 15): sent once, as soon as the screen opens, with an
+  // id made here so a retry counts once (test note F4). A failure goes to the walk
+  // queue (sent when the app next opens online) and keeps a Try again row here.
+  const [walkId] = useState(randomId);
+  const [queued] = useState(() => ({
+    id: walkId,
+    gpsM: a.gpsM,
+    durationS: a.durationS,
+    to: a.to.name,
+    createdAt: new Date().toISOString(),
+  }));
+  const [saved, setSaved] = useState<'sending' | 'saved' | 'failed'>('sending');
+  const finished = useRef<Promise<boolean> | null>(null);
   const send = useCallback(() => {
-    finished.current = walkFinish(a.gpsM, a.durationS, a.to.name)
+    setSaved('sending');
+    finished.current = walkFinish(queued.id, queued.gpsM, queued.durationS, queued.to)
       .then((r) => {
         setPoints(r.points);
-        return r.walk;
+        setSaved('saved');
+        void dropWalk(queued.id);
+        return true;
       })
       .catch((error: unknown) => {
         console.warn('Could not send the finished walk', error);
-        snack.show({ text: t('arrival.saveFailed'), actionLabel: t('arrival.retry'), onAction: () => retry.current() });
-        return null;
+        setSaved('failed');
+        void queueWalk({ ...queued, sent: false });
+        return false;
       });
-  }, [a, snack, t]);
+  }, [queued]);
   useEffect(() => {
-    retry.current = send;
     if (!finished.current) send();
   }, [send]);
 
-  // The rating is sent once, when the user leaves this screen. Optional, so a
-  // failure (offline) is only logged.
+  // +5 for rating, said once when a face is first picked (test note F11).
+  const rated = useRef(false);
+  const pick = (level: Rating | null) => {
+    setRating(level);
+    if (level && !rated.current) {
+      rated.current = true;
+      snack.show({ text: t('arrival.ratePoints') });
+    }
+  };
+
+  // More below the buttons (the rating, street checks): a cue until scrolled (F11).
+  const [more, setMore] = useState(false);
+  const [actionsH, setActionsH] = useState(touchTarget * 3);
+  const boxH = useRef(0);
+  const contentH = useRef(0);
+  const checkMore = (y: number) => setMore(contentH.current - boxH.current - y > spacing.lg);
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => checkMore(e.nativeEvent.contentOffset.y);
+
+  // The rating is sent once, when the user leaves this screen. If it cannot be sent
+  // (offline), it waits in the walk queue with its walk.
   const leave = useCallback(
     (then: 'map' | 'report') => {
       if (left.current) return;
       left.current = true;
       if (rating) {
-        void finished.current
-          ?.then((walk) => rateWalk({ rating, mode: a.mode, kind: a.kind, score: a.score, distanceM: a.walkedM, walk }))
-          .catch((error: unknown) => console.warn('Could not send the walk rating', error));
+        const r = { rating, mode: a.mode, kind: a.kind, score: a.score, distanceM: a.walkedM };
+        void finished.current?.then((ok) => {
+          if (!ok) return queueWalk({ ...queued, sent: false, rating: r });
+          return rateWalk({ ...r, walk: queued.id }).catch((error: unknown) => {
+            console.warn('Could not send the walk rating', error);
+            return queueWalk({ ...queued, sent: true, rating: r });
+          });
+        });
       }
       if (then === 'report') setReportAfterWalk({ at: a.to.lngLat, trail: a.trail });
       setArrival(null);
       if (router.canGoBack()) router.back();
       else router.replace('/');
     },
-    [rating, a, router],
+    [rating, a, router, queued],
   );
 
   useEffect(() => {
@@ -134,7 +188,19 @@ function ArrivalView({ arrival: a }: { arrival: Arrival }) {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom + spacing.md }]}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        onScroll={onScroll}
+        scrollEventThrottle={100}
+        onLayout={(e) => {
+          boxH.current = e.nativeEvent.layout.height;
+          checkMore(0);
+        }}
+        onContentSizeChange={(_, h) => {
+          contentH.current = h;
+          checkMore(0);
+        }}
+      >
         <View style={styles.halo} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <View style={styles.check}>
             <Check size={56} color={colors.white} strokeWidth={3} />
@@ -166,6 +232,20 @@ function ArrivalView({ arrival: a }: { arrival: Arrival }) {
           />
         </View>
 
+        {saved === 'failed' && (
+          <View style={[styles.card, styles.points]} accessibilityLiveRegion="polite">
+            <CloudOff size={24} color={colors.hazardText} />
+            <AppText variant="body" color={colors.text} style={styles.flex}>
+              {t('arrival.notSaved')}
+            </AppText>
+            <Pressable accessibilityRole="button" onPress={send} hitSlop={8} style={styles.retry}>
+              <AppText variant="bodyStrong" color={colors.interactiveText}>
+                {t('arrival.retry')}
+              </AppText>
+            </Pressable>
+          </View>
+        )}
+
         {points !== null && points > 0 && (
           <View style={[styles.card, styles.points]} accessibilityLiveRegion="polite">
             <CircleParking size={26} color={colors.interactiveText} />
@@ -188,11 +268,11 @@ function ArrivalView({ arrival: a }: { arrival: Arrival }) {
                   accessibilityRole="radio"
                   accessibilityState={{ selected: on }}
                   accessibilityLabel={t(`arrival.rate.${level}`)}
-                  onPress={() => setRating(on ? null : level)}
-                  style={[styles.face, on && styles.faceOn]}
+                  onPress={() => pick(on ? null : level)}
+                  style={[styles.face, on && { borderColor: FACE_TONE[level].edge, backgroundColor: FACE_TONE[level].bg }]}
                 >
-                  <Face level={level} color={on ? colors.safeText : colors.textMuted} />
-                  <AppText variant="label" color={on ? colors.safeText : colors.text} style={styles.center}>
+                  <Face level={level} color={on ? FACE_TONE[level].fg : colors.textMuted} />
+                  <AppText variant="label" color={on ? FACE_TONE[level].fg : colors.text} style={styles.center}>
                     {t(`arrival.rate.${level}`)}
                   </AppText>
                 </Pressable>
@@ -207,8 +287,21 @@ function ArrivalView({ arrival: a }: { arrival: Arrival }) {
         {/* Street checks need a signed-in walker, like reports (guests read only). */}
         {canWrite && a.quests.length > 0 && <StreetChecks quests={a.quests} />}
       </ScrollView>
+      {more && (
+        <View
+          style={styles.more}
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          <ChevronDown size={18} color={colors.textMuted} />
+          <AppText variant="caption" color={colors.textMuted}>
+            {t('arrival.moreBelow')}
+          </AppText>
+        </View>
+      )}
 
-      <View style={styles.actions}>
+      <View style={styles.actions} onLayout={(e) => setActionsH(e.nativeEvent.layout.height)}>
         <Pressable
           accessibilityRole="button"
           onPress={() => leave('report')}
@@ -229,7 +322,8 @@ function ArrivalView({ arrival: a }: { arrival: Arrival }) {
           </AppText>
         </Pressable>
       </View>
-      <Snackbar message={snack.message} onHide={snack.hide} bottom={insets.bottom + touchTarget + spacing.xl} />
+      {/* Above both buttons, never over them (test note F24). */}
+      <Snackbar message={snack.message} onHide={snack.hide} bottom={insets.bottom + spacing.md + actionsH + spacing.sm} />
     </View>
   );
 }
@@ -270,7 +364,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  faceOn: { borderColor: colors.safe, backgroundColor: colors.safeSoft },
+  retry: { minHeight: touchTarget, justifyContent: 'center', paddingHorizontal: spacing.sm },
+  more: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, paddingTop: spacing.xs },
   actions: { gap: spacing.sm, paddingTop: spacing.sm },
   button: {
     minHeight: touchTarget + spacing.md,

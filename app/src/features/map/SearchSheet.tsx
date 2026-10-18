@@ -1,6 +1,6 @@
 import type { LngLat } from '@maplibre/maplibre-react-native';
 import { Clock, LocateFixed, Search, ShieldCheck, Star, X } from 'lucide-react-native';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -65,7 +65,7 @@ export function SearchSheet({ purpose, near, saved, recent, onPick, onPickSaved,
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Results>({ status: 'idle' });
   const [attempt, setAttempt] = useState(0);
-  const dragY = useRef(new Animated.Value(0)).current;
+  const dragY = useState(() => new Animated.Value(0))[0];
 
   // Android keeps the keyboard up when the focused field unmounts, covering the route cards.
   useEffect(() => () => Keyboard.dismiss(), []);
@@ -231,6 +231,8 @@ function ResultsHeader({ results, count }: { results: Results; count: number }) 
       </View>
     );
   }
+  // A failed search has no places, so no "Places found" heading (test note F16).
+  if (results.status === 'error' && count === 0) return null;
   return (
     <View style={styles.sectionHead}>
       <AppText variant="bodyStrong" color={colors.navy} accessibilityRole="header">

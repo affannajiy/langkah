@@ -138,14 +138,14 @@
     "demoChip": "Demo",
     "reset": "Reset demo",
     "resetTitle": "Reset the demo?",
-    "resetBody": "Points, history, reports, votes and ratings go back to the start, and so do Afrina's actions. Recent searches are cleared. Your language stays.",
+    "resetBody": "Points, history, reports, votes and ratings go back to the start, and so does everything the demo helpers did. Recent searches are cleared.",
     "resetDone": "Demo reset",
     "resetFailed": "Could not reset the demo. Try again."
   },
   "units": {
-    "m": "{{value}} m",
-    "km": "{{value}} km",
-    "min": "{{count}} min"
+    "m": "{{value}} m",
+    "km": "{{value}} km",
+    "min": "{{count}} min"
   },
   "home": {
     "searchPlaceholder": "Where are you walking to?",
@@ -265,7 +265,8 @@
       "unmarked": "Unmarked main-road crossings",
       "hazards": "Hazards reported on route",
       "unchecked": "Not yet checked",
-      "percent": "{{pct}}%"
+      "percent": "{{pct}}%",
+      "amenities": "Bus stops and shelters"
     },
     "error": {
       "too_far": "This walk is over 10 km. Langkah plans walks up to 10 km.",
@@ -278,7 +279,8 @@
       "no_start": "Choose a start point, or allow location to start from where you are.",
       "network": "Could not reach Langkah. Check your internet connection and try again.",
       "generic": "Something went wrong planning this walk. Try again.",
-      "no_step_free": "We could not find a walk without stairs between these places. Turn off Avoid steps in Settings to see other routes."
+      "no_step_free": "We could not find a walk without stairs between these places. Turn off Avoid steps in Settings to see other routes.",
+      "rate_limited": "Too many route requests. Try again in a minute."
     },
     "retry": "Try again",
     "cover": {
@@ -355,13 +357,15 @@
       "gone": "Gone",
       "answerHint": "Helps other walkers know if this hazard is still there",
       "thanks": "Thanks. Your answer is saved and is sent once you sign in.",
-      "thanksSent": "Thanks. Your answer was sent."
+      "thanksSent": "Thanks. Your answer was sent.",
+      "notCounted": "Your answer was not counted. This report may be your own or no longer active."
     },
     "reroute": {
       "finding": "Off the route. Finding a new walk from here…",
       "back": "Back on route",
       "failed": "Could not find a new walk. Head back to the route line."
-    }
+    },
+    "ending": "Ending the walk"
   },
   "quick": {
     "title": "Quick report",
@@ -528,10 +532,12 @@
   },
   "time": {
     "justNow": "just now",
-    "hoursAgo_one": "1 h ago",
-    "hoursAgo_other": "{{count}} h ago",
+    "hoursAgo_one": "1 h ago",
+    "hoursAgo_other": "{{count}} h ago",
     "daysAgo_one": "1 day ago",
-    "daysAgo_other": "{{count}} days ago"
+    "daysAgo_other": "{{count}} days ago",
+    "minutesAgo_one": "1 min ago",
+    "minutesAgo_other": "{{count}} min ago"
   },
   "offline": {
     "banner": "No internet. Showing what was loaded before.",
@@ -557,8 +563,10 @@
     },
     "rateNote": "Your rating helps tune the safety scores for everyone.",
     "spot": "Spot anything new?",
-    "saveFailed": "Could not save this walk. Check your connection.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "ratePoints": "Thanks. +5 points for rating, added when you leave this screen.",
+    "notSaved": "This walk is not saved yet. It is sent by itself once you are online.",
+    "moreBelow": "More below"
   },
   "settings": {
     "title": "Settings",
@@ -570,7 +578,7 @@
     "vibration": "Vibration alerts",
     "vibrationBody": "One pulse for a turn, two for a hazard ahead, one long pulse on arrival.",
     "privacy": "Privacy",
-    "privacyLocation": "Location is used on the phone to show where you are and to guide a walk. Langkah never keeps a history of where you walked.",
+    "privacyLocation": "Your location is sent only to find routes and places near you, and to a contact while you share a walk. It is not stored with your name, and Langkah never keeps a history of where you walked.",
     "privacyReports": "Reports are anonymous unless you turn that off. Then only your first name from Google is shown. Your email is never shown.",
     "privacyPhotos": "Photos are shrunk on the phone before upload, which also removes the GPS and camera details inside them.",
     "privacyRatings": "Walk ratings send only the rating, day or night, the route's score and its length. No places.",
@@ -595,7 +603,7 @@
     "reasonRoute": "Plan walks from where you are",
     "reasonHazard": "Warn you about hazards ahead while you walk",
     "reasonReport": "Pin a report where you stand",
-    "privacy": "Location stays on your phone. Langkah never keeps a history of where you walked.",
+    "privacy": "Your location is sent only to find routes and places near you. It is not stored with your name, and Langkah never keeps a history of where you walked.",
     "asking": "Asking…"
   },
   "batteryTip": {
@@ -627,7 +635,8 @@
     "walkEarned_other": "+{{count}} Langkah Points for this walk",
     "rateBonus": "Rating earns +5 points.",
     "checkinEarned_one": "+{{count}} point · Daily check-in, day {{day}} of 7",
-    "checkinEarned_other": "+{{count}} points · Daily check-in, day {{day}} of 7"
+    "checkinEarned_other": "+{{count}} points · Daily check-in, day {{day}} of 7",
+    "chipDone": "done"
   },
   "ledger": {
     "walk": "Walk, {{km}} km",
@@ -1033,6 +1042,13 @@
       "checkin7": "Check in 7 days in a row",
       "street_checker": "Answer 10 street checks after walks",
       "got_fixed": "A request of yours fixed by the council"
+    },
+    "notYet": "Not yet",
+    "left": {
+      "checkin7": "Reach day 7 of the check-in",
+      "first_walk": "Finish a walk",
+      "first_report": "Post a report",
+      "got_fixed": "Get a report marked fixed"
     }
   }
 }

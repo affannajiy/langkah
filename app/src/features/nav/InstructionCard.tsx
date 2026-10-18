@@ -13,7 +13,7 @@ import {
 } from 'lucide-react-native';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Animated, StyleSheet, View } from 'react-native';
+import { Animated, StyleSheet } from 'react-native';
 
 import type { Step } from '../../api/types';
 import { AppText } from '../../components/AppText';
@@ -55,7 +55,8 @@ function landmarkText(step: Step, t: TFunction): string | null {
   return t(`nav.landmark.${l.k}`);
 }
 
-type Props = { view: WalkView; destName: string };
+// night: a light edge, so the navy card stands out on the navy night map (test note F17).
+type Props = { view: WalkView; destName: string; night?: boolean };
 
 // Under this distance the card says "Now" and pulses (with the turn haptic, as before).
 const NOW_M = 10;
@@ -95,7 +96,7 @@ function StepIn({ children, style }: { children: ReactNode; style?: object }) {
 
 // A gentle pulse on the arrow box at "turn now".
 function usePulse(on: boolean): Animated.Value {
-  const scale = useRef(new Animated.Value(1)).current;
+  const scale = useState(() => new Animated.Value(1))[0];
   useEffect(() => {
     if (!on || reduceMotion()) {
       scale.setValue(1);
@@ -114,7 +115,7 @@ function usePulse(on: boolean): Animated.Value {
 }
 
 // Navy card at the top of the walking screen (docs/screens/Navigation.png).
-export function InstructionCard({ view, destName }: Props) {
+export function InstructionCard({ view, destName, night = false }: Props) {
   const { t } = useTranslation();
   const compact = useCompactHeight();
   const nextM = useCountdown(view.next?.distM ?? 0);
@@ -162,7 +163,7 @@ export function InstructionCard({ view, destName }: Props) {
   if (compact) {
     return (
       <Animated.View
-        style={[styles.card, styles.cardCompact, slide]}
+        style={[styles.card, styles.cardCompact, night && styles.cardNight, slide]}
         accessible
         accessibilityRole="header"
         accessibilityLiveRegion="polite"
@@ -183,7 +184,7 @@ export function InstructionCard({ view, destName }: Props) {
 
   return (
     <Animated.View
-      style={[styles.card, slide]}
+      style={[styles.card, night && styles.cardNight, slide]}
       accessible
       accessibilityRole="header"
       accessibilityLiveRegion="polite"
@@ -229,5 +230,6 @@ const styles = StyleSheet.create({
   },
   text: { flex: 1, gap: 2 },
   cardCompact: { gap: spacing.sm, padding: spacing.sm },
+  cardNight: { borderWidth: 1.5, borderColor: colors.onNavyAccent },
   iconBoxCompact: { width: 48, height: 48 },
 });

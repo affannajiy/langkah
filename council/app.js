@@ -447,21 +447,27 @@
     return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
 
+  // Street names come from OpenStreetMap (ODbL), so the files carry the credit (test note F23).
+  const OSM_CREDIT = 'Street names (c) OpenStreetMap contributors, ODbL';
+
   function download(format) {
     const rows = ranked();
     let body, type;
     if (format === 'csv') {
-      const lines = ['rank,id,category,upvotes,status,council_status,street,lon,lat,created_at,note'];
-      rows.forEach((r) => lines.push([r.rank, r.id, r.cat, r.upvotes, r.status, r.cs, r.street, r.lon, r.lat, r.created, r.note].map(cell).join(',')));
+      // type: the readable name next to the category code (test note G18).
+      const lines = ['rank,id,category,type,upvotes,status,council_status,street,lon,lat,created_at,note'];
+      rows.forEach((r) => lines.push([r.rank, r.id, r.cat, cat('improvement', r.cat), r.upvotes, r.status, r.cs, r.street, r.lon, r.lat, r.created, r.note].map(cell).join(',')));
+      lines.push('', cell(OSM_CREDIT));
       body = '﻿' + lines.join('\r\n') + '\r\n'; // BOM so Excel reads UTF-8
       type = 'text/csv';
     } else {
       body = JSON.stringify({
         type: 'FeatureCollection',
+        attribution: OSM_CREDIT,
         features: rows.map((r) => ({
           type: 'Feature',
           geometry: { type: 'Point', coordinates: [r.lon, r.lat] },
-          properties: { rank: r.rank, id: r.id, category: r.cat, upvotes: r.upvotes, status: r.status, council_status: r.cs, street: r.street, created_at: r.created, note: r.note },
+          properties: { rank: r.rank, id: r.id, category: r.cat, type: cat('improvement', r.cat), upvotes: r.upvotes, status: r.status, council_status: r.cs, street: r.street, created_at: r.created, note: r.note },
         })),
       });
       type = 'application/geo+json';

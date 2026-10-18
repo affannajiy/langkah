@@ -28,7 +28,7 @@ export function BottomSheet({ snapPoints, index, onIndexChange, onDismiss, heade
   const side = useSideInset();
   const maxH = Math.max(...snapPoints);
   const offsetFor = (i: number) => maxH - (snapPoints[i] ?? snapPoints[0] ?? 0);
-  const y = useRef(new Animated.Value(offsetFor(index))).current;
+  const y = useState(() => new Animated.Value(offsetFor(index)))[0];
   const start = useRef(0);
   const [reduceMotion, setReduceMotion] = useState(false);
 

@@ -100,7 +100,8 @@ const styles = StyleSheet.create({
   top: { position: 'absolute', left: 0, right: 0, top: 0, gap: spacing.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md },
   rowEnd: { justifyContent: 'flex-end' },
-  chipScroll: { flexGrow: 1, flexShrink: 1, marginLeft: -spacing.md },
+  // flexBasis 0: the chip row ends where the Layers button starts (test note F19).
+  chipScroll: { flexGrow: 1, flexShrink: 1, flexBasis: 0, marginLeft: -spacing.md },
   chips: { gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
   layers: { borderRadius: radius.card },
   bottom: {

@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { CircleParking, Gift, MonitorPlay, Plus, type LucideIcon } from 'lucide-react-native';
+import { Check, CircleParking, Gift, MonitorPlay, Plus, type LucideIcon } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -123,16 +123,21 @@ export function CheckinCard({ day }: { day: number }) {
             <View
               key={d}
               accessible
-              accessibilityLabel={t('points.chip', { day: d, points: last ? 50 : 5 })}
+              accessibilityLabel={`${t('points.chip', { day: d, points: last ? 50 : 5 })}${done ? `, ${t('points.chipDone')}` : ''}`}
               accessibilityState={{ selected: today }}
               style={[styles.chip, last ? styles.chipLast : done ? styles.chipDone : today ? styles.chipToday : styles.chipLater]}
             >
-              <AppText
-                variant={done || today || last ? 'bodyStrong' : 'body'}
-                color={today ? colors.white : last ? colors.hazardText : done ? colors.safeText : colors.textMuted}
-              >
-                {last ? '+50' : '+5'}
-              </AppText>
+              {/* Done days get a tick, so the state is not shown by colour alone (F14). */}
+              {done ? (
+                <Check size={18} color={colors.safeText} strokeWidth={3} />
+              ) : (
+                <AppText
+                  variant={today || last ? 'bodyStrong' : 'body'}
+                  color={today ? colors.white : last ? colors.hazardText : colors.textMuted}
+                >
+                  {last ? '+50' : '+5'}
+                </AppText>
+              )}
             </View>
           );
         })}

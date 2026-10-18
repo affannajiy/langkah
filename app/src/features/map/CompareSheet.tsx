@@ -49,6 +49,7 @@ const KNOWN_ERRORS = new Set<RouteError>([
   'end_off_network',
   'no_route',
   'no_step_free',
+  'rate_limited',
   'outside_pilot',
   'start_outside_pilot',
   'no_start',
@@ -74,7 +75,8 @@ export function CompareSheet(props: Props) {
   const showFooter = ok || loading;
   // Start stays pinned under the cards; without routes, only the system bar needs room.
   const bottom = showFooter ? footerH : insets.bottom + spacing.lg;
-  const collapsed = Math.min(mainH + bottom, screenH * 0.75, maxHeight);
+  // At most about 60% of the screen, so the destination stays in view (test note F19).
+  const collapsed = Math.min(mainH + bottom, screenH * 0.6, maxHeight);
   // Small screens or big text: the cards scroll above Start instead of pushing it off screen.
   const overflow = mainH + bottom > collapsed;
   const expanded = Math.max(collapsed + 1, Math.min(screenH * 0.85, maxHeight));
@@ -172,7 +174,7 @@ function Body({ state, destinationName, selected, onSelect, onRetry, onChooseSta
   if (state.status === 'error') {
     const code = KNOWN_ERRORS.has(state.error) ? state.error : 'generic';
     const needsStart = code === 'no_start' || code === 'start_outside_pilot' || code === 'start_off_network';
-    const canRetry = code === 'network' || code === 'generic';
+    const canRetry = code === 'network' || code === 'generic' || code === 'rate_limited';
     return (
       <View style={styles.error} accessibilityLiveRegion="polite">
         <View style={styles.errorText}>
@@ -237,7 +239,7 @@ function Rise({ delay, children }: { delay: number; children: ReactNode }) {
 
 // A short fade each time a toggle's state changes, so the switch reads as one smooth change.
 function useFadeOnChange(value: unknown) {
-  const fade = useRef(new Animated.Value(1)).current;
+  const fade = useState(() => new Animated.Value(1))[0];
   const first = useRef(true);
   useEffect(() => {
     if (first.current) {
@@ -297,6 +299,7 @@ function Details({ route }: { route: Route }) {
     [t('route.row.marked'), String(s.mx)],
     [t('route.row.unmarked'), String(s.ux)],
     [t('route.row.hazards'), String(s.hz)],
+    [t('route.row.amenities'), String(s.am)],
     [t('route.row.unchecked'), t('route.row.percent', { pct: s.unk })],
   ];
   return (

@@ -26,11 +26,16 @@ export function routeReasons(stats: RouteStats, kind: 'safest' | 'fastest', t: T
   if (stats.mx > 0) good.push({ tone: 'good', label: t('route.chip.marked', { count: stats.mx }) });
   if (stats.hz === 0) good.push({ tone: 'good', label: t('route.chip.noHazards') });
 
-  if (stats.hz > 0) warn.push({ tone: 'warn', label: t('route.chip.hazards', { count: stats.hz }) });
+  // The hazard and "not yet checked" warnings must never drop off (test note F10).
+  const must: Reason[] = [];
+  if (stats.hz > 0) must.push({ tone: 'warn', label: t('route.chip.hazards', { count: stats.hz }) });
   if (stats.nosw > 0) warn.push({ tone: 'warn', label: t('route.chip.noSidewalk', { distance: formatDistance(stats.nosw) }) });
   if (stats.ux > 0) warn.push({ tone: 'warn', label: t('route.chip.unmarked', { count: stats.ux }) });
-  if (stats.unk >= UNCHECKED_WARN_PCT) warn.push({ tone: 'warn', label: t('route.chip.unchecked', { pct: stats.unk }) });
+  if (stats.unk >= UNCHECKED_WARN_PCT) must.push({ tone: 'warn', label: t('route.chip.unchecked', { pct: stats.unk }) });
 
-  const ordered = kind === 'safest' ? [...good, ...warn] : [...warn, ...good];
-  return ordered.slice(0, MAX_CHIPS[kind]);
+  const max = MAX_CHIPS[kind];
+  if (kind === 'fastest') return [...must, ...warn, ...good].slice(0, max);
+  // Safest leads with what it has, but gives up a good chip for a must-keep warning.
+  const kept = must.slice(0, max);
+  return [...good.slice(0, max - kept.length), ...kept, ...warn].slice(0, max);
 }

@@ -195,7 +195,14 @@ export function ReportFlowSheet({ pin, street, onStep, onHeight, onClose, onDone
                 </Pressable>
               );
             })}
-            <View style={styles.switchRow}>
+            <Pressable
+              accessibilityRole="switch"
+              accessibilityLabel={t('report.anonymous')}
+              accessibilityHint={t('report.anonymousHint')}
+              accessibilityState={{ checked: anonymous }}
+              onPress={() => setAnonymous(!anonymous)}
+              style={styles.switchRow}
+            >
               <View style={styles.flex}>
                 <AppText variant="bodyStrong" color={colors.text}>
                   {t('report.anonymous')}
@@ -205,13 +212,14 @@ export function ReportFlowSheet({ pin, street, onStep, onHeight, onClose, onDone
                 </AppText>
               </View>
               <Switch
-                accessibilityLabel={t('report.anonymous')}
+                importantForAccessibility="no-hide-descendants"
+                accessibilityElementsHidden
                 value={anonymous}
                 onValueChange={setAnonymous}
-                trackColor={{ true: colors.safe, false: colors.border }}
+                trackColor={{ true: colors.safeText, false: colors.limestone }}
                 thumbColor={colors.white}
               />
-            </View>
+            </Pressable>
           </>
         )}
 

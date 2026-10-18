@@ -138,14 +138,14 @@
     "demoChip": "Demo",
     "reset": "Set semula demo",
     "resetTitle": "Set semula demo?",
-    "resetBody": "Mata, sejarah, laporan, undian dan penilaian kembali ke permulaan, begitu juga tindakan Afrina. Carian terkini dipadam. Bahasa anda kekal.",
+    "resetBody": "Mata, sejarah, laporan, undian dan penilaian kembali ke permulaan, begitu juga semua tindakan pembantu demo. Carian terkini dipadam.",
     "resetDone": "Demo telah diset semula",
     "resetFailed": "Tidak dapat set semula demo. Cuba lagi."
   },
   "units": {
-    "m": "{{value}} m",
-    "km": "{{value}} km",
-    "min": "{{count}} min"
+    "m": "{{value}} m",
+    "km": "{{value}} km",
+    "min": "{{count}} min"
   },
   "home": {
     "searchPlaceholder": "Hendak berjalan ke mana?",
@@ -265,7 +265,8 @@
       "unmarked": "Lintasan jalan utama tidak bertanda",
       "hazards": "Bahaya dilaporkan di laluan",
       "unchecked": "Belum disemak",
-      "percent": "{{pct}}%"
+      "percent": "{{pct}}%",
+      "amenities": "Hentian bas dan tempat berteduh"
     },
     "error": {
       "too_far": "Perjalanan ini lebih 10 km. Langkah merancang perjalanan sehingga 10 km.",
@@ -278,7 +279,8 @@
       "no_start": "Pilih titik mula, atau benarkan lokasi untuk bermula dari tempat anda berada.",
       "network": "Tidak dapat menghubungi Langkah. Semak sambungan internet anda dan cuba lagi.",
       "generic": "Ada masalah semasa merancang perjalanan ini. Cuba lagi.",
-      "no_step_free": "Kami tidak menemui laluan tanpa tangga antara tempat ini. Matikan Elak tangga dalam Tetapan untuk melihat laluan lain."
+      "no_step_free": "Kami tidak menemui laluan tanpa tangga antara tempat ini. Matikan Elak tangga dalam Tetapan untuk melihat laluan lain.",
+      "rate_limited": "Terlalu banyak permintaan laluan. Cuba lagi dalam seminit."
     },
     "retry": "Cuba lagi",
     "cover": {
@@ -355,13 +357,15 @@
       "gone": "Sudah tiada",
       "answerHint": "Membantu pejalan kaki lain tahu sama ada bahaya ini masih ada",
       "thanks": "Terima kasih. Jawapan anda disimpan dan dihantar sebaik sahaja anda log masuk.",
-      "thanksSent": "Terima kasih. Jawapan anda telah dihantar."
+      "thanksSent": "Terima kasih. Jawapan anda telah dihantar.",
+      "notCounted": "Jawapan anda tidak dikira. Laporan ini mungkin milik anda atau tidak aktif lagi."
     },
     "reroute": {
       "finding": "Terkeluar dari laluan. Mencari laluan baharu dari sini…",
       "back": "Kembali ke laluan",
       "failed": "Laluan baharu tidak dijumpai. Kembali ke garisan laluan."
-    }
+    },
+    "ending": "Menamatkan perjalanan"
   },
   "quick": {
     "title": "Laporan pantas",
@@ -528,10 +532,12 @@
   },
   "time": {
     "justNow": "baru tadi",
-    "hoursAgo_one": "{{count}} jam lalu",
-    "hoursAgo_other": "{{count}} jam lalu",
+    "hoursAgo_one": "{{count}} jam lalu",
+    "hoursAgo_other": "{{count}} jam lalu",
     "daysAgo_one": "{{count}} hari lalu",
-    "daysAgo_other": "{{count}} hari lalu"
+    "daysAgo_other": "{{count}} hari lalu",
+    "minutesAgo_one": "1 min lalu",
+    "minutesAgo_other": "{{count}} min lalu"
   },
   "offline": {
     "banner": "Tiada internet. Memaparkan apa yang dimuatkan tadi.",
@@ -557,8 +563,10 @@
     },
     "rateNote": "Penilaian anda membantu menambah baik skor keselamatan untuk semua.",
     "spot": "Nampak sesuatu yang baharu?",
-    "saveFailed": "Perjalanan ini tidak dapat disimpan. Semak sambungan anda.",
-    "retry": "Cuba lagi"
+    "retry": "Cuba lagi",
+    "ratePoints": "Terima kasih. +5 mata untuk penilaian, ditambah apabila anda keluar dari skrin ini.",
+    "notSaved": "Perjalanan ini belum disimpan. Ia dihantar sendiri apabila anda dalam talian.",
+    "moreBelow": "Ada lagi di bawah"
   },
   "settings": {
     "title": "Tetapan",
@@ -570,7 +578,7 @@
     "vibration": "Getaran amaran",
     "vibrationBody": "Satu getaran untuk belokan, dua untuk bahaya di hadapan, satu getaran panjang apabila tiba.",
     "privacy": "Privasi",
-    "privacyLocation": "Lokasi digunakan dalam telefon untuk menunjukkan kedudukan anda dan memandu perjalanan. Langkah tidak pernah menyimpan sejarah tempat anda berjalan.",
+    "privacyLocation": "Lokasi anda dihantar hanya untuk mencari laluan dan tempat berdekatan, dan kepada kenalan semasa anda berkongsi perjalanan. Ia tidak disimpan bersama nama anda, dan Langkah tidak pernah menyimpan sejarah tempat anda berjalan.",
     "privacyReports": "Laporan adalah tanpa nama melainkan anda mematikannya. Jika begitu, hanya nama pertama anda daripada Google ditunjukkan. E-mel anda tidak pernah ditunjukkan.",
     "privacyPhotos": "Foto dikecilkan dalam telefon sebelum dimuat naik, dan ini juga membuang butiran GPS dan kamera di dalamnya.",
     "privacyRatings": "Penilaian perjalanan hanya menghantar penilaian, siang atau malam, skor laluan dan panjangnya. Tiada tempat.",
@@ -595,7 +603,7 @@
     "reasonRoute": "Merancang perjalanan dari tempat anda berada",
     "reasonHazard": "Memberi amaran tentang bahaya di hadapan semasa anda berjalan",
     "reasonReport": "Menanda laporan di tempat anda berdiri",
-    "privacy": "Lokasi kekal dalam telefon anda. Langkah tidak pernah menyimpan sejarah tempat anda berjalan.",
+    "privacy": "Lokasi anda dihantar hanya untuk mencari laluan dan tempat berdekatan. Ia tidak disimpan bersama nama anda, dan Langkah tidak pernah menyimpan sejarah tempat anda berjalan.",
     "asking": "Sedang meminta…"
   },
   "batteryTip": {
@@ -627,7 +635,8 @@
     "walkEarned_other": "+{{count}} Mata Langkah untuk perjalanan ini",
     "rateBonus": "Penilaian memberi +5 mata.",
     "checkinEarned_one": "+{{count}} mata · Daftar masuk harian, hari {{day}} daripada 7",
-    "checkinEarned_other": "+{{count}} mata · Daftar masuk harian, hari {{day}} daripada 7"
+    "checkinEarned_other": "+{{count}} mata · Daftar masuk harian, hari {{day}} daripada 7",
+    "chipDone": "selesai"
   },
   "ledger": {
     "walk": "Berjalan, {{km}} km",
@@ -1033,6 +1042,13 @@
       "checkin7": "Daftar masuk 7 hari berturut-turut",
       "street_checker": "Jawab 10 semakan jalan selepas berjalan",
       "got_fixed": "Permintaan anda dibaiki oleh majlis"
+    },
+    "notYet": "Belum lagi",
+    "left": {
+      "checkin7": "Capai hari ke-7 daftar masuk",
+      "first_walk": "Habiskan satu perjalanan",
+      "first_report": "Hantar satu laporan",
+      "got_fixed": "Laporan anda ditanda dibaiki"
     }
   }
 }

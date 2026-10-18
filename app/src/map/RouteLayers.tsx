@@ -68,6 +68,11 @@ function toLine(p: LngLat, line: LngLat[], m: Metres): number {
   return best;
 }
 
+// Tags keep clear of the end pin (about 50 m tall on screen at street zoom) and the
+// start dot (test note G5), unless the route is too short for that.
+const TAG_CLEAR_END_M = 70;
+const TAG_CLEAR_START_M = 40;
+
 function candidates(route: Route): LngLat[] {
   const last = route.points.length - 1;
   const out: LngLat[] = [];
@@ -75,7 +80,11 @@ function candidates(route: Route): LngLat[] {
     const at = TAG_FROM + ((TAG_TO - TAG_FROM) * s) / TAG_STEPS;
     out.push(route.points[Math.round(last * at)] ?? route.points[0]!);
   }
-  return out;
+  const m = metresFn(route.points);
+  const start = route.points[0]!;
+  const end = route.points[last]!;
+  const clear = out.filter((c) => m(c, end) >= TAG_CLEAR_END_M && m(c, start) >= TAG_CLEAR_START_M);
+  return clear.length > 0 ? clear : out;
 }
 
 function tagPoints(pair: RoutePair): { safest: LngLat; fastest: LngLat | null } {
@@ -168,18 +177,22 @@ export function RouteLayers({ pair, selected, onSelect, start, end }: Props) {
   );
 
   const tags = useMemo(() => tagPoints(pair), [pair]);
-  const dim = (kind: RouteKind) => (selected === kind ? 1 : 0.55);
+  // The route not picked fades. Fastest fades less, so its thin dashes stay readable.
+  const dim = (kind: RouteKind) => (selected === kind ? 1 : kind === 'fastest' ? 0.8 : 0.55);
 
-  // White casing so the grey dashes also read on the night map, as on the walk screen.
-  const fastestLines = [
+  // Fastest always draws on top (test note F5): its white casing goes under Safest and
+  // only its grey dashes go over, so where both use a street, grey dashes show on teal.
+  const fastestCasing = (
     <Layer
       key="route-fastest-outline"
       id="route-fastest-outline"
       type="line"
       filter={['==', ['get', 'kind'], 'fastest']}
       layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-      paint={{ 'line-color': colors.routeOutline, 'line-width': selected === 'fastest' ? 9 : 8, 'line-opacity': dim('fastest') }}
-    />,
+      paint={{ 'line-color': colors.routeOutline, 'line-width': selected === 'fastest' ? 8 : 7, 'line-opacity': dim('fastest') }}
+    />
+  );
+  const fastestDashes = (
     <Layer
       key="route-fastest"
       id="route-fastest"
@@ -188,12 +201,12 @@ export function RouteLayers({ pair, selected, onSelect, start, end }: Props) {
       layout={{ 'line-cap': 'butt', 'line-join': 'round' }}
       paint={{
         'line-color': colors.routeFastest,
-        'line-width': selected === 'fastest' ? 5 : 4,
+        'line-width': selected === 'fastest' ? 4.5 : 3.5,
         'line-dasharray': [1.6, 1.2],
         'line-opacity': dim('fastest'),
       }}
-    />,
-  ];
+    />
+  );
   const safestLines = [
     <Layer
       key="route-safest-outline"
@@ -215,9 +228,7 @@ export function RouteLayers({ pair, selected, onSelect, start, end }: Props) {
 
   return (
     <>
-      {/* The selected route draws on top; the key re-adds both sources in that order. */}
       <GeoJSONSource
-        key={`routes-${selected}`}
         id="routes"
         data={routes}
         onPress={(e) => {
@@ -225,9 +236,11 @@ export function RouteLayers({ pair, selected, onSelect, start, end }: Props) {
           if (kind === 'safest' || kind === 'fastest') onSelect(kind);
         }}
       >
-        {selected === 'fastest' ? [safestLines, fastestLines] : [fastestLines, safestLines]}
+        {fastestCasing}
+        {safestLines}
+        {fastestDashes}
       </GeoJSONSource>
-      <GeoJSONSource key={`unchecked-${selected}`} id="routes-unchecked" data={unchecked}>
+      <GeoJSONSource id="routes-unchecked" data={unchecked}>
         <Layer
           id="route-unchecked-dots"
           type="line"

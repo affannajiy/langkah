@@ -1,8 +1,13 @@
-# Final full test (preview APK)
+# Final test
 
-One pass over the whole app on the **preview** APK with Phase 19 (this is Phase 20), before the final prototype. The emulator (Pixel 8) and a real phone (Honor) each take the rows they can. Mark each row Pass, Fail (with a note) or Skip, and log every fail or oddity in [test-notes.md](test-notes.md) under **Full test**.
+One pass over the whole app on the **preview** APK before the final prototype. The emulator (Pixel 8) and a real phone (Honor) each take the rows they can. Mark each row Pass, Fail (with a note) or Skip, and log every fail or oddity in [test-notes.md](test-notes.md).
 
-Rows are grouped by screen and numbered afresh. "Was" is the row number in [final-test-run1.md](final-test-run1.md), where the last results are.
+Rows are grouped by screen. Each row has two results:
+
+- **Run 1**: the first full run and the Phase 18 and 19 tests (17 and 18 Oct 2026, builds `e5808c9a` to `47d6f7eb` and the Phase 19 rebuilds). **Run 1 #** is the row number used then; the G and N notes in test-notes refer to it.
+- **Run 2**: the Phase 20 full test (18 Oct 2026, build `5fdee194`, commit 7065da4). The F notes in test-notes refer to the row number **#**. Totals: 63 Pass, 3 Fail (rows 10, 15, 40), 10 Skip (47, 66 to 74).
+
+Where the devices are:
 
 - **Emu**: Pixel 8 emulator, `eas build:run -p android --latest`, GPX playback.
 - **Phone**: a real phone from the build link. Vibration, real GPS, compass, lock screen and battery tips only work here.
@@ -12,142 +17,142 @@ Rows are grouped by screen and numbered afresh. "Was" is the row number in [fina
 
 1. Open the Supabase dashboard (free projects pause after about 7 days). Migrations up to 24 are on the live project.
 2. Demo hazards are younger than 7 days, or run `python seed_demo.py` in `data-scripts/`, then `python seed_demo.py --council-stats` for the council page.
-3. The preview SHA-1 is in Google Cloud (README section 3), or skip the Google rows.
+3. The preview SHA-1 is in Google Cloud (DEVELOPMENT.md section 3), or skip the Google rows.
 4. A new preview APK with Phase 19, then a fresh start: `adb shell pm clear com.langkah.app` (emulator), or reinstall (phone).
 5. GPX: `data-scripts/out/demo-walk.gpx` (Ipoh, station to Concubine Lane) and `data-scripts/out/utp-walk.gpx` (V5C to V5 Cafe, 181 m, a left and a right). Play them as mock gps **and** network fixes with `--accuracy 5`; the emulator setup is in [test-notes.md](test-notes.md), Emulator-only notes.
 6. Mock location at V5C (100.96418, 4.38748) for the UTP rows, at the railway station for the Ipoh rows.
-7. For the motion row: Android Settings, Accessibility, **Remove animations**. For the council rows: the Pages URL is in Supabase **Redirect URLs** (README section 5).
+7. For the motion row: Android Settings, Accessibility, **Remove animations**. For the council rows: the Pages URL is in Supabase **Redirect URLs** (DEVELOPMENT.md section 5).
 
 ## First launch
 
-| # | Was | Where | Area | Step | Expect | Result |
-|---|---|---|---|---|---|---|
-| 1 | 1 | Both | Splash | Open the app | Navy splash, logo mark, "Langkah", "Lebih selamat". No white flash. | |
-| 2 | 2 | Both | Onboarding | Read how to start, pick Guest, read the location screen, allow location | No language step (English only for now). The Android prompt appears only after the explanation. Lands on the Map. | |
-| 3 | 32 | Both | Demo account | Fresh start, on how to start pick the demo | Signed in as Demo Walker with points, reports and saved places filled in (Afrina is the helper who confirms). Reset demo on Me puts it back. | |
-| 4 | 25 | Both | English only | Open Settings, then go through every tab | No language section in Settings. Everything in English, even on a phone set to Malay. | |
-| 5 | 67 | Emu | N2 status bar | `pm clear`, Try the demo, tap the moon; then close and reopen the app | Light status bar icons on the night map at once, and on the first map screen after reopening. | |
+| # | Run 1 # | Where | Area | Step | Expect | Run 1 | Run 2 |
+|---|---|---|---|---|---|---|---|
+| 1 | 1 | Both | Splash | Open the app | Navy splash, logo mark, "Langkah", "Lebih selamat". No white flash. | Pass. Native splash shows the mark only; "Langkah" and "Lebih selamat" show on the next screen. | Pass. Navy splash, mark, words; no white flash (14 frames). |
+| 2 | 2 | Both | Onboarding | Read how to start, pick Guest, read the location screen, allow location | No language step (English only for now). The Android prompt appears only after the explanation. Lands on the Map. | Pass. Guest sign-in clean (B1 fixed). | Pass (F7, F8). No language step; Android prompt only after Allow location; lands on the Map. |
+| 3 | 32 | Both | Demo account | Fresh start, on how to start pick the demo | Signed in as Afrina (LGK-DEMO-01) with points and reports filled in; only the UTP saved place is preset. A demo hazard is confirmed by a crew helper (Haikal, Lee and others). Reset demo on Me puts it back and checks in again. | Pass. Demo account signs in as "Demo Walker" (LGK-DEMO-01); Afrina is the helper account that confirms reports (test text is old). Points, reports, saved places filled. Reset demo (dialog) back to 1,500 points and 3 reports. | Pass (note). Demo Walker, points, ledger, 3 reports, badges. Saved places: only the UTP preset (Home, Work empty). Duplicates: F6. |
+| 4 | 25 | Both | English only | Open Settings, then go through every tab | No language section in Settings. Everything in English, even on a phone set to Malay. | Pass. No language section in Settings. App locale set to ms-MY (adb cmd locale): still all English. | Pass. No language section; app locale ms-MY still all English. |
+| 5 | 67 | Emu | N2 status bar | `pm clear`, Try the demo, tap the moon; then close and reopen the app | Light status bar icons on the night map at once, and on the first map screen after reopening. | Pass. After pm clear and Try the demo: light icons on the night map, dark on day after the moon, light again after close and reopen. | Pass. Light icons at once; reopen at night (zone set to 23:01) also light. |
 
 ## Map home
 
-| # | Was | Where | Area | Step | Expect | Result |
-|---|---|---|---|---|---|---|
-| 6 | 3 | Both | Map | Look at the map around Ipoh Railway Station | Positron map in Langkah colours, "(c) OpenStreetMap contributors" visible, orange diamond hazards, light blue crossings, pink bus stops. | |
-| 7 | 4 | Both | Layers | Open Layers, turn bus stops off and on | Pins hide and come back. Hazards always show. | |
-| 8 | 5 | Both | Peek sheet | Read the counts under the map | Hazard and improvement counts near you. Matches what Community shows for the same area. | |
-| 9 | 41 | Both | Sponsored pins | Browse the map in Old Town | White teardrop pins tagged "Sponsored", at most 3 on screen. Tap one: sheet with Get voucher and Walk here. | |
-| 10 | new (N4) | Emu | Location comes back | Location services off, open the app, "No thanks" on Google's dialog. Then turn location on from quick settings | Within about 5 s the map finds you (blue dot, distances in search), no restart. Also after leaving the app and coming back. | |
+| # | Run 1 # | Where | Area | Step | Expect | Run 1 | Run 2 |
+|---|---|---|---|---|---|---|---|
+| 6 | 3 | Both | Map | Look at the map around Ipoh Railway Station | Positron map in Langkah colours, "(c) OpenStreetMap contributors" visible, orange diamond hazards, light blue crossings, pink bus stops. | Pass. Emulator needs a mock GPS fix. | Pass (note). Positron, credit, diamonds, crossings, bus stops. Covered rails clutter at the platforms. |
+| 7 | 4 | Both | Layers | Open Layers, turn bus stops off and on | Pins hide and come back. Hazards always show. | Pass. | Pass (F9). Bus stops off/on works, hazards stay. |
+| 8 | 5 | Both | Peek sheet | Read the counts under the map | Hazard and improvement counts near you. Matches what Community shows for the same area. | Pass. Near station: 2 hazards, 8 requests, same as the pins on screen. Community lists by distance, not by map area, so only a rough match. | Pass (F26). Counts match the pins; G5/G6 seen. |
+| 9 | 41 | Both | Sponsored pins | Browse the map in Old Town | White teardrop pins tagged "Sponsored", at most 3 on screen. Tap one: sheet with Get voucher and Walk here. | Pass. 3 white Sponsored pins in Old Town. Tap: sheet with RM3 off, Get voucher 450 pts, Walk here, "Shops pay to show here" note. Counted by partner_report.py --real. | Pass. White Sponsored teardrops; tap opens the shop sheet with voucher and Walk here. |
+| 10 | new (N4) | Emu | Location comes back | Location services off, open the app, "No thanks" on Google's dialog. Then turn location on from quick settings | Within about 5 s the map finds you (blue dot, distances in search), no restart. Also after leaving the app and coming back. | New row. | **Fail** (F3). Location off: Google's Location Accuracy dialog comes back after every No thanks, the map can't be reached. Leave and come back with location on: found in < 5 s. |
 
 ## Search
 
-| # | Was | Where | Area | Step | Expect | Result |
-|---|---|---|---|---|---|---|
-| 11 | 6 | Both | Search | Search "Concubine" | Concubine Lane with distance and area. No score shown. Recent search saved. | |
-| 12 | 57 | Emu | Nearby search | Mock location at V5C (100.96418, 4.38748). Search **cafe** | V5 Cafe (about 160 m) first; Ipoh cafes after it. Search **v5**: the V5 blocks and V5 Cafe, nearest first. | |
-| 13 | 58 | Emu | Instant search | Type **cafe**, clear, type it again. Then close the app, reopen, type it once more | Second time and after the restart: results at once, no spinner. While typing a new word, the old results stay until the new ones land. | |
-| 14 | 69 | Both | Reset demo | Me, **Reset demo**, then search **cafe** and start a walk | Recent places gone; the search asks the server again (saved searches cleared). The walk opens in 3D. | |
+| # | Run 1 # | Where | Area | Step | Expect | Run 1 | Run 2 |
+|---|---|---|---|---|---|---|---|
+| 11 | 6 | Both | Search | Search "Concubine" | Concubine Lane with distance and area. No score shown. Recent search saved. | Pass. 3 results with distance and street. | Pass. Concubine: Gallery 500 m, Lane 550 m, 27 Concubine Lane 600 m; no score; recent saved. |
+| 12 | 57 | Emu | Nearby search | Mock location at V5C (100.96418, 4.38748). Search **cafe** | V5 Cafe (about 160 m) first; Ipoh cafes after it. Search **v5**: the V5 blocks and V5 Cafe, nearest first. | Pass. **cafe**: V5 Cafe 150 m first, then Ipoh cafes 25 to 27 km. **v5**: V5 Cafe (150 m) first, then V5C 10 m, V5D 50 m, V5B, V5A, V5E... nearest first. V5 Cafe tops V5C because v5 is a whole word in its name (better match), by design. | Pass. cafe: V5 Cafe 150 m first; v5: V5C 10 m ... V5K 300 m by distance. |
+| 13 | 58 | Emu | Instant search | Type **cafe**, clear, type it again. Then close the app, reopen, type it once more | Second time and after the restart: results at once, no spinner. While typing a new word, the old results stay until the new ones land. | Pass after fix. Retype: instant. After a restart it showed a spinner when typed before the first GPS fix (no location yet, so the saved answer did not match). Fixed: before the first fix the newest saved answer for the same words shows at once, without distances, and the fresh search replaces it. Rebuilt and retested: cold start, typed at once, results in 0.3 s; with no GPS fix the saved list shows without distances and the fresh one replaces it. | Pass. Second search and after force-stop: results in the first frame; typing more keeps the old list with a spinner. |
+| 14 | 69 | Both | Reset demo | Me, **Reset demo**, then search **cafe** and start a walk | Recent places gone; the search asks the server again (saved searches cleared). The walk opens in 3D. | Pass. After Reset demo: Recent empty, **cafe** shows the spinner (server asked again). | Pass. Recent gone, server asked again, walk opens in 3D. |
 
 ## Route compare
 
-| # | Was | Where | Area | Step | Expect | Result |
-|---|---|---|---|---|---|---|
-| 15 | 7 | Both | Route compare | Pick Concubine Lane | Safest solid teal, Fastest dashed grey, unchecked dotted. Cards with time, distance, score and what Fastest lacks. | |
-| 16 | 8 | Both | Route detail | Expand the sheet | Breakdown: sidewalk %, lit %, marked crossings, hazards, amenities. | |
-| 17 | 9 | Both | Day and night | Tap the moon, then the sun | Routes and scores change; the map goes dark at night. Never colour alone. | |
-| 18 | 59 | Emu | Route on tap | Tap **V5 Cafe** in the results | Grey skeleton cards the size of the real ones (Start dimmed) for a moment, or the routes at once. Nothing jumps when they land. | |
-| 19 | 60 | Emu | Instant toggles | On the route sheet tap the moon, then **Prefer cover**, then each again | New routes show at once, no skeletons (fetched in the background). Snackbar "Night scoring on" or "Day scoring on". | |
-| 20 | 61 | Both | Route sheet header | Station to Concubine Lane, by day and by night | "2 walking routes" on one line, round moon or sun button and the star beside it. No long Night scoring pill. | |
-| 21 | 62 | Both | Sheet motion | Open a route; press and hold buttons; turn **Remove animations** on and repeat | Lines draw from start to end, then the tags and dots show. Cards rise one after the other, the score ring fills, buttons shrink a little while held, snackbars slide up, the cover chip fades on change. With Remove animations: everything appears at once. | |
-| 22 | 50 | Both | Rain and heat | Route compare. Tap **Prefer cover**; when it rains the chip turns on by itself | Chip with an icon, a word and a tick when on. Safest may change near covered walkways (the station); the score does not. | |
-| 23 | 66 | Both | N1 cover | Station to Concubine Lane, Prefer cover off, then on | Safest is never worse with cover on: same or higher score, same or fewer hazards. (Server check: 827 m, score 72, no hazards both ways.) | |
-| 24 | 51 | Both | Step-free | Settings, **Avoid steps** on, then route through the railway station | Step-free tag on the sheet, no stairs on either route, "Kerbs are not checked at N crossings". Off again restores the usual routes. | |
+| # | Run 1 # | Where | Area | Step | Expect | Run 1 | Run 2 |
+|---|---|---|---|---|---|---|---|
+| 15 | 7 | Both | Route compare | Pick Concubine Lane | Safest solid teal, Fastest dashed grey, unchecked dotted. Cards with time, distance, score and what Fastest lacks. | Pass. Safest 94 / Fastest 60. Scores still doubtful (G2). Crossing pins pile up (G6). | **Fail** (F5). With Safest selected the dashed Fastest line is hidden under Safest, its own tag and the hazard pins. |
+| 16 | 8 | Both | Route detail | Expand the sheet | Breakdown: sidewalk %, lit %, marked crossings, hazards, amenities. | Pass. Sidewalk, lit, marked and unmarked crossings, hazards, not yet checked. No amenities line (G7). | Pass (G7 seen, F10). Shares, 97% not checked + note. |
+| 17 | 9 | Both | Day and night | Tap the moon, then the sun | Routes and scores change; the map goes dark at night. Never colour alone. | Pass. Night 88/52, map goes dark. Star wraps to a new line (G3); dark status bar icons at night (G4). | Pass (F10). Night map, 69 vs 29 then; day back 72/37; light status bar. |
+| 18 | 59 | Emu | Route on tap | Tap **V5 Cafe** in the results | Grey skeleton cards the size of the real ones (Start dimmed) for a moment, or the routes at once. Nothing jumps when they land. | Pass. Two skeleton cards with Start dimmed, then the route. Small shrink when only one route comes back (two skeletons, one card). | Pass. Two skeletons, Start dimmed, then one card "Safest and fastest". Map still flying in (G17). |
+| 19 | 60 | Emu | Instant toggles | On the route sheet tap the moon, then **Prefer cover**, then each again | New routes show at once, no skeletons (fetched in the background). Snackbar "Night scoring on" or "Day scoring on". | Pass. Moon: score 70 to 75 at once, snackbar "Day scoring on". Prefer cover off: route at once, line redraws. | Pass. New numbers in the first frame (0.3 s), snackbars name the mode. |
+| 20 | 61 | Both | Route sheet header | Station to Concubine Lane, by day and by night | "2 walking routes" on one line, round moon or sun button and the star beside it. No long Night scoring pill. | Pass. "2 walking routes" on one line, round moon (night) and sun (day) button, star beside it. | Pass. "2 walking routes" one line, round moon/sun, star beside. |
+| 21 | 62 | Both | Sheet motion | Open a route; press and hold buttons; turn **Remove animations** on and repeat | Lines draw from start to end, then the tags and dots show. Cards rise one after the other, the score ring fills, buttons shrink a little while held, snackbars slide up, the cover chip fades on change. With Remove animations: everything appears at once. | Pass. Line draws on, ring fills, cards rise, step text slides. Remove animations (scales 0): cards, ring and both lines all there at once. Press-hold scale not checkable by adb. | Pass (part). Slowed 10x: Safest card, then Fastest, ring fills, then lines with tags. Remove animations: all in the first frame. Press-shrink and line draw too quick to catch. |
+| 22 | 50 | Both | Rain and heat | Route compare. Tap **Prefer cover**; when it rains the chip turns on by itself | Chip with an icon, a word and a tick when on. Safest may change near covered walkways (the station); the score does not. | Pass with note. Rain forecast turned the chip on by itself ("Rain likely · prefers cover" with a tick). Off: plain "Prefer cover" with icon. Safest changes: cover on 700 m, score 59, 1 hazard; off 900 m, 69, no hazards (N1). | Pass. Rain: "Raining · prefers cover" with tick on by itself; off: "Prefer cover". |
+| 23 | 66 | Both | N1 cover | Station to Concubine Lane, Prefer cover off, then on | Safest is never worse with cover on: same or higher score, same or fewer hazards. (Server check: 827 m, score 72, no hazards both ways.) | Pass. Station to Concubine Lane, Safest 900 m: night 68, day 74, no hazards, same with cover on and off. | Pass. Cover on/off: Safest 850 m, 72, no hazards both ways. |
+| 24 | 51 | Both | Step-free | Settings, **Avoid steps** on, then route through the railway station | Step-free tag on the sheet, no stairs on either route, "Kerbs are not checked at N crossings". Off again restores the usual routes. | Pass. Step-free tag on the sheet, "No stairs on this route. Kerbs are not checked at 3 crossings". Fastest changed (29 to 27, 2 to 3 unmarked crossings); off again restores 29. | Pass (F19). Step-free tag + kerb note; numbers change and come back. |
 
 ## Walk
 
-| # | Was | Where | Area | Step | Expect | Result |
-|---|---|---|---|---|---|---|
-| 25 | 63 | Emu | Start a walk | V5C to V5 Cafe, **Start**, then play `utp-walk.gpx` | The map shows the whole route, then swoops down behind the walker (about 1.2 s), tilted, buildings raised in 3D. The turn card slides down from the top. | |
-| 26 | 70 | Emu | Walker size on Start | V5C to V5 Cafe, **Start**, play `utp-walk.gpx`; watch the swoop | The arrow starts small and grows with the swoop to its normal size; it never fills the screen, then shrinks. | |
-| 27 | 64 | Emu | Walk in 3D | Keep the GPX playing; repeat at night | Navy arrow on the street pointing along the walk, gliding between fixes (no jumps). Walked part grey. Turn distance runs down smoothly; "Now" and the arrow box pulse at each turn with the haptic. Night: buildings faint navy, route still clear. Recentre returns to the tilted view. | |
-| 28 | 71 | Emu | Map view button | During the walk, tap the view button three times | 3D, then 2D (flat, turns with the walk), then North (flat, north up, walker in the middle), then 3D again. Each tap names the view in a snackbar; the button shows an icon and a word. | |
-| 29 | 72 | Emu | View remembered | Pick North, end the walk, start a new one; then Me, **Reset demo**, start again | The second walk opens in North; after Reset demo it opens in 3D. | |
-| 30 | 73 | Emu | Pinch while walking | Pinch the map in and out, then tap the follow button | The arrow keeps a steady size on screen while pinching; follow returns to the chosen view. | |
-| 31 | new (N6) | Emu | Night walker | Tap the moon, start a walk, play the GPX | The walker arrow is light blue with a white edge on the navy map, easy to see. By day it is navy. | |
-| 32 | 10 | Emu | Navigation | Start **Fastest**, load `data-scripts/out/demo-walk.gpx`, Play | Turn banners, three hazard banners worded by landmark, auto-hide in about 6 s, nothing blocks the map. | |
-| 33 | 11 | Emu | Hazard banner | Tap **Still there** on one banner | Snackbar about 3 s. The vote counts in Community. As a guest, the map banner says "1 report or vote is waiting on this phone" (G8). | |
-| 34 | 12 | Emu | Reroute | Start **Safest** with the same GPX | Off-route notice and a new line (it may reroute again every 15 s, known). | |
-| 35 | 13 | Both | Quick report | During a walk tap Quick report, pick one icon | Pinned at the current spot in one tap, snackbar confirms. | |
-| 36 | 42 | Emu | No ads on a walk | Start a walk past a partner shop | No sponsored pin or popup during navigation. | |
-| 37 | 49 | Emu | Voice | On the walk screen tap the speaker, play the GPX | "Voice guidance on" snackbar. Turns, hazards (by landmark) and arrival spoken after the pulse. Tap again: silence. Settings shows the same switch. | |
-| 38 | 46 | Emu | Live share | Start a walk, tap **Share**, read the sheet, tap **Share link** | Sheet says what the friend sees and when it stops. Android share sheet opens with the walk.html link. The button now reads **Live**. | |
+| # | Run 1 # | Where | Area | Step | Expect | Run 1 | Run 2 |
+|---|---|---|---|---|---|---|---|
+| 25 | 63 | Emu | Start a walk | V5C to V5 Cafe, **Start**, then play `utp-walk.gpx` | The map shows the whole route, then swoops down behind the walker (about 1.2 s), tilted, buildings raised in 3D. The turn card slides down from the top. | Pass. Overview, then the swoop into a tilted view behind the arrow with raised buildings. Turn card slides down (caught mid-slide). | Pass (F18). Overview, "Finding you…", swoop into 3D, buildings raised. |
+| 26 | 70 | Emu | Walker size on Start | V5C to V5 Cafe, **Start**, play `utp-walk.gpx`; watch the swoop | The arrow starts small and grows with the swoop to its normal size; it never fills the screen, then shrinks. | Not run. | Pass. Arrow stays small through the swoop. |
+| 27 | 64 | Emu | Walk in 3D | Keep the GPX playing; repeat at night | Navy arrow on the street pointing along the walk, gliding between fixes (no jumps). Walked part grey. Turn distance runs down smoothly; "Now" and the arrow box pulse at each turn with the haptic. Night: buildings faint navy, route still clear. Recentre returns to the tilted view. | Pass after fix. Arrow on the street, map turns with the walk, walked part grey, "Now" at the turn, new step slides in, recentre returns to the follow view, arrival screen at V5 Cafe. Night: buildings faint navy, route clear; arrow navy on navy is readable by its white edge only. Fixed: a new step showed the old step's "10 m" for a frame before its own 80 m. Rebuilt and retested frame by frame: both step changes show the new distance (80 m, 40 m) in the first frame. Haptics not checkable on the emulator. | Pass. Arrow on the street, walked part grey, turn distance counts down; Follow returns to the tilted view. |
+| 28 | 71 | Emu | Map view button | During the walk, tap the view button three times | 3D, then 2D (flat, turns with the walk), then North (flat, north up, walker in the middle), then 3D again. Each tap names the view in a snackbar; the button shows an icon and a word. | Not run. | Pass. 3D, 2D, North, 3D; snackbar names each; icon + word. |
+| 29 | 72 | Emu | View remembered | Pick North, end the walk, start a new one; then Me, **Reset demo**, start again | The second walk opens in North; after Reset demo it opens in 3D. | Not run. | Pass. Second walk opens in North; after Reset demo in 3D. |
+| 30 | 73 | Emu | Pinch while walking | Pinch the map in and out, then tap the follow button | The arrow keeps a steady size on screen while pinching; follow returns to the chosen view. | Not run. | Pass (note). Two-finger pinch can't be sent over adb; double-tap zoom: arrow kept its size, Follow back to North. |
+| 31 | new (N6) | Emu | Night walker | Tap the moon, start a walk, play the GPX | The walker arrow is light blue with a white edge on the navy map, easy to see. By day it is navy. | New row. | Pass (N6 fixed, F17). Light blue arrow with white edge on the night map. |
+| 32 | 10 | Emu | Navigation | Start **Fastest**, load `data-scripts/out/demo-walk.gpx`, Play | Turn banners, three hazard banners worded by landmark, auto-hide in about 6 s, nothing blocks the map. | Pass. Turn banners count down; 3 hazard banners (Broken sidewalk, Unsafe crossing on Jalan Dato Sagor; Blocked path on Lorong Panglima), hide after about 5 s; arrived 650 m. | Pass (F13, F20). Hazard banners by street, hide after ~6 s, no scrim; 3 hazard pulses; 8 turn pulses (5 in the first 30 s). |
+| 33 | 11 | Emu | Hazard banner | Tap **Still there** on one banner | Snackbar about 3 s. The vote counts in Community. As a guest, the map banner says "1 report or vote is waiting on this phone" (G8). | Pass. Snackbar shows. As a guest the vote waits ("sent once you sign in") and went out as "Hazard vote +2" after demo sign-in. Waiting banner calls the vote a "report" (G8). | Pass (G8 fixed). Still there, then the waiting snackbar with Sign in on refocus. |
+| 34 | 12 | Emu | Reroute | Start **Safest** with the same GPX | Off-route notice and a new line (it may reroute again every 15 s, known). | Pass. "Off the route. Finding a new walk from here", new line, "Back on route"; rerouted once. Arrival then said "3 hazards avoided" though 2 hazard banners showed after the reroute (G12); 550 m vs 650 m for the same GPX (G13). | Pass. Off-route notice and a new line. |
+| 35 | 13 | Both | Quick report | During a walk tap Quick report, pick one icon | Pinned at the current spot in one tap, snackbar confirms. | Pass. One tap (Flooding), 3 s undo countdown, "Reported" snackbar. Shows in My reports. | Pass (F2). One tap, pinned, snackbar. |
+| 36 | 42 | Emu | No ads on a walk | Start a walk past a partner shop | No sponsored pin or popup during navigation. | Pass. No sponsored pin or popup in any of the 200 frames of both walks. | Pass. No sponsored pin or popup on the Fastest walk past 3 partner shops. |
+| 37 | 49 | Emu | Voice | On the walk screen tap the speaker, play the GPX | "Voice guidance on" snackbar. Turns, hazards (by landmark) and arrival spoken after the pulse. Tap again: silence. Settings shows the same switch. | Pass. "Voice guidance on. Turns and hazards are spoken." snackbar. 12 TTS lines in logcat, each about 0.35 s after its pulse (turns, 3 hazard pulses, arrival). Words not heard (no audio on the emulator); off and Settings switch not retested. | Pass. Snackbar, turns spoken after the pulse (TTS in logcat), off again silent, Settings matches. |
+| 38 | 46 | Emu | Live share | Start a walk, tap **Share**, read the sheet, tap **Share link** | Sheet says what the friend sees and when it stops. Android share sheet opens with the walk.html link. The button now reads **Live**. | Pass. Build 47d6f7eb, demo account. Sheet says what the friend sees, that it stops on arrival or End and the position is deleted, links stop after 2 hours. Share link opens the Android share sheet with the walk.html link. Button then reads Live (green). | Pass. Sheet text clear; share sheet with the walk.html link; button reads Live. |
 
 ## Arrival
 
-| # | Was | Where | Area | Step | Expect | Result |
-|---|---|---|---|---|---|---|
-| 39 | 14 | Both | Arrival | Finish the walk | One long pulse (phone), distance, hazards avoided, rating faces, "Spot anything new?". | |
-| 40 | new (G1) | Emu | Arrival offline | Play the GPX to the end with data off (airplane mode just before arriving) | Arrival screen shows, then a snackbar "Could not save this walk. Check your connection." with **Try again**. Data on, Try again: the walk points appear. | |
-| 41 | 15 | Both | Rating | Tap a rating | Saved. `python rating_report.py` shows one more rating afterwards. | |
-| 42 | 54 | Both | Street checks | Finish a walk signed in (Google or demo) | "Help check these streets": up to 3 questions. Answer one: "Two walkers agree" (demo) and +2 points. The next route on that street asks the next question. | |
+| # | Run 1 # | Where | Area | Step | Expect | Run 1 | Run 2 |
+|---|---|---|---|---|---|---|---|
+| 39 | 14 | Both | Arrival | Finish the walk | One long pulse (phone), distance, hazards avoided, rating faces, "Spot anything new?". | Pass. 650 m, 4 min, 3 hazards flagged, +6 points, faces, Spot anything new. | Pass (F11). Arrived screen, distance, time, hazards, points, faces with labels; 700 ms arrival pulse. |
+| 40 | new (G1) | Emu | Arrival offline | Play the GPX to the end with data off (airplane mode just before arriving) | Arrival screen shows, then a snackbar "Could not save this walk. Check your connection." with **Try again**. Data on, Try again: the walk points appear. | New row. | **Fail** (F4). Snackbar with Try again shows, but hides after 5 s and is the only retry; data back later = walk never saved (twice). |
+| 41 | 15 | Both | Rating | Tap a rating | Saved. `python rating_report.py` shows one more rating afterwards. | Pass. rating_report.py: 0 to 1 rating (day, fastest, felt 4, score 56). Sent when leaving the screen. | Pass (F11). Rating stored (count 10 to 11+); no snackbar for the +5. |
+| 42 | 54 | Both | Street checks | Finish a walk signed in (Google or demo) | "Help check these streets": up to 3 questions. Answer one: "Two walkers agree" (demo) and +2 points. The next route on that street asks the next question. | Pass. Demo, Fastest walk: 3 questions (sidewalk on Jalan Dato Sagor, 2 lighting). One side: "Two walkers agree, so this street is now updated", ledger +2 "Street check answered". Next-route question not retested. | Pass (F1). Ipoh walk: questions shown; answer: "Two walkers agree" and +2. |
 
 ## Reports and Community
 
-| # | Was | Where | Area | Step | Expect | Result |
-|---|---|---|---|---|---|---|
-| 43 | 16 | Both | Report flow | Report an improvement with a photo | Four steps, pin confirm, photo, send. Shows in Community as pending. | |
-| 44 | 17 | Both | Sign-in prompt | As a guest, try to report or vote with demo mode off | The sign-in sheet appears, not a dialog. | |
-| 45 | 19 | Both | Community: Hazards | Open the hazards list and map view | Pending and Active chips with icon and word. Still there and Gone work. | |
-| 46 | 20 | Both | Community: Improvements | Sort Top, Newest, Nearest; upvote one | Count changes at once. Tap again takes it back. Zebra crossing at the station has 3. | |
-| 47 | 21 | Both | Export | Export CSV and GeoJSON | Share sheet opens. File opens in Sheets or Files: ranked by upvotes, no names or ids. | |
-| 48 | 22 | Both | Report detail | Open a report with a photo | Photo, category, mini map, status, votes, reported time, expiry. | |
+| # | Run 1 # | Where | Area | Step | Expect | Run 1 | Run 2 |
+|---|---|---|---|---|---|---|---|
+| 43 | 16 | Both | Report flow | Report an improvement with a photo | Four steps, pin confirm, photo, send. Shows in Community as pending. | Pass. Improvement, kerb ramp, pin, photo, posted (+10). Shows in My reports as Pending with the photo. | Pass. Four steps, pin, photo, sent; pending in Community. |
+| 44 | 17 | Both | Sign-in prompt | As a guest, try to report or vote with demo mode off | The sign-in sheet appears, not a dialog. | Pass. Post report as guest opens the sign-in bottom sheet (Google, demo, Not now). | Pass. Bottom sheet "Sign in so your vote counts" with Google, demo, Not now. |
+| 45 | 19 | Both | Community: Hazards | Open the hazards list and map view | Pending and Active chips with icon and word. Still there and Gone work. | Pass. List and map view; Gone 0 to 1 with snackbar; map pins show a clock badge when pending. Only Pending has a chip, Active shows none (G16). | Pass (F15). Chips with icon and word; Still there and Gone work. |
+| 46 | 20 | Both | Community: Improvements | Sort Top, Newest, Nearest; upvote one | Count changes at once. Tap again takes it back. Zebra crossing at the station has 3. | Pass. Top, Newest, Nearest sort. Upvote 3 to 4, tap again back to 3. Station zebra (Jalan Dato Maharajalela) has 3. | Pass. Sorts work; upvote counts at once and undoes. |
+| 47 | 21 | Both | Export | Export CSV and GeoJSON | Share sheet opens. File opens in Sheets or Files: ranked by upvotes, no names or ids. | Pass. Export sheet, CSV opens the Android share sheet (langkah-most-requested-2026-10-17.csv). Columns: rank, report id, category, upvotes, status, street, lon, lat, date, note; no names or user ids. File not opened in Sheets (release build, no run-as). | Skip. No in-app export since Phase 15 (council page has it). Row out of date (F21). |
+| 48 | 22 | Both | Report detail | Open a report with a photo | Photo, category, mini map, status, votes, reported time, expiry. | Pass. Photo, title, street, status, votes, time, mini map, delete for own report. | Pass. Photo, category, mini map, status, votes, time, expiry. |
 
 ## Me, points and shop
 
-| # | Was | Where | Area | Step | Expect | Result |
-|---|---|---|---|---|---|---|
-| 49 | 23 | Both | Me | Open Me | My reports with status, saved places, stats. Delete your own test report works. | |
-| 50 | 55 | Both | Badges | Open **Me** | Badges card: weekly streak and 8 badges, earned ones say Earned with a tick, others show progress. | |
-| 51 | 33 | Both | Wallet | Open Me, read the wallet card | Points balance and the last ledger lines with a reason each. | |
-| 52 | 34 | Both | Earn points | Finish a walk and rate it, then report or vote once | New ledger lines for each, the snackbar names the points. Doing the same again past the daily cap adds nothing. | |
-| 53 | 35 | Both | Daily check-in | Open the app on two days, then twice on the same day | Check-in is automatic on open: points once a day and the day count. A second open the same day adds nothing. | |
-| 54 | 36 | Both | Mock top up | Top up, pick an amount, a bank, log in, TAC | Every screen says demo, no real money. Receipt, then the points show in the wallet. Over RM500 a month is refused. | |
-| 55 | 37 | Both | Mock ads | Watch an ad from Me | Marked as an ad and a mock. Close only after the countdown. Points paid once; past the daily cap it says so. | |
-| 56 | 38 | Both | Points shop | Shop, redeem a voucher | Confirm sheet, then a code screen to show the cashier. It shows under My vouchers. | |
-| 57 | 39 | Both | Too few points | Try a voucher that costs more than you have | A bottom sheet (not a dialog) with ways to earn or top up. | |
-| 58 | 40 | Both | Cosmetics and Plus | Wear a frame or badge; get Plus with points | Frame shows on Me. Plus gives the gold frame, badge and 20 saved places. No live share perk (free for everyone). | |
-| 59 | 56 | Both | Plus | Open Langkah Plus | No live walk share perk (it is free for everyone now). | |
-| 60 | 24 | Both | Settings | Turn vibration off, walk again | No pulses (phone); banners still show. Turn it back on. | |
+| # | Run 1 # | Where | Area | Step | Expect | Run 1 | Run 2 |
+|---|---|---|---|---|---|---|---|
+| 49 | 23 | Both | Me | Open Me | My reports with status, saved places, stats. Delete your own test report works. | Pass. Saved places, My reports with status, stats (4 posted). Delete works with a dialog and snackbar. Starred shows raw {{n}} (G9); stock Android dialog (G10); points kept after delete (G11). | Pass. Reports with status, places, stats; delete own report works (-10 in the ledger). |
+| 50 | 55 | Both | Badges | Open **Me** | Badges card: weekly streak and 8 badges, earned ones say Earned with a tick, others show progress. | Pass. Streak card "1 week in a row with a walk", 2 of 8 earned (First walk, First report) with tick and Earned; others show progress (3.4 of 10 km, 1 of 5, 0 of 10). | Pass (F14). Streak card, 2 of 8 earned, progress on the rest. |
+| 51 | 33 | Both | Wallet | Open Me, read the wallet card | Points balance and the last ledger lines with a reason each. | Pass. 1,512 points, ledger lines with reasons. | Pass. Balance and ledger lines with reasons. |
+| 52 | 34 | Both | Earn points | Finish a walk and rate it, then report or vote once | New ledger lines for each, the snackbar names the points. Doing the same again past the daily cap adds nothing. | Pass. Walk +6, rating +5, Afrina confirmed +20; 1,512 to 1,543. Hazard quick report pays only on confirmation. | Pass (note). Walk +6, rating +5, vote +2, photo +10 in the ledger; ad cap hit in the app ("Ads done"); walk/vote/photo/quest caps checked in SQL only. |
+| 53 | 35 | Both | Daily check-in | Open the app on two days, then twice on the same day | Check-in is automatic on open: points once a day and the day count. A second open the same day adds nothing. | Pass. Check-in is automatic on open (no button, test text is old). Day 3 of 7; reopening the app adds nothing. | Pass (F14). One check-in per day (SQL); a second open adds nothing. |
+| 54 | 36 | Both | Mock top up | Top up, pick an amount, a bank, log in, TAC | Every screen says demo, no real money. Receipt, then the points show in the wallet. Over RM500 a month is refused. | Pass. DEMO banner on every screen, made-up banks, pre-filled login and TAC, receipt LGK-0043, +1,100 points. Month cap checked in SQL (rolled back): RM410 ok, next RM100 refused (month_cap). Copy: "AfnanOnline online" (G15). | Pass (F24). DEMO band on every screen, locked demo login, TAC, receipt, points in the wallet. Over RM500: "capped at RM500 a month, RM78 left", button off. |
+| 55 | 37 | Both | Mock ads | Watch an ad from Me | Marked as an ad and a mock. Close only after the countdown. Points paid once; past the daily cap it says so. | Pass. Ad and mock label, close greyed until 0:00, +20 each. 5 a day, 6th says "No more ads today". Button still says +20 when capped (G14). | Pass (F24). "Ad · mock", X locked until 0:00 (Back leaves early with "No points this time"), +20 once; after 5: "Ads done". |
+| 56 | 38 | Both | Points shop | Shop, redeem a voucher | Confirm sheet, then a code screen to show the cashier. It shows under My vouchers. | Pass on retest (build b5390a00, B2 fixed). Voucher LGK-7C1D13, 1,505 to 1,355, code screen. Confirm is still a stock dialog (G10, later). | Pass (G10). Confirm is a stock dialog, then the code sheet; shows under My vouchers. |
+| 57 | 39 | Both | Too few points | Try a voucher that costs more than you have | A bottom sheet (not a dialog) with ways to earn or top up. | Pass on retest. Guest with 5 points: bottom sheet "You need 145 more points" with ad, walk, vote, check-in and Top up. | Pass. Bottom sheet "You need 200 more points" with ad, walk, vote, check-in and Top up. |
+| 58 | 40 | Both | Cosmetics and Plus | Wear a frame or badge; get Plus with points | Frame shows on Me. Plus gives the gold frame, badge and 20 saved places. No live share perk (free for everyone). | Pass on retest. Teal ring bought and in use (-200), Plus on until 16 Nov (-690), Plus badge on Me, starred "0 of 20", walk share "Coming later". | Pass (F22). Batik ring shows on Me; Plus gives the gold frame (needs Use) and badge; 0 of 20 starred places; no share perk. |
+| 59 | 56 | Both | Plus | Open Langkah Plus | No live walk share perk (it is free for everyone now). | Pass. Plus lists only more starred places and the badge and frame; no live share perk. | Pass. Two perks only; "Routes, hazard alerts and reports are never behind Plus". |
+| 60 | 24 | Both | Settings | Turn vibration off, walk again | No pulses (phone); banners still show. Turn it back on. | Pass. Vibration off: no pulses in dumpsys vibrator_manager during the walk, banners still show. With it on: turn 150 ms, hazard 150+150, arrival 700 ms. | Pass. Vibration off: no pulses in dumpsys, banners still show; back on. |
 
 ## Laptop: friend's page, council and partners
 
-| # | Was | Where | Area | Step | Expect | Result |
-|---|---|---|---|---|---|---|
-| 61 | 47 | Laptop | Friend's page | Open the shared link, play the GPX | Dot moves about every 15 s, route line, "About N min left", "Updated just now". Map credit visible. | |
-| 62 | 48 | Both | Share ends | Arrive (or End), reload the friend's page | "Arrived at hh:mm" (or "ended the walk"), "position was deleted". In SQL, the row has no position. After 15 min the link says it ended. | |
-| 63 | 68 | Laptop | N3 friend's page | Open a live share link in a small browser window, then make it bigger | The map fills its box at once and again after the resize, no reload. | |
-| 64 | 43 | Laptop | Partner report | `python partner_report.py` in `data-scripts/` | Views and taps per shop from your test, a CSV written. | |
-| 65 | 44 | Laptop | Council page | Open https://affannajiy.github.io/langkah/ | English only, no language button. Ranked requests with photos, heatmap, 12-week charts, report types. 30/90/365 switch works. CSV and GeoJSON download, no names. | |
-| 66 | 45 | Phone | Council on phone | Open the same page on the phone | Fits the screen, no side scroll, map moves with a finger. | |
-| 67 | 52 | Laptop | Staff sign-in | Council page, **Staff sign in**, your email, open the link | "Signed in as staff". Mark planned, Mark fixed and Reopen under each request. | |
-| 68 | 53 | Both | Fixed loop | Mark one of your own requests **Fixed**, then reopen the app | Snackbar: "Fixed: the council fixed your request … +50 points". Fixed by council chip in Community and Me. Ledger line. The request leaves the ranked list on the page. | |
+| # | Run 1 # | Where | Area | Step | Expect | Run 1 | Run 2 |
+|---|---|---|---|---|---|---|---|
+| 61 | 47 | Laptop | Friend's page | Open the shared link, play the GPX | Dot moves about every 15 s, route line, "About N min left", "Updated just now". Map credit visible. | Pass. Page shows "Demo Walker is walking to Concubine Lane", About 8 to 5 min left, Updated just now, legend, map credit. share_view gave a new 5-decimal position about every 15 s during GPX playback. | Pass. Map, line, dot, "About 1 min left", "Updated just now", credit (3 MapLibre null warnings in the console). |
+| 62 | 48 | Both | Share ends | Arrive (or End), reload the friend's page | "Arrived at hh:mm" (or "ended the walk"), "position was deleted". In SQL, the row has no position. After 15 min the link says it ended. | Pass. After arrival: "Demo Walker arrived at 8:33 am", "Sharing has stopped and their position was deleted". share_view returns only state, name and time, no position. 15-min expiry not waited for. | Pass (15 min not waited). "Arrived at 2:07 pm ... position was deleted"; SQL row has no position. |
+| 63 | 68 | Laptop | N3 friend's page | Open a live share link in a small browser window, then make it bigger | The map fills its box at once and again after the resize, no reload. | Pass on the local page (Pages still has the old one until you push). At 360x420 and at 1100x800 the map canvas matched its box both times, no reload. | Pass. Map refills its box after the resize, no reload. |
+| 64 | 43 | Laptop | Partner report | `python partner_report.py` in `data-scripts/` | Views and taps per shop from your test, a CSV written. | Pass. partner_report.py: sample plus real counts; --real shows this test (Roti Bakar 2 views, 1 tap). CSV written to out/. | Pass. Sample and --real both work; CSV written. |
+| 65 | 44 | Laptop | Council page | Open https://affannajiy.github.io/langkah/ | English only, no language button. Ranked requests with photos, heatmap, 12-week charts, report types. 30/90/365 switch works. CSV and GeoJSON download, no names. | Pass. English only, KPIs load (11 hazards, 54 requests), map, ranked list, trends, types. CSV (55 lines) and GeoJSON built, no names, 5-decimal coords (captured in the page, not saved). CSV uses codes like street_lights, not labels (G18). | Pass. English only, ranked list, heatmap, charts, 30/90/365, CSV and GeoJSON without names (F6 duplicates in the ranking). |
+| 66 | 45 | Phone | Council on phone | Open the same page on the phone | Fits the screen, no side scroll, map moves with a finger. | Not run. | Skip (phone). Note: the map uses two-finger moves (cooperativeGestures). |
+| 67 | 52 | Laptop | Staff sign-in | Council page, **Staff sign in**, your email, open the link | "Signed in as staff". Mark planned, Mark fixed and Reopen under each request. | Not run. | Skip. Staff magic link goes to your email. |
+| 68 | 53 | Both | Fixed loop | Mark one of your own requests **Fixed**, then reopen the app | Snackbar: "Fixed: the council fixed your request … +50 points". Fixed by council chip in Community and Me. Ledger line. The request leaves the ranked list on the page. | Not run. | Skip. Needs the staff sign-in (row 67). |
 
 ## Real phone only
 
-| # | Was | Where | Area | Step | Expect | Result |
-|---|---|---|---|---|---|---|
-| 69 | 18 | Phone | Google sign-in | Sign in with Google | "Signed in as {name}" on Me. DEVELOPER_ERROR means the SHA-1 is missing. | |
-| 70 | 27 | Phone | Lock screen | Start a walk, lock the phone, walk a bit | Guidance keeps going, pulses still come. | |
-| 71 | 28 | Phone | Battery tip | First walk on the Honor | The keep-running tip shows before the walk. | |
-| 72 | 29 | Phone | Haptics | Walk a real route | One short pulse per turn, two for a hazard, one long on arrival. | |
-| 73 | 30 | Phone | Real GPS | Walk outdoors for a few minutes | The dot follows you within about 10 m. No false reroutes when you stand still. | |
-| 74 | 65 | Phone | Compass and GPS ring | Walk outside, turn the phone; then indoors | A light-blue cone turns with the phone. Indoors (GPS worse than 15 m) a soft ring around the arrow. | |
+| # | Run 1 # | Where | Area | Step | Expect | Run 1 | Run 2 |
+|---|---|---|---|---|---|---|---|
+| 69 | 18 | Phone | Google sign-in | Sign in with Google | "Signed in as {name}" on Me. DEVELOPER_ERROR means the SHA-1 is missing. | Not run. | Skip (phone). |
+| 70 | 27 | Phone | Lock screen | Start a walk, lock the phone, walk a bit | Guidance keeps going, pulses still come. | Not run. | Skip (phone). |
+| 71 | 28 | Phone | Battery tip | First walk on the Honor | The keep-running tip shows before the walk. | Not run. | Skip (phone). |
+| 72 | 29 | Phone | Haptics | Walk a real route | One short pulse per turn, two for a hazard, one long on arrival. | Not run. | Skip (phone). See F13 before testing. |
+| 73 | 30 | Phone | Real GPS | Walk outdoors for a few minutes | The dot follows you within about 10 m. No false reroutes when you stand still. | Not run. | Skip (phone). |
+| 74 | 65 | Phone | Compass and GPS ring | Walk outside, turn the phone; then indoors | A light-blue cone turns with the phone. Indoors (GPS worse than 15 m) a soft ring around the arrow. | Not run (needs a real phone outside). | Skip (phone). |
 
 ## Whole app
 
-| # | Was | Where | Area | Step | Expect | Result |
-|---|---|---|---|---|---|---|
-| 75 | 26 | Both | Screen fit | Check every screen and sheet | Nothing cut off or under the nav bar. Text at least 14 sp, buttons easy to hit. | |
-| 76 | 31 | Both | No internet | Turn data off, then search | A clear message, no crash. Back online works again. | |
+| # | Run 1 # | Where | Area | Step | Expect | Run 1 | Run 2 |
+|---|---|---|---|---|---|---|---|
+| 75 | 26 | Both | Screen fit | Check every screen and sheet | Nothing cut off or under the nav bar. Text at least 14 sp, buttons easy to hit. | Pass with notes. Nothing cut off or under the nav bar on any screen tried. See G3 (night chip wraps), G9 (raw {{n}}). | Pass (F19, F11). No small tap targets on the route sheet, Community, Me; text 14 sp or more; 130% font fits Me and Settings. |
+| 76 | 31 | Both | No internet | Turn data off, then search | A clear message, no crash. Back online works again. | Pass. Offline search: "Search is not working right now. Check your internet connection." with Try again; back online, Try again shows results. | Pass (F16). Clear message with Try again, no crash; back online works. |
 
 ## After
 

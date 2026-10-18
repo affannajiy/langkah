@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/affannajiy/langkah/security/advisories/new
+    about: Please report security problems privately, not as an issue.
+  - name: Council dashboard
+    url: https://affannajiy.github.io/langkah/
+    about: The live ranking of improvement requests for the council.

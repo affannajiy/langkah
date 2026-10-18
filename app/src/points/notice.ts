@@ -6,7 +6,8 @@ import { useEffect } from 'react';
 
 export type PointsNotice =
   | { kind: 'checkin'; points: number; day: number }
-  | { kind: 'text'; text: string }
+  // lift: dp above the safe area, for screens with buttons at the bottom (F24).
+  | { kind: 'text'; text: string; lift?: number }
   // The council planned or fixed a request (Phase 21). more: other news at the same time.
   | { kind: 'council'; status: 'planned' | 'fixed'; category: string; street: string | null; points: number; more: number };
 

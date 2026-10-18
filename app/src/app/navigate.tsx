@@ -179,6 +179,31 @@ function WalkScreen({ walk }: { walk: Walk }) {
     else router.replace('/');
   }, [router]);
 
+  // End asks for nothing: it waits 5 s with an Undo, so a slip does not lose the
+  // walk (test note F20). Back pressed twice still ends at once.
+  const endTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const askEnd = useCallback(() => {
+    if (endTimer.current) return;
+    endTimer.current = setTimeout(() => {
+      endTimer.current = null;
+      end();
+    }, 5000);
+    snackbar.show({
+      text: t('nav.ending'),
+      actionLabel: t('common.undo'),
+      onAction: () => {
+        if (endTimer.current) clearTimeout(endTimer.current);
+        endTimer.current = null;
+      },
+    });
+  }, [end, snackbar, t]);
+  useEffect(
+    () => () => {
+      if (endTimer.current) clearTimeout(endTimer.current);
+    },
+    [],
+  );
+
   // Arrived: hand the numbers to the Arrival screen (guide Section 6.3, screen 8).
   const finish = useCallback(() => {
     if (!summary) return;
@@ -248,9 +273,9 @@ function WalkScreen({ walk }: { walk: Walk }) {
           snackbar.show({ text: t('nav.hazard.thanksSent') });
           return;
         } catch (error) {
-          // Your own report, or it just expired: nothing to send.
+          // Your own report, or it just expired: nothing was counted, so say so.
           if (error instanceof ReportError && error.code !== 'network') {
-            snackbar.show({ text: t('nav.hazard.thanksSent') });
+            snackbar.show({ text: t('nav.hazard.notCounted') });
             return;
           }
         }
@@ -392,7 +417,7 @@ function WalkScreen({ walk }: { walk: Walk }) {
 
         <View style={[styles.top, { left: side, right: side, top: insets.top + spacing.md }]} pointerEvents="box-none">
           <View onLayout={(e) => setCardBottom(insets.top + spacing.md + e.nativeEvent.layout.height)}>
-            <InstructionCard view={view} destName={walk.to.name} />
+            <InstructionCard view={view} destName={walk.to.name} night={mapLand !== MAP_LAND.day} />
           </View>
           {banner && !view.arrived && <NavBanner banner={banner} onAnswer={onAnswer} onHide={dismissBanner} />}
           {!servicesOn && !view.arrived && (
@@ -436,7 +461,7 @@ function WalkScreen({ walk }: { walk: Walk }) {
           remainingS={remainingS}
           destName={walk.to.name}
           arrived={view.arrived}
-          onEnd={view.arrived ? finish : end}
+          onEnd={view.arrived ? finish : askEnd}
           onQuickReport={openQuick}
           onHeight={setBarH}
         />

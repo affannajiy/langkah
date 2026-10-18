@@ -29,7 +29,7 @@ import { IPOH_BOUNDS, isInPilotArea, MAX_ZOOM, MIN_ZOOM, nearestPilotArea, PILOT
 import { MapPins } from '../../map/MapPins';
 import { TrailLayer } from '../../map/TrailLayer';
 import { RouteLayers, type RouteKind } from '../../map/RouteLayers';
-import { useHere } from '../../map/useHere';
+import { retryHere, useHere } from '../../map/useHere';
 import { UserDot } from '../../map/UserDot';
 import { useLangkahMapStyle } from '../../map/useLangkahMapStyle';
 import { useMapStatusBar } from '../../map/useMapStatusBar';
@@ -57,6 +57,7 @@ import {
 } from '../../storage/places';
 import { usePlusActive } from '../../points/plus';
 import { flushQueue, queuedCount } from '../../storage/reportQueue';
+import { flushWalks } from '../../storage/walkQueue';
 import { updateSettings, useSettings } from '../../storage/settings';
 import { useSideInset } from '../../theme/layout';
 import { chromeTextScale, colors, radius, shadow, spacing } from '../../theme/theme';
@@ -111,6 +112,10 @@ export default function MapScreen() {
   useMapStatusBar(mapLand);
   const { access, request, servicesOn, turnOnServices } = useLocationPermission();
   const online = useOnline();
+  // Back online: send any walk that could not be saved (test note F4).
+  useEffect(() => {
+    if (online) void flushWalks();
+  }, [online]);
   const here = useHere(access);
   const { mode, toggle: toggleMode } = useScoringMode();
   const { saved, setPlace } = useSavedPlaces();
@@ -144,7 +149,11 @@ export default function MapScreen() {
   const [batteryTip, setBatteryTip] = useState(false);
   const [partner, setPartner] = useState<SponsoredPin | null>(null);
 
-  const home = screen.kind === 'home';
+  // Set on Start until this screen is back in focus, so the home overlays never
+  // flash between the route sheet and the walk screen (test note F18).
+  const [away, setAway] = useState(false);
+  useFocusEffect(useCallback(() => setAway(false), []));
+  const home = screen.kind === 'home' && !away;
   const comparing = screen.kind === 'compare';
   const reporting = screen.kind === 'report';
   const placing = reporting && reportStep === 3;
@@ -185,19 +194,21 @@ export default function MapScreen() {
     }
   }
 
-  // The map opens on central Ipoh. On the first fix inside another pilot area, frame that area once.
+  // The map opens on central Ipoh. On the first fix inside a pilot area, go to the
+  // walker at street zoom, where hazards show (test note G17).
   const framedFirstFix = useRef(false);
   useEffect(() => {
     if (!here || framedFirstFix.current) return;
     framedFirstFix.current = true;
     const area = PILOT_AREAS.find(([w, s, e, n]) => here[0] >= w && here[0] <= e && here[1] >= s && here[1] <= n);
-    if (area && area !== IPOH_BOUNDS && screen.kind === 'home') {
-      cameraRef.current?.fitBounds(area, { padding: NO_PADDING, duration: 800 });
+    if (area && screen.kind === 'home') {
+      cameraRef.current?.flyTo({ center: here, zoom: RECENTRE_ZOOM, padding: NO_PADDING, duration: 800 });
     }
     // Only the first fix matters; later screen changes must not re-run this.
   }, [here]);
 
   async function flyToMe() {
+    retryHere();
     try {
       const pos =
         (await Location.getLastKnownPositionAsync()) ??
@@ -422,6 +433,7 @@ export default function MapScreen() {
       startedAt: Date.now(),
       fastestHazards: kind === 'safest' && !pair.same ? pair.fastest.stats.hz : null,
     });
+    setAway(true);
     router.push('/navigate');
     // Back on the map after the walk, the home screen shows again.
     closeTrip();
@@ -673,7 +685,7 @@ export default function MapScreen() {
               onRecentre={() => (access === 'granted' ? flyToMe() : setLocationSheet(true))}
               onReport={() => openReport()}
             />
-            <PeekSheet state={mapView.state} nearUser={nearUser} onLayout={setPeekH} />
+            <PeekSheet state={mapView.state} nearUser={nearUser} from={nearUser ? here : null} onLayout={setPeekH} />
             {/* Above the Report button: recentre (56) + gap + Report (64). */}
             <View style={[styles.status, { left: side, right: side, bottom: peekH + spacing.md * 3 + 120 }]} pointerEvents="box-none">
               {!online && <StatusBanner icon={CloudOff} text={t('offline.banner')} />}

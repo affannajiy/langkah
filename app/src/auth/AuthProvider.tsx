@@ -10,8 +10,9 @@ import { notifyPoints } from '../points/notice';
 import { clearRouteCache } from '../route/routeCache';
 import { clearRecentPlaces, clearStarred, requestMapHome } from '../storage/places';
 import { clearSearchCache } from '../storage/searchCache';
-import { updateSettings } from '../storage/settings';
+import { updateSettings, useSettings } from '../storage/settings';
 import { flushQueue } from '../storage/reportQueue';
+import { flushWalks } from '../storage/walkQueue';
 import { SignInSheet, type SignInReason } from './SignInSheet';
 
 // Who the user is (guide Section 5.2, screen 12; kickoff Phase 5):
@@ -20,7 +21,7 @@ import { SignInSheet, type SignInReason } from './SignInSheet';
 //   account is linked to Google, so it keeps its id.
 // - Anything queued on the phone is sent right after sign-in.
 // - The demo account (Phase 10, guide Section 15): while the server's demo switch is
-//   on, "Try the demo" makes a fresh guest and the server fills it as Demo Walker.
+//   on, "Try the demo" makes a fresh guest and the server fills it as Afrina.
 //   That guest may write without Google. The server decides; the app only stops
 //   asking for sign-in.
 // - Daily check-in: the first open each Malaysian day earns points.
@@ -36,7 +37,7 @@ type AuthState = {
   isFull: boolean; // signed in with Google
   canWrite: boolean; // signed in with Google, or the demo account
   name: string | null;
-  // available: the server's demo switch is on. isDemo: this account is Demo Walker.
+  // available: the server's demo switch is on. isDemo: this account is Afrina, the demo.
   demo: { available: boolean; isDemo: boolean };
   signInGoogle: () => Promise<SignInResult>; // the welcome screen's button
   startDemo: () => Promise<boolean>;
@@ -167,6 +168,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (canWrite) void flushQueue();
   }, [canWrite, session?.user.id]);
 
+  // Walks that could not be saved (guests too) go once there is a session (F4).
+  useEffect(() => {
+    if (session?.user.id) void flushWalks();
+  }, [session?.user.id]);
+
   // Is this guest the demo account? Asked again for each new account.
   useEffect(() => {
     if (!userId || !isGuest) return;
@@ -182,8 +188,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [userId, isGuest]);
 
   // Daily check-in: on start, after a sign-in, and when the app comes back the next day.
+  // Not before onboarding ends, so its snackbar never covers the Welcome buttons (F7).
+  const { onboarded } = useSettings();
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !onboarded) return;
     const checkIn = () => {
       const day = malaysiaDay();
       if (checkedIn.current === `${userId}:${day}`) return;
@@ -223,7 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (state === 'active') checkIn();
     });
     return () => sub.remove();
-  }, [userId]);
+  }, [userId, onboarded]);
 
   const finish = useCallback((ok: boolean) => {
     setSheet(null);
@@ -255,7 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInGoogle = useCallback(() => signInWithGoogle(isDemo), [isDemo]);
 
-  // "Try the demo": a fresh guest, filled by the server as Demo Walker.
+  // "Try the demo": a fresh guest, filled by the server as Afrina.
   const startDemo = useCallback(async () => {
     try {
       await supabase.auth.signOut();

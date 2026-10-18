@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, Animated, Image, StyleSheet, View } from 'react-native';
 
@@ -16,8 +16,8 @@ type Props = {
 // while the map loads behind it, then fades away.
 export function LoadingScreen({ onLayout, onDone }: Props) {
   const { t } = useTranslation();
-  const progress = useRef(new Animated.Value(0)).current;
-  const opacity = useRef(new Animated.Value(1)).current;
+  const progress = useState(() => new Animated.Value(0))[0];
+  const opacity = useState(() => new Animated.Value(1))[0];
 
   useEffect(() => {
     let cancelled = false;

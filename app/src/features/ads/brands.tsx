@@ -51,11 +51,10 @@ function GfcBody() {
           RM32.40
         </AppText>
       </View>
-      <View style={[styles.cta, { backgroundColor: '#FFFFFF' }]}>
-        <AppText variant="heading" color="#B31229">
-          {t('ads.gfc.cta')}
-        </AppText>
-      </View>
+      {/* Tapping the ad does nothing, so its call to action is plain text, not a button (F24). */}
+      <AppText variant="heading" color="#FFFFFF" style={styles.ctaText}>
+        {t('ads.gfc.cta')}
+      </AppText>
     </View>
   );
 }
@@ -125,11 +124,9 @@ function McgBody() {
           <View key={it.key} style={[styles.pageDot, i === page ? styles.pageDotOn : null]} />
         ))}
       </View>
-      <View style={[styles.cta, { backgroundColor: '#D9261C' }]}>
-        <AppText variant="heading" color="#FFFFFF">
-          {t('ads.mcg.cta')}
-        </AppText>
-      </View>
+      <AppText variant="heading" color="#D9261C" style={styles.ctaText}>
+        {t('ads.mcg.cta')}
+      </AppText>
     </View>
   );
 }
@@ -211,11 +208,9 @@ function TealoveBody({ elapsed }: { elapsed: number }) {
         </AppText>
       )}
       <ChevronUp size={28} color="#FFFFFF" />
-      <View style={[styles.cta, styles.stretch, { backgroundColor: '#FFFFFF' }]}>
-        <AppText variant="heading" color="#2D1648">
-          {t('ads.tealove.cta')}
-        </AppText>
-      </View>
+      <AppText variant="heading" color="#FFFFFF" style={styles.ctaText}>
+        {t('ads.tealove.cta')}
+      </AppText>
     </View>
   );
 }
@@ -473,6 +468,7 @@ const styles = StyleSheet.create({
   strike: { textDecorationLine: 'line-through', marginBottom: spacing.sm },
   cta: { minHeight: touchTarget + spacing.md, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg },
   ctaSquare: { borderRadius: radius.sheet },
+  ctaText: { textAlign: 'center', paddingVertical: spacing.sm },
   stretch: { alignSelf: 'stretch' },
   rowGap: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   logo: { width: 64, height: 64, borderRadius: radius.sheet, alignItems: 'center', justifyContent: 'center' },

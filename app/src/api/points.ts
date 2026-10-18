@@ -112,11 +112,18 @@ export async function dailyCheckin(): Promise<{ day: number; points: number }> {
 }
 
 // Metres from the phone's GPS track (see walkLocation), seconds, and where to.
-export async function walkFinish(distanceM: number, durationS: number, to: string): Promise<{ walk: string | null; points: number }> {
+// id is made on the phone, so a retry of the same walk is saved and paid once.
+export async function walkFinish(
+  id: string,
+  distanceM: number,
+  durationS: number,
+  to: string,
+): Promise<{ walk: string | null; points: number }> {
   const d = await rpc('walk_finish', {
     p_distance: Math.round(Math.min(50000, Math.max(0, distanceM))),
     p_duration: Math.round(Math.min(86400, Math.max(0, durationS))),
     p_to: to.slice(0, 80),
+    p_id: id,
   });
   const r = isObj(d) ? d : {};
   return { walk: str(r.walk), points: num(r.points) };

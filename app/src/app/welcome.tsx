@@ -225,24 +225,29 @@ function AccountStep({ onDone }: { onDone: () => void }) {
             {t('account.guest')}
           </AppText>
         </Pressable>
-        {demo.available && (
-          <>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ busy: busy === 'demo', disabled: !!busy }}
-              onPress={tryDemo}
-              style={({ pressed }) => [styles.demoLink, pressed && styles.pressed]}
-            >
-              {busy === 'demo' ? <ActivityIndicator color={colors.onNavyAccent} /> : <Play size={22} color={colors.onNavyAccent} />}
-              <AppText variant="bodyStrong" color={colors.onNavyAccent}>
-                {t('account.demo')}
-              </AppText>
-            </Pressable>
-            <AppText variant="caption" color={colors.onNavyAccent} style={styles.center}>
-              {t('account.demoNote')}
+        {/* The demo row keeps its space from the start, so the buttons never jump when
+            the server's demo switch arrives (test note F7). */}
+        <View
+          style={!demo.available && styles.hidden}
+          pointerEvents={demo.available ? 'auto' : 'none'}
+          accessibilityElementsHidden={!demo.available}
+          importantForAccessibility={demo.available ? 'auto' : 'no-hide-descendants'}
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ busy: busy === 'demo', disabled: !!busy }}
+            onPress={tryDemo}
+            style={({ pressed }) => [styles.demoLink, pressed && styles.pressed]}
+          >
+            {busy === 'demo' ? <ActivityIndicator color={colors.onNavyAccent} /> : <Play size={22} color={colors.onNavyAccent} />}
+            <AppText variant="bodyStrong" color={colors.onNavyAccent}>
+              {t('account.demo')}
             </AppText>
-          </>
-        )}
+          </Pressable>
+          <AppText variant="caption" color={colors.onNavyAccent} style={styles.center}>
+            {t('account.demoNote')}
+          </AppText>
+        </View>
       </View>
     </View>
   );
@@ -312,6 +317,7 @@ const styles = StyleSheet.create({
   },
   pillWhite: { backgroundColor: colors.white },
   pillOutline: { borderWidth: 2, borderColor: colors.white },
+  hidden: { opacity: 0 },
   demoLink: { flexDirection: 'row', gap: spacing.sm, minHeight: touchTarget, alignItems: 'center', justifyContent: 'center' },
   pressed: { opacity: 0.85 },
 });

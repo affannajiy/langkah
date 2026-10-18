@@ -18,7 +18,7 @@ import {
 } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -34,10 +34,11 @@ import {
   type MyStats,
 } from '../../api/reports';
 import { myBadges, type Badges } from '../../api/badges';
-import { myItems, myWallet, type OwnedItem, type Wallet } from '../../api/points';
+import { dailyCheckin, myItems, myWallet, type OwnedItem, type Wallet } from '../../api/points';
 import { useAuth } from '../../auth/AuthProvider';
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
+import { useConfirm } from '../../components/ConfirmDialog';
 import { Snackbar, useSnackbar } from '../../components/Snackbar';
 import { ScrimSheet } from '../../components/ScrimSheet';
 import { StatusBanner } from '../../components/StatusBanner';
@@ -86,6 +87,7 @@ export default function MeScreen() {
   const insets = useSafeAreaInsets();
   const online = useOnline();
   const snackbar = useSnackbar();
+  const { confirm, dialog } = useConfirm();
   const { ready, hasSession, isFull, canWrite, name, demo, requireSignIn, signOut, resetDemo } = useAuth();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [vouchers, setVouchers] = useState<OwnedItem[]>([]);
@@ -184,20 +186,21 @@ export default function MeScreen() {
 
   // Cannot be undone, so a dialog (guide Section 5.3).
   function confirmReset() {
-    Alert.alert(t('me.resetTitle'), t('me.resetBody'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('me.reset'),
-        style: 'destructive',
-        onPress: async () => {
-          setResetting(true);
-          const ok = await resetDemo();
-          setResetting(false);
-          snackbar.show({ text: ok ? t('me.resetDone') : t('me.resetFailed') });
-          if (ok) await load();
-        },
+    confirm({
+      title: t('me.resetTitle'),
+      body: t('me.resetBody'),
+      confirmLabel: t('me.reset'),
+      destructive: true,
+      onConfirm: async () => {
+        setResetting(true);
+        const ok = await resetDemo();
+        setResetting(false);
+        snackbar.show({ text: ok ? t('me.resetDone') : t('me.resetFailed') });
+        // Today's check-in again at once, so the card shows day 4, not 3 (test note F14).
+        if (ok) await dailyCheckin().catch((err: unknown) => console.warn('Check-in after reset failed', err));
+        if (ok) await load();
       },
-    ]);
+    });
   }
 
   async function loadMore() {
@@ -263,26 +266,25 @@ export default function MeScreen() {
 
   // Deleting cannot be undone, so this is the one place a dialog is right (Section 5.3).
   function confirmDelete(r: CommunityReport) {
-    Alert.alert(t('me.deleteTitle'), t('me.deleteBody'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('me.delete'),
-        style: 'destructive',
-        onPress: async () => {
-          setOwnerBusy(true);
-          try {
-            await deleteReport(r);
-            setOpen(null);
-            snackbar.show({ text: t('me.deleted') });
-            await load();
-          } catch {
-            setOwnerMessage(t('me.deleteFailed'));
-          } finally {
-            setOwnerBusy(false);
-          }
-        },
+    confirm({
+      title: t('me.deleteTitle'),
+      body: t('me.deleteBody'),
+      confirmLabel: t('me.delete'),
+      destructive: true,
+      onConfirm: async () => {
+        setOwnerBusy(true);
+        try {
+          await deleteReport(r);
+          setOpen(null);
+          snackbar.show({ text: t('me.deleted') });
+          await load();
+        } catch {
+          setOwnerMessage(t('me.deleteFailed'));
+        } finally {
+          setOwnerBusy(false);
+        }
       },
-    ]);
+    });
   }
 
   const demoName = demo.isDemo ? (wallet?.name ?? t('me.demoGuest')) : null;
@@ -625,6 +627,7 @@ export default function MeScreen() {
       </ScrimSheet>
 
       <Snackbar message={snackbar.message} onHide={snackbar.hide} bottom={spacing.md} />
+      {dialog}
     </View>
   );
 }

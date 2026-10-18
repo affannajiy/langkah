@@ -3,16 +3,25 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import type { LngLat } from '@maplibre/maplibre-react-native';
+
 import { AppText } from '../../components/AppText';
+import { formatDistance } from '../../i18n/format';
 import type { MapViewState } from '../../map/useMapView';
+import { metres } from '../../nav/geo';
+import { categoryKey } from '../report/categoryIcons';
 import { useSideInset } from '../../theme/layout';
 import { colors, radius, shadow, spacing, touchTarget } from '../../theme/theme';
 
-type Props = { state: MapViewState; nearUser: boolean; onLayout: (height: number) => void };
+// from: where distances are measured (the walker, or the middle of the map).
+type Props = { state: MapViewState; nearUser: boolean; from: LngLat | null; onLayout: (height: number) => void };
+
+// Open, the sheet lists the nearest hazards by name (test note F26; guide Section 6.3).
+const LIST_MAX = 4;
 
 // Sheet above the tab bar with what is nearby (guide Section 6.3, screen 1).
 // It starts collapsed to one line so the map stays in full view; a tap opens it.
-export function PeekSheet({ state, nearUser, onLayout }: Props) {
+export function PeekSheet({ state, nearUser, from, onLayout }: Props) {
   const { t } = useTranslation();
   const side = useSideInset();
   const [open, setOpen] = useState(false);
@@ -62,6 +71,27 @@ export function PeekSheet({ state, nearUser, onLayout }: Props) {
               open ? t('home.improvements', { count: improvements }) : t('home.improvementsShort', { count: improvements })
             }
           />
+        )}
+        {open && view.hazards.length > 0 && (
+          <View style={styles.list}>
+            {view.hazards
+              .map((h) => ({ ...h, m: from ? metres(from, h.lngLat) : null }))
+              .sort((a, b) => (a.m ?? 0) - (b.m ?? 0))
+              .slice(0, LIST_MAX)
+              .map((h) => (
+                <View key={h.id} style={styles.item}>
+                  <View style={styles.diamond} />
+                  <AppText color={colors.text} style={styles.flex} numberOfLines={1}>
+                    {t(categoryKey('hazard', h.category))}
+                  </AppText>
+                  {h.m !== null && (
+                    <AppText variant="label" color={colors.textMuted}>
+                      {formatDistance(h.m)}
+                    </AppText>
+                  )}
+                </View>
+              ))}
+          </View>
         )}
       </View>
     );
@@ -144,4 +174,16 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: 28 },
   rowText: { flexShrink: 1 },
   placeholder: { height: 28 },
+  list: { flexBasis: '100%', gap: spacing.xs, paddingTop: spacing.xs },
+  item: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 28 },
+  // A small hazard diamond, as on the map; the name beside it says what it is.
+  diamond: {
+    width: 12,
+    height: 12,
+    backgroundColor: colors.hazard,
+    borderWidth: 1.5,
+    borderColor: colors.navy,
+    transform: [{ rotate: '45deg' }],
+    marginHorizontal: 4,
+  },
 });

@@ -23,7 +23,9 @@ export function minutes(seconds: number): number {
 // "Just now", "3 h ago", "2 days ago". Report times in Community.
 export function timeAgo(iso: string, now = Date.now()): string {
   const mins = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60000));
-  if (mins < 60) return i18n.t('time.justNow');
+  if (mins < 2) return i18n.t('time.justNow');
+  // "N min ago" under an hour (test note F27).
+  if (mins < 60) return i18n.t('time.minutesAgo', { count: mins });
   const hours = Math.round(mins / 60);
   if (hours < 24) return i18n.t('time.hoursAgo', { count: hours });
   return i18n.t('time.daysAgo', { count: Math.round(hours / 24) });

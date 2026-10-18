@@ -1,6 +1,6 @@
 import { CircleCheck, Route as RouteIcon, TriangleAlert } from 'lucide-react-native';
 import type { TFunction } from 'i18next';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 
@@ -31,7 +31,7 @@ export function hazardWhere(landmark: HazardLandmark, t: TFunction): string | nu
 // need no tap and hide themselves; the hazard one after about 6 s with a countdown line.
 export function NavBanner({ banner, onAnswer, onHide }: Props) {
   const { t } = useTranslation();
-  const progress = useRef(new Animated.Value(1)).current;
+  const progress = useState(() => new Animated.Value(1))[0];
   const hideAfter = banner.kind === 'hazard' || banner.kind === 'rerouteFailed' ? HAZARD_BANNER_MS : banner.kind === 'back' ? STATUS_BANNER_MS : 0;
 
   useEffect(() => {

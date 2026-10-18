@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Switch, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import { Button } from '../../components/Button';
@@ -42,19 +42,27 @@ export function LayersSheet({ visible, toggles, onChange, onClose }: Props) {
       </AppText>
       <View>
         {rows.map((r) => (
-          <View key={r.key} style={styles.row}>
+          <Pressable
+            key={r.key}
+            accessibilityRole="switch"
+            accessibilityLabel={r.label}
+            accessibilityState={{ checked: toggles[r.key] }}
+            onPress={() => onChange({ ...toggles, [r.key]: !toggles[r.key] })}
+            style={styles.row}
+          >
             <View importantForAccessibility="no-hide-descendants">{r.mark}</View>
             <AppText color={colors.text} style={styles.label}>
               {r.label}
             </AppText>
             <Switch
-              accessibilityLabel={r.label}
+              importantForAccessibility="no-hide-descendants"
+              accessibilityElementsHidden
               value={toggles[r.key]}
               onValueChange={(v) => onChange({ ...toggles, [r.key]: v })}
-              trackColor={{ true: colors.interactive, false: colors.border }}
+              trackColor={{ true: colors.interactiveText, false: colors.limestone }}
               thumbColor={colors.white}
             />
-          </View>
+          </Pressable>
         ))}
       </View>
       <AppText variant="caption" color={colors.textMuted}>

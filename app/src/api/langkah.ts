@@ -98,6 +98,7 @@ const ROUTE_ERRORS = new Set([
   'end_off_network',
   'no_route',
   'no_step_free',
+  'rate_limited',
 ]);
 
 function parseStats(v: unknown): RouteStats {
@@ -107,6 +108,7 @@ function parseStats(v: unknown): RouteStats {
     lit: num(v.lit),
     unk: num(v.unk),
     nosw: num(v.nosw),
+    am: typeof v.am === 'number' ? v.am : 0,
     mx: num(v.mx),
     ux: num(v.ux),
     hz: num(v.hz),

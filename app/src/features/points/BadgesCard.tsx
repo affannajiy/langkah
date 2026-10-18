@@ -59,9 +59,12 @@ export function BadgesCard({ data }: { data: Badges }) {
         {data.badges.map((b) => {
           const done = b.n >= b.goal;
           const Icon = ICONS[b.id];
+          // A one-step badge says what is left, not "0 of 1" (test note F14).
           const progress = b.id.startsWith('km')
             ? t('badges.km', { n: (b.n / 1000).toFixed(1), goal: b.goal / 1000 })
-            : t('badges.progress', { n: b.n, goal: b.goal });
+            : b.goal === 1
+              ? t(`badges.left.${b.id}`, { defaultValue: t('badges.notYet') })
+              : t('badges.progress', { n: b.n, goal: b.goal });
           return (
             <View
               key={b.id}

@@ -202,9 +202,12 @@ export async function castVote(reportId: string, vote: Vote | null): Promise<voi
 
 // --- photos ---------------------------------------------------------------
 
-// Random v4-style id for the file name. It only needs to be unique and say nothing
-// about the reporter (the bucket is public).
-function randomId(): string {
+// Random v4 id for photo names and queued walks. It only needs to be unique and say
+// nothing about the reporter (the bucket is public). The platform's crypto when the
+// engine has it, else Math.random.
+export function randomId(): string {
+  const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  if (typeof c?.randomUUID === 'function') return c.randomUUID();
   const hex = (n: number) => Array.from({ length: n }, () => Math.floor(Math.random() * 16).toString(16)).join('');
   const variant = '89ab'[Math.floor(Math.random() * 4)];
   return `${hex(8)}-${hex(4)}-4${hex(3)}-${variant}${hex(3)}-${hex(12)}`;

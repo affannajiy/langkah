@@ -18,7 +18,7 @@ The scope follows the proposal approved by Dr. Vijay Lahri. The MVP is a working
 | **Live hazard alerts**             | While navigating, the app warns the user of upcoming turns and reported hazards within about 50 m, using vibration and an in-app banner.                             | Objective 2        |
 | **Hazard and improvement reports** | Users pin a hazard (temporary) or an improvement request (permanent) with an optional photo. Other users confirm hazards and upvote improvements.                    | Objectives 2 and 3 |
 | **Amenity layer**                  | Shows zebra crossings, shelters and bus stops on the map, plus covered walkways (five-foot ways), kerb ramps and tactile paving, and rest stops (benches, toilets, drinking water).                                                                                                            | Solution section   |
-| **Council dataset**                | An in-app ranking of the most upvoted improvements, exportable as CSV or GeoJSON for local councils.                                                                 | Objective 3        |
+| **Council dataset**                | An in-app ranking of the most upvoted improvements. Councils export it as CSV or GeoJSON from the council page (Section 16).                                                                 | Objective 3        |
 
 *Table 1 shows the MVP features and the proposal item each one answers.*
 
@@ -93,7 +93,7 @@ The app uses a **bottom tab bar** with three tabs, **Map**, **Community** and **
 | 11     | Report flow (sheet)           | Four short steps: Hazard or Improvement, category, confirm the pin on the map, optional photo and note. Then submit.                                                                                | Revise       | P1                       |
 | 12     | Sign-in prompt (sheet)        | "Sign in so others can trust your report" with Google sign-in. Appears only at the first report or vote.                                                                                            | New          | P1                       |
 | 13     | Community: Hazards            | Nearby hazards with list or map view, status (pending or active) and Still there / Gone buttons.                                                                                                    | Revise       | P1                       |
-| 14     | Community: Improvements       | Improvement requests with upvote count, sorted by Top, Newest or Nearest. Top requested is the council ranking, with an Export CSV button.                                                          | New          | P1                       |
+| 14     | Community: Improvements       | Improvement requests with upvote count, sorted by Top, Newest or Nearest. Top requested is the council ranking; the export is on the council page.                                                          | New          | P1                       |
 | 15     | Report detail                 | Photo, category, mini map, status, votes, time reported and expiry date.                                                                                                                            | New          | P1                       |
 | 16     | Arrival                       | Journey complete with distance, hazards avoided, star rating and "Spot anything new?" that opens the report flow.                                                                                   | Revise       | P1                       |
 | 17     | Me                            | My reports with status, saved places (home, campus, work) and contribution stats.                                                                                                                   | New          | P1 (stats and badges P2) |
@@ -228,7 +228,7 @@ These are the 8 screens to redesign first, since together they tell the whole La
 
 #### Screen 7. Community
 
-- **Layout:** A switch at the top for **Hazards** and **Improvements**, plus a Map or List toggle. Each card has a photo thumbnail, the title, street and distance, a status chip (Pending, Active or Expired, each with an icon) and, for improvements, a pink upvote button with a count. Sort chips: Top, Newest, Nearest. The Top view is headed "Most requested in Ipoh" and has an Export CSV button for councils.
+- **Layout:** A switch at the top for **Hazards** and **Improvements**, plus a Map or List toggle. Each card has a photo thumbnail, the title, street and distance, a status chip (Pending, Active or Expired, each with an icon) and, for improvements, a pink upvote button with a count. Sort chips: Top, Newest, Nearest. The Top view is headed "Most requested in Ipoh". The CSV and GeoJSON export for councils is on the council page, not in the app.
 
 - **Interaction:** Hazard cards have Still there and Gone buttons. Improvement cards have one upvote per user. Tapping a card opens its detail sheet with a mini map.
 
@@ -669,6 +669,95 @@ Small fixes from `docs/test-notes.md`, built before the full test of the whole a
 - N6: at night the walker arrow is light blue (#56B4E9) with its white edge, so it stands out on the navy map.
 - G1: when the finished walk cannot be saved (offline), the Arrival screen says so in a snackbar with Try again, instead of looking saved.
 - G8: the waiting banner counts reports and votes together ("1 report or vote is waiting on this phone").
+
+## 18. Fix Batch (Phase 20)
+
+Decided by the owner on 2026-10-18 after the Phase 20 full test (`docs/final-test.md`, Run 2; the F, G and N notes are in `docs/test-notes.md`). Every open note gets fixed. Build it all, then test it together as Run 3 in `docs/final-test.md`. No new dependency. Each new table turns on RLS in the migration that makes it.
+
+The bar is a supervised demo for the external examiners, not a public release: a recorded video on the Honor phone (real GPS, walking), and a live MS Teams screen share of the emulator with GPX playback. The video goes to uLearn, or to YouTube as Unlisted.
+
+### 18.1 Demo accounts
+
+- The "Try the demo" account is called **Afrina** (it was Demo Walker). The user code stays `LGK-DEMO-01`, so the screen still shows it is a demo.
+- The single helper account (Afrina (demo)) becomes a crew of about 20 helpers with local names: Haikal, Lee, Adam, Ali, Abu, Subramaniam, Muthu, Chong, Aisyah, Nurul, Siti, Farah, Hafiz, Iman, Mei Ling, Wei Jie, Jia Hui, Kavitha, Priya, Rajesh. The list lives in `seed_demo.py`, so adding a name is one line.
+- Each action takes its helper from the report id or street id, so the same report always gets the same helper and every video retake shows the same names. The ledger keeps the name: "+20 · Haikal confirmed your report". The seeded history also uses the crew.
+- Reset demo undoes the actions of every helper, not just one. The reset dialog loses the line "Your language stays" (F14).
+- Demo accounts are never deleted automatically.
+- The mock banks, wallets and food ads keep their names, since the audience is internal. The screens already say "Mock ad, made-up brand" and DEMO.
+
+### 18.2 Demo data stays in the demo (F1, F2, F6)
+
+- **Street checks (F1).** A new table `street_asks` (user, osm_id, asked_at). `route_safe` fills it with the questions it returns. `street_answer` accepts an answer only for a street asked of that user in the last 6 hours and a finished walk after that. The server cannot prove a walk (GPS is on the phone), but the phone can no longer name any street it likes. A demo user's answers and the crew's agreement are kept only for that demo user: "Two walkers agree" shows, but no road fact is written and nothing is rescored for others.
+- **Reports (F2).** A new column `reports.is_demo`, set by a trigger from the author's profile. Every public read leaves demo reports out except for their owner: the map, the peek counts, Community, the council page and its CSV and GeoJSON, and the ranking. Crew confirms touch demo reports only, so they never make a real report active.
+- **Clean-up, once (F6).** The 3 test street facts (Jalan Dato Sagor lit and sidewalk, `street_answers` 13 to 18) and a rescore of those streets; the demo duplicate reports; the anonymous guests from the test; the orphan photo (`clean_photos.py`). This writes to the live project, so the owner approves it first.
+
+### 18.3 Route requests (F23)
+
+- A new table `route_calls` (user_id, at). `route_safe` allows 30 calls a minute and 300 a day per user and then returns `rate_limited`; the app shows a snackbar: "Too many route requests. Try again in a minute." Normal use (about 4 calls per compare, with the background toggles) stays far below. The existing pg_cron job drops rows older than a day.
+- It stops a stuck retry or a careless loop from using up the free database. It does not stop someone who makes many guests; for that, app attestation would be needed, which is out of scope.
+
+### 18.4 Map and routes
+
+- **F5.** Fastest always draws on top of Safest: thin, dashed, with its white casing, 0.8 opacity when not selected. Where both use a street, grey dashes show on teal. The Fastest tag goes on a stretch the two routes do not share.
+- **F10.** The Safest card always keeps the "not yet checked" or hazard chip and drops a good chip instead.
+- **F19.** The route sheet opens no higher than about 60% of the screen, so the destination stays visible (also with step-free and at 130% font). The saved-place chip row ends before the layers button.
+- **F26.** The expanded peek sheet lists the nearby hazards and requests (guide Section 6.3), not just the counts.
+- **G5, G6.** Route tags keep clear of the end pin. Crossing pins do not overlap (`iconAllowOverlap: false` for crossings).
+- **G7.** The route breakdown gets an amenities line (shelters and lit bus stops on the route).
+- **G17.** A cold start opens at the last camera, or at the user at street zoom, not on the whole city.
+
+### 18.5 Walk and arrival
+
+- **F13.** Turn and arrival pulses are sent as patterns (`[0, 150]` and `[0, 700]`), like the hazard pulse, so Android does not drop them when Touch feedback is off. Row 72 checks this on the Honor; only if it still fails, a small local native module in `modules/` vibrates with alarm usage.
+- **F3 (N4).** After "No thanks" on Google's location dialog, the app does not ask again on its own. It retries when location services change or when the user taps the locate button.
+- **F4 (G1).** A walk that cannot be saved goes into a phone queue (like `reportQueue`) with a client id, and is sent once the phone is back online. The Arrival screen keeps a retry row until it is saved. The rating is queued the same way (F11).
+- **F11.** Arrival: a scroll cue when the rating card and street questions are below the buttons; a snackbar for the +5 rating points; rating faces coloured by meaning (very unsafe is not teal).
+- **F12.** A street answer that fails shows an error snackbar, not "Thanks. Your answer was sent."
+- **F17.** At night the turn card gets a light edge, so it stands out on the navy map.
+- **F18.** The Map home overlays hide before the walk screen shows, so they do not flash on Start.
+- **F20.** End walk shows an Undo snackbar for about 5 s.
+
+### 18.6 Screens and copy
+
+- **F7.** The first check-in happens after onboarding, not on the Welcome screen. The "Try the demo" row keeps its space from the start, so the buttons do not jump.
+- **F8.** The location screen says what is sent and when: "Your location is sent only to find routes and places near you. It is not stored with your name."
+- **F9.** Switches get darker tracks (3:1 contrast), and the whole settings row is the switch (48 dp).
+- **F14.** Done check-in days get a tick, not just a colour. The badge says what it counts. Reset demo checks in again at once.
+- **F15.** A non-breaking space between a number and its unit ("400 m").
+- **F16.** Offline search hides the "Places found" heading.
+- **F22.** The "With Plus" gold is darker (4.5:1). Cosmetics buttons say what they wear ("Use, Plus gold frame"). Getting Plus puts on the gold frame.
+- **F24.** Snackbars sit above the bottom buttons. The ad's call-to-action looks like text, not a button.
+- **F27.** Report times say "N min ago" under an hour.
+- **G10.** One Langkah-style dialog component replaces the stock Android dialogs (delete report, Reset demo, redeem, Get, Get Plus). They stay dialogs, because these cannot be undone.
+- **G18.** The council CSV and GeoJSON get a readable type column next to the code.
+- **N5.** Find what holds the JS thread on a cold start, so the first taps on search work at once.
+
+### 18.7 Code, security and docs
+
+- **F23 (rest).** Photo file names use `crypto.randomUUID`. Exported files (council CSV and GeoJSON) carry "(c) OpenStreetMap contributors". The unused `community_export` loses its anon grant. The APK drops `SYSTEM_ALERT_WINDOW`. CDN scripts on the web pages get integrity hashes. `walk.html` guards the null values behind the MapLibre warnings.
+- **F25.** The lint warnings that Phase 19 added are cleared (back to 66 or fewer).
+- **F21.** Guide Sections 2, 5.2 and 6.3 no longer list Export CSV in the app. Row 3 of the test sheet says only the UTP preset is filled in.
+
+### 18.8 As built (Phase 20, 18 Oct 2026)
+
+Everything above is in migration 25 (`20261018000025_fix_batch.sql`) and the app, with these differences from the plan:
+
+- **Crew.** The crew is made by migration 25 itself (20 server-only accounts, the list is at the top of the file), not by `seed_demo.py`, so `npx supabase db push` is the only step. The old helper id (`...0005`) is now Haikal. `seed_demo.py` no longer makes or removes a helper.
+- **Demo reads.** The reports read policy hides demo reports from everyone but their owner (map view and direct reads). The server functions that run as the owner (`route_net`, `route_build`, `community_reports`, `council_data`, `community_export`) read the view `private.visible_reports` instead. Their bodies are copied from their latest migrations with only that change, plus the `am` count in `route_build`.
+- **Demo votes.** A demo voter (a demo user or the crew) counts only on demo reports: no status change, no 7 more days and no +20 for a real report. So the seeded walk hazards no longer get extra days from a demo; run `python seed_demo.py` before a demo to refresh them.
+- **Street checks.** `route_safe` is now a small wrapper (rate limit, then `private.route_safe_core`, then it records the asked streets). A demo answer is saved for the demo user only and answers "agreed".
+- **F4.** `walk_finish` takes the walk id from the phone (`p_id`); a retry returns the same walk with 0 points. `rate_walk` returns 0 for a walk already rated. The phone queue is `storage/walkQueue.ts`, sent on every new session and when the Map tab comes back online.
+- **F23.** The rate-limit message shows in the route sheet's error card (with Try again), not a snackbar, since the sheet already has that place for route errors. The cleanup job is a new pg_cron job (hourly), which also drops street asks older than a day. Photo names use `crypto.randomUUID` when the JS engine has it, else the old random id.
+- **F26.** The open peek sheet lists the 4 nearest hazards by name and distance. Requests stay a count, since the map view sends no request list.
+- **G6.** Pins are React markers, not a symbol layer, so there is no `iconAllowOverlap`; pins of one kind that would touch on screen (32 dp at the current zoom) show as one.
+- **G10.** `components/ConfirmDialog.tsx` (`useConfirm`) replaces the 4 stock dialogs.
+- **F25.** Lint is at 38 warnings: the `Animated.Value` refs now use `useState`.
+- **F6.** Done on the live project on 18 Oct: the 3 street facts and their 6 answers were removed and the 2 streets rescored; 13 test guests were deleted with their demo reports (the newest demo account and the 2 newest guests were kept). The orphan photo is less than a day old, so run `python clean_photos.py --apply` from 19 Oct.
+- **Not done here.** N5 (what holds the JS thread on a cold start) needs a profile on the phone; check it in Run 3. The MapLibre "found null" warnings on `walk.html` may come from the Positron style itself; `walk.js` now never sends a feature with a missing position.
+
+### 18.9 Run 3
+
+A new preview APK (native change: the dropped permission, and any vibration module). Then, in `docs/final-test.md`, a Run 3 column: the 3 fails (rows 10, 15, 40), every row a fix touches, and the phone rows 69 to 74 on the Honor before the video is recorded. Rows 66 to 68 (council on the phone, staff sign-in, Fixed loop) need the owner's email and phone.
 
 ## References
 

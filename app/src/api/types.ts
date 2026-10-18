@@ -37,6 +37,7 @@ export type RouteStats = {
   lit: number; // % lit
   unk: number; // % not yet checked
   nosw: number; // metres with no sidewalk
+  am: number; // bus stops and shelters on the route (migration 25; 0 from an older server)
   mx: number; // marked crossings
   ux: number; // unmarked main-road crossings
   hz: number; // active hazards within 15 m
@@ -82,6 +83,7 @@ export type RouteError =
   | 'end_off_network'
   | 'no_route'
   | 'no_step_free'
+  | 'rate_limited' // 30 a minute, 300 a day per user (migration 25)
   // App-side failures
   | 'outside_pilot'
   | 'start_outside_pilot'

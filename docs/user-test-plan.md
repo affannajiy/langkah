@@ -9,7 +9,7 @@ and tunes the safety weights once or twice. Nothing here is for publication.
 1. Apply migration `20261011000011_score_weights.sql` (`npx supabase db push`).
    The scores stay the same: the table starts with the Table 9 values.
 2. Reseed the demo data if it is older than 7 days: `python seed_demo.py` in `data-scripts/`.
-3. Install the latest preview APK on every phone (README section 3).
+3. Install the latest preview APK on every phone (DEVELOPMENT.md section 3).
 4. One person keeps the log below in this file (or a copy of it).
 
 ## Each session (about 45 minutes)
@@ -28,7 +28,7 @@ the night score uses different weights.
 | 6 | Confirm or upvote another person's report | The count changes, and the hazard starts changing routes once confirmed. |
 | 7 | Switch to Bahasa Melayu for one walk | Nothing cut off or untranslated. |
 
-If you can't walk, the emulator works with a GPX file (README section 7), but
+If you can't walk, the emulator works with a GPX file (DEVELOPMENT.md section 7), but
 rate only walks you really did.
 
 ## Tuning the weights
@@ -51,7 +51,7 @@ After 2 or 3 sessions (10 or more rated walks):
 5. Write the change in the log, and update Table 9 in the guide (Section 7.1) at the end.
 
 If a missing sidewalk or a wrong lighting tag caused the problem, fix it in
-OpenStreetMap and reload the data instead of changing a weight (README section 5).
+OpenStreetMap and reload the data instead of changing a weight (DEVELOPMENT.md section 5).
 
 ## Rules in `private.score_weights`
 

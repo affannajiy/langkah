@@ -141,7 +141,15 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 function SwitchRow(p: { label: string; body?: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <View style={styles.switchRow}>
+    // The whole row is the switch (test note F9); the Switch itself is only the picture.
+    <Pressable
+      accessibilityRole="switch"
+      accessibilityLabel={p.label}
+      accessibilityHint={p.body}
+      accessibilityState={{ checked: p.value }}
+      onPress={() => p.onChange(!p.value)}
+      style={styles.switchRow}
+    >
       <View style={styles.flex}>
         <AppText variant="bodyStrong" color={colors.text}>
           {p.label}
@@ -153,13 +161,14 @@ function SwitchRow(p: { label: string; body?: string; value: boolean; onChange: 
         )}
       </View>
       <Switch
-        accessibilityLabel={p.label}
+        importantForAccessibility="no-hide-descendants"
+        accessibilityElementsHidden
         value={p.value}
         onValueChange={p.onChange}
-        trackColor={{ true: colors.interactive, false: colors.border }}
+        trackColor={{ true: colors.interactiveText, false: colors.limestone }}
         thumbColor={colors.white}
       />
-    </View>
+    </Pressable>
   );
 }
 

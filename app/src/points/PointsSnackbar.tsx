@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,9 +13,11 @@ export function PointsSnackbar() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { message, show, hide } = useSnackbar();
+  const [lift, setLift] = useState<number | null>(null);
 
   const onNotice = useCallback(
     (n: PointsNotice) => {
+      setLift(n.kind === 'text' ? (n.lift ?? null) : null);
       if (n.kind === 'checkin') show({ text: t('points.checkinEarned', { count: n.points, day: n.day }) });
       else if (n.kind === 'text') show({ text: n.text });
       else {
@@ -34,6 +36,6 @@ export function PointsSnackbar() {
   );
   usePointsNotice(onNotice);
 
-  // Above the tab bar.
-  return <Snackbar message={message} onHide={hide} bottom={insets.bottom + spacing.xxl * 2} />;
+  // Above the tab bar, or above a screen's bottom buttons.
+  return <Snackbar message={message} onHide={hide} bottom={insets.bottom + (lift ?? spacing.xxl * 2)} />;
 }

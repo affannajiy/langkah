@@ -1,4 +1,4 @@
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { AccessibilityInfo, Animated, Easing } from 'react-native';
 
 // Motion tokens and the phone's Reduce Motion setting (guide Section 17). Every
@@ -42,7 +42,7 @@ export function useReduceMotion(): boolean {
 
 // A value that eases from 0 to 1 once, after delayMs. With Reduce Motion it starts at 1.
 export function useEnter(delayMs = 0, duration: number = motion.base): Animated.Value {
-  const v = useRef(new Animated.Value(reduce ? 1 : 0)).current;
+  const v = useState(() => new Animated.Value(reduce ? 1 : 0))[0];
   useEffect(() => {
     if (reduce) {
       v.setValue(1);
@@ -57,7 +57,7 @@ export function useEnter(delayMs = 0, duration: number = motion.base): Animated.
 
 // Scale for a pressable: call onPressIn/onPressOut from the Pressable, put scale in an Animated.View.
 export function usePressScale() {
-  const scale = useRef(new Animated.Value(1)).current;
+  const scale = useState(() => new Animated.Value(1))[0];
   const to = (toValue: number) => {
     if (reduce) return;
     Animated.spring(scale, { toValue, useNativeDriver: true, speed: 40, bounciness: 0 }).start();

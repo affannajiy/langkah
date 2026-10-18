@@ -1,0 +1,30 @@
+name: Idea or feature
+description: Something Langkah should do, or do better.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The walker's problem
+      description: What is hard or unsafe today, and for whom?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: How Langkah could help. Sketches welcome.
+    validations:
+      required: true
+  - type: input
+    id: guide
+    attributes:
+      label: Guide section
+      description: The section of docs/Langkah Tech Stack.md this touches, if you know it.
+      placeholder: "Section 14"
+  - type: checkboxes
+    id: cost
+    attributes:
+      label: Cost
+      options:
+        - label: This needs no paid service, card on file or new dependency (or I've said which above).

@@ -2,12 +2,13 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Check, ChevronLeft, Clock, ShieldCheck } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { cosmeticUse, myWallet, plusBuy, pointsErrorCode, type Wallet } from '../api/points';
 import { AppText } from '../components/AppText';
 import { ScrimSheet } from '../components/ScrimSheet';
+import { useConfirm } from '../components/ConfirmDialog';
 import { Snackbar, useSnackbar } from '../components/Snackbar';
 import { LowPointsBody } from '../features/points/LowPointsSheet';
 import { useOpenTopUp } from '../features/points/useOpenTopUp';
@@ -27,6 +28,7 @@ export default function PlusScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const snackbar = useSnackbar();
+  const { confirm, dialog } = useConfirm();
   const openTopUp = useOpenTopUp();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [busy, setBusy] = useState(false);
@@ -53,30 +55,29 @@ export default function PlusScreen() {
       return;
     }
     // Spending points cannot be undone, so a dialog (guide Section 5.3).
-    Alert.alert(on ? t('plus.extendTitle') : t('plus.confirmTitle'), t('plus.confirmBody', { cost: formatPoints(PRICE) }), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('plus.confirm'),
-        onPress: async () => {
-          setBusy(true);
-          try {
-            const r = await plusBuy();
-            // First time: put on the gold frame and badge, unless something is already worn.
-            if (!on) {
-              if (!wallet.frame) await cosmeticUse('frame', 'plus_frame').catch(() => undefined);
-              if (!wallet.badge) await cosmeticUse('badge', 'plus_badge').catch(() => undefined);
-            }
-            snackbar.show({ text: t('plus.done', { date: shortDate(r.until) }) });
-            load();
-          } catch (e) {
-            const code = pointsErrorCode(e);
-            snackbar.show({ text: t(`shop.error.${code}`, { defaultValue: t('shop.error.network') }) });
-          } finally {
-            setBusy(false);
+    confirm({
+      title: on ? t('plus.extendTitle') : t('plus.confirmTitle'),
+      body: t('plus.confirmBody', { cost: formatPoints(PRICE) }),
+      confirmLabel: t('plus.confirm'),
+      onConfirm: async () => {
+        setBusy(true);
+        try {
+          const r = await plusBuy();
+          // First time: put on the gold frame (test note F22), and the badge unless one is worn.
+          if (!on) {
+            await cosmeticUse('frame', 'plus_frame').catch((err: unknown) => console.warn('Could not wear the Plus frame', err));
+            if (!wallet.badge) await cosmeticUse('badge', 'plus_badge').catch(() => undefined);
           }
-        },
+          snackbar.show({ text: t('plus.done', { date: shortDate(r.until) }) });
+          load();
+        } catch (e) {
+          const code = pointsErrorCode(e);
+          snackbar.show({ text: t(`shop.error.${code}`, { defaultValue: t('shop.error.network') }) });
+        } finally {
+          setBusy(false);
+        }
       },
-    ]);
+    });
   }
 
   const perks = [
@@ -190,6 +191,7 @@ export default function PlusScreen() {
       </ScrimSheet>
 
       <Snackbar message={snackbar.message} onHide={snackbar.hide} bottom={insets.bottom + spacing.md} />
+      {dialog}
     </View>
   );
 }

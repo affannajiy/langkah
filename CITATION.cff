@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use or refer to Langkah, please cite it as below."
+title: "Langkah: pedestrian safety and navigation for Ipoh, Malaysia"
+abstract: >-
+  An Android app that scores streets for walkers on sidewalks, lighting,
+  crossings and reported hazards, compares the safest and the fastest walk,
+  guides the walk with hazard alerts, and ranks the improvements walkers ask
+  for so the local council can act on them. Built on OpenStreetMap, Supabase
+  (PostGIS and pgRouting) and MapLibre.
+type: software
+authors:
+  - given-names: Affan
+    family-names: Najiy
+  - name: "Langkah team, UTP Technopreneurship Team Project, Group 4"
+repository-code: "https://github.com/affannajiy/langkah"
+url: "https://affannajiy.github.io/langkah/"
+license: MIT
+version: "0.1.0"
+date-released: "2026-10-18"
+keywords:
+  - pedestrian safety
+  - walking navigation
+  - OpenStreetMap
+  - pgRouting
+  - Ipoh
+  - Malaysia

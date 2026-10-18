@@ -2,6 +2,30 @@
 
 Newest first. Phases 10 to 17 were written up after the fact from their commits, so they are shorter than the earlier entries.
 
+## Phase 20: Full test and fix batch (2026-10-18)
+
+The whole app was tested on the preview APK (Runs 1 and 2, [docs/final-test.md](docs/final-test.md)) and every finding fixed (guide Section 18, as built in 18.8). No new dependency. **A new preview APK is needed** (SYSTEM_ALERT_WINDOW is now blocked, a native change). `npm run typecheck` passes; lint warnings 88 to 38. Migration 25 is on the live project.
+
+### Server (migration 25)
+- Try the demo signs in as Afrina (LGK-DEMO-01) with a crew of 20 helpers who confirm demo hazards. The crew is made by the migration.
+- `reports.is_demo`: demo reports are seen only by their owner; demo votes and street answers never count on real reports.
+- `street_asks`: a street answer counts only for a street the app asked about, after a walk.
+- `route_safe` is rate limited per user (30 a minute, 300 a day); the cleanup runs hourly on pg_cron.
+- `walk_finish` takes a walk id from the phone, so a retried walk is saved and paid once; `rate_walk` pays once.
+- Routes count bus stops and shelters on the way (`am`). The old app export is closed to guests.
+
+### App
+- Turn and arrival vibrations work with touch feedback off; Fastest always draws above Safest; the route sheet opens no higher than 60% of the screen.
+- End walk waits 5 s with Undo. Unsaved walks wait on the phone and send when back online.
+- Langkah-style confirm dialogs replace the stock Android ones. Location comes back when it is turned on again.
+- The opened peek sheet lists the 4 nearest hazards; close pins of one kind merge; switches are whole-row; copy, contrast and badge fixes.
+
+### Council page
+- Exports gain a readable type column and the OpenStreetMap credit. MapLibre loads with integrity hashes. `walk.js` never sends a point with a missing position.
+
+### Repo
+- README rewritten as an overview with the screens; setup moved to [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Added LICENSE (MIT), SECURITY.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md, CITATION.cff and issue and pull request templates.
+
 ## Phase 19: Feel upgrade (2026-10-18)
 
 Decided after the Phase 18 test (guide Section 17): the app should feel instant and the walk should feel close. No new dependency. **A new preview APK is needed** (JS only). `npm run typecheck` passes, `npx eslint src` has 0 errors. Migrations 23 and 24 are on the live project.

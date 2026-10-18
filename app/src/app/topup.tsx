@@ -27,6 +27,8 @@ type Step =
   | { kind: 'failed'; message: string };
 
 const PROCESSING_MS = 2000;
+// The receipt's two buttons (2 x 72 dp, gap and padding), so the points snackbar sits above them.
+const RECEIPT_BUTTONS_H = 184;
 
 // Mock top-up (guide Section 15.5; docs/revenue-plan.md "Top-up flow"). Amount,
 // method, bank or wallet, mock login or PIN, TAC, processing, receipt. Nothing is
@@ -98,7 +100,8 @@ export default function TopUpScreen() {
       const [r] = await Promise.all([topupMock(choice.rm, choice.pack, p.name), new Promise((res) => setTimeout(res, PROCESSING_MS))]);
       if (!alive.current) return;
       setStep({ kind: 'receipt', p, r });
-      notifyPoints({ kind: 'text', text: t('topup.earned', { value: formatPoints(r.points) }) });
+      // Above the receipt's two buttons.
+      notifyPoints({ kind: 'text', text: t('topup.earned', { value: formatPoints(r.points) }), lift: RECEIPT_BUTTONS_H });
     } catch (e) {
       if (!alive.current) return;
       const code = pointsErrorCode(e);

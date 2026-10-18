@@ -195,8 +195,14 @@
     });
   }
 
-  const line = (pts) => ({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: pts } });
-  const point = (p) => ({ type: 'FeatureCollection', features: p ? [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: p } }] : [] });
+  // Empty or half-filled positions draw nothing, instead of features with null numbers
+  // (the MapLibre "found null" warnings, test note F23).
+  const okPos = (p) => Array.isArray(p) && p.length >= 2 && Number.isFinite(p[0]) && Number.isFinite(p[1]);
+  const line = (pts) => {
+    const good = (pts || []).filter(okPos);
+    return { type: 'FeatureCollection', features: good.length >= 2 ? [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: good } }] : [] };
+  };
+  const point = (p) => ({ type: 'FeatureCollection', features: okPos(p) ? [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: p } }] : [] });
 
   function draw(d) {
     if (!ready) return;

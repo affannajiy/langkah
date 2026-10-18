@@ -13,6 +13,8 @@ import { colors } from '../theme/theme';
 
 const NEXT_KEY = 'langkah.adNext.v1';
 const TICK_MS = 250;
+// The ad's call to action and footer line, so the points snackbar sits above them (F24).
+const AD_BUTTONS_H = 160;
 
 type Result = { status: 'waiting' } | { status: 'paid'; points: number } | { status: 'none'; why: string };
 
@@ -53,7 +55,7 @@ export default function AdScreen() {
       .then((r) => {
         if (r.points > 0) {
           setResult({ status: 'paid', points: r.points });
-          notifyPoints({ kind: 'text', text: t('ads.earned', { count: r.points }) });
+          notifyPoints({ kind: 'text', text: t('ads.earned', { count: r.points }), lift: AD_BUTTONS_H });
         } else setResult({ status: 'none', why: t('ads.capped') });
       })
       .catch((e: unknown) => {

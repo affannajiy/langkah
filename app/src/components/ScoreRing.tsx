@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Animated, StyleSheet, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
@@ -19,7 +19,7 @@ export function ScoreRing({ score, size = 60 }: Props) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const target = Math.max(0, Math.min(100, score)) / 100;
-  const fill = useRef(new Animated.Value(reduceMotion() ? target : 0)).current;
+  const fill = useState(() => new Animated.Value(reduceMotion() ? target : 0))[0];
 
   useEffect(() => {
     if (reduceMotion()) {

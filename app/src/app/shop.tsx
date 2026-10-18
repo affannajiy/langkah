@@ -2,7 +2,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronRight, Crown, UserRound } from 'lucide-react-native';
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -20,9 +20,10 @@ import { AppText } from '../components/AppText';
 import { Button } from '../components/Button';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ScrimSheet } from '../components/ScrimSheet';
+import { useConfirm } from '../components/ConfirmDialog';
 import { Snackbar, useSnackbar } from '../components/Snackbar';
 import { Avatar } from '../features/points/Avatar';
-import { BADGES, itemText, PLUS_GOLD, voucherLook } from '../features/points/catalog';
+import { BADGES, itemText, voucherLook } from '../features/points/catalog';
 import { LowPointsBody, type LowPoints } from '../features/points/LowPointsSheet';
 import { useOpenTopUp } from '../features/points/useOpenTopUp';
 import { VoucherBody } from '../features/points/VoucherSheet';
@@ -44,6 +45,7 @@ export default function ShopScreen() {
   const { buy: buyParam } = useLocalSearchParams<{ buy?: string }>();
   const insets = useSafeAreaInsets();
   const snackbar = useSnackbar();
+  const { confirm, dialog } = useConfirm();
   const openTopUp = useOpenTopUp();
   const [tab, setTab] = useState<Tab>('vouchers');
   const [items, setItems] = useState<ShopItem[] | null>(null);
@@ -81,30 +83,29 @@ export default function ShopScreen() {
       setOpen({ kind: 'low', need: { item: name(item.id), cost: item.cost, have: wallet.balance } });
       return;
     }
-    Alert.alert(t('shop.confirmTitle', { item: name(item.id) }), t('shop.confirmBody', { cost: formatPoints(item.cost) }), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: item.kind === 'voucher' ? t('shop.redeem') : t('shop.get'),
-        onPress: async () => {
-          setBusy(item.id);
-          try {
-            const r = await shopBuy(item.id);
-            if (item.kind === 'voucher' && r.code) {
-              setOpen({ kind: 'voucher', item: item.id, code: r.code, at: new Date().toISOString() });
-            } else {
-              await cosmeticUse(item.kind === 'frame' ? 'frame' : 'badge', item.id);
-              snackbar.show({ text: t('shop.wearing', { item: name(item.id) }) });
-            }
-            await load();
-          } catch (e) {
-            const code = pointsErrorCode(e);
-            snackbar.show({ text: t(`shop.error.${code}`, { defaultValue: t('shop.error.network') }) });
-          } finally {
-            setBusy(null);
+    confirm({
+      title: t('shop.confirmTitle', { item: name(item.id) }),
+      body: t('shop.confirmBody', { cost: formatPoints(item.cost) }),
+      confirmLabel: item.kind === 'voucher' ? t('shop.redeem') : t('shop.get'),
+      onConfirm: async () => {
+        setBusy(item.id);
+        try {
+          const r = await shopBuy(item.id);
+          if (item.kind === 'voucher' && r.code) {
+            setOpen({ kind: 'voucher', item: item.id, code: r.code, at: new Date().toISOString() });
+          } else {
+            await cosmeticUse(item.kind === 'frame' ? 'frame' : 'badge', item.id);
+            snackbar.show({ text: t('shop.wearing', { item: name(item.id) }) });
           }
-        },
+          await load();
+        } catch (e) {
+          const code = pointsErrorCode(e);
+          snackbar.show({ text: t(`shop.error.${code}`, { defaultValue: t('shop.error.network') }) });
+        } finally {
+          setBusy(null);
+        }
       },
-    ]);
+    });
   }
 
   // From a sponsored pin: ask about that voucher once the shop and wallet are in.
@@ -292,6 +293,7 @@ export default function ShopScreen() {
       </ScrimSheet>
 
       <Snackbar message={snackbar.message} onHide={snackbar.hide} bottom={insets.bottom + spacing.md} />
+      {dialog}
     </View>
   );
 }
@@ -318,11 +320,13 @@ function PlusCosmetics({ wallet, busy, onWear }: { wallet: Wallet; busy: boolean
             </AppText>
             <AppText color={colors.textMuted}>{itemText(t, r.id, 'detail')}</AppText>
             <View style={styles.cardFoot}>
-              <AppText variant="heading" color={PLUS_GOLD} style={styles.flex}>
+              {/* The darker Plus text colour: the ring gold is only 2.6:1 on white (F22). */}
+              <AppText variant="heading" color={colors.plusText} style={styles.flex}>
                 {t('shop.withPlus')}
               </AppText>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={`${r.on ? t('shop.inUse') : t('shop.use')}, ${itemText(t, r.id, 'name')}`}
                 accessibilityState={{ disabled: busy, selected: r.on }}
                 disabled={busy}
                 onPress={() => onWear(r.slot, !r.on)}

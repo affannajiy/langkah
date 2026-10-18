@@ -1,0 +1,59 @@
+name: Bug report
+description: Something in the app, the council page or the scripts doesn't work.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please don't paste keys, passwords or anyone's personal details. For a security problem, use Security, Report a vulnerability instead.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where
+      options:
+        - App, Map tab (search, routes)
+        - App, walking
+        - App, reports or Community
+        - App, Me, points or shop
+        - Council dashboard or live walk page
+        - Database or SQL functions
+        - Data scripts
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: And what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Search Concubine Lane
+        2. Pick Fastest and press Start
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Phone or emulator
+      placeholder: Pixel 8 emulator, Android 15, preview APK of 18 Oct
+  - type: dropdown
+    id: account
+    attributes:
+      label: Account
+      options:
+        - Guest
+        - Google
+        - Try the demo
+        - Not sure
+  - type: textarea
+    id: shots
+    attributes:
+      label: Screenshots or a screen recording
+      description: Drag files here. Crop out anything personal.
